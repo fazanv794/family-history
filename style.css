@@ -13,6 +13,13 @@ body {
     min-height: 100vh;
 }
 
+/* Убираем pointer-events: none если есть */
+body,
+#main-content,
+.container {
+    pointer-events: auto !important;
+}
+
 /* Контейнеры */
 .container {
     max-width: 1200px;
@@ -43,6 +50,7 @@ header {
     font-weight: bold;
     color: #2d3748;
     text-decoration: none;
+    pointer-events: auto !important;
 }
 
 .logo i {
@@ -55,6 +63,7 @@ header {
     display: flex;
     list-style: none;
     gap: 30px;
+    pointer-events: auto !important;
 }
 
 .nav-links a {
@@ -62,6 +71,7 @@ header {
     text-decoration: none;
     font-weight: 500;
     transition: color 0.3s;
+    pointer-events: auto !important;
 }
 
 .nav-links a:hover {
@@ -76,6 +86,7 @@ header {
     font-size: 1.5rem;
     cursor: pointer;
     color: #4a5568;
+    pointer-events: auto !important;
 }
 
 /* Пользовательское меню */
@@ -83,6 +94,7 @@ header {
     display: flex;
     align-items: center;
     gap: 10px;
+    pointer-events: auto !important;
 }
 
 .avatar {
@@ -112,6 +124,7 @@ header {
     align-items: center;
     justify-content: center;
     gap: 8px;
+    pointer-events: auto !important;
 }
 
 .btn:hover {
@@ -202,6 +215,7 @@ header {
 .form-group textarea:focus {
     outline: none;
     border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
 .form-row {
@@ -265,6 +279,12 @@ header {
     display: flex;
     gap: 15px;
     justify-content: center;
+    margin-top: 30px;
+    pointer-events: auto !important;
+}
+
+.hero-buttons .btn {
+    pointer-events: auto !important;
 }
 
 .quick-stats {
@@ -313,6 +333,8 @@ header {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 30px;
+    margin-top: 30px;
+    pointer-events: auto !important;
 }
 
 .feature-card {
@@ -321,6 +343,8 @@ header {
     border-radius: 15px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.05);
     transition: all 0.3s;
+    cursor: pointer;
+    pointer-events: auto !important;
 }
 
 .feature-card:hover {
@@ -351,6 +375,12 @@ header {
     margin-bottom: 20px;
 }
 
+.feature-card .btn-small {
+    margin-top: 15px;
+    width: 100%;
+    pointer-events: auto !important;
+}
+
 /* Дерево */
 .page-header {
     display: flex;
@@ -369,6 +399,10 @@ header {
     display: flex;
     gap: 10px;
     margin-bottom: 20px;
+}
+
+.tree-controls .btn-small {
+    pointer-events: auto !important;
 }
 
 .tree-container {
@@ -410,6 +444,10 @@ header {
     margin-bottom: 20px;
 }
 
+.tree-empty .btn {
+    pointer-events: auto !important;
+}
+
 /* Стили для дерева */
 .tree-visualization {
     position: relative;
@@ -419,6 +457,7 @@ header {
     border: 2px dashed #cbd5e0;
     border-radius: 10px;
     overflow: hidden;
+    min-height: 500px;
 }
 
 .tree-person {
@@ -433,16 +472,18 @@ header {
     user-select: none;
     transition: all 0.3s;
     z-index: 1;
+    pointer-events: auto !important;
 }
 
 .tree-person:hover {
     transform: scale(1.05);
     box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    z-index: 2;
 }
 
 .tree-person.dragging {
     cursor: grabbing;
-    z-index: 1000;
+    z-index: 1000 !important;
     box-shadow: 0 15px 35px rgba(0,0,0,0.2);
 }
 
@@ -578,6 +619,10 @@ header {
     color: #c3cfe2;
 }
 
+.timeline-empty .btn {
+    pointer-events: auto !important;
+}
+
 /* Медиатека */
 .media-filters {
     margin-bottom: 30px;
@@ -672,6 +717,10 @@ header {
     font-size: 4rem;
     margin-bottom: 20px;
     color: #c3cfe2;
+}
+
+.media-empty .btn {
+    pointer-events: auto !important;
 }
 
 /* Профиль */
@@ -815,21 +864,28 @@ header {
     height: 18px;
 }
 
-/* Модальные окна */
+/* === ИСПРАВЛЕНИЕ МОДАЛЬНЫХ ОКОН === */
+
 .modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0,0,0,0.5);
+    background: rgba(0, 0, 0, 0.5);
     z-index: 2000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: none; /* ВАЖНО: по умолчанию скрыт */
+}
+
+.modal-overlay:not(.hidden) {
+    display: block !important; /* Показываем когда нужно */
 }
 
 .modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     background: white;
     border-radius: 20px;
     overflow: hidden;
@@ -837,6 +893,15 @@ header {
     width: 90%;
     max-height: 90vh;
     z-index: 2001;
+    display: none; /* ВАЖНО: по умолчанию скрыты */
+}
+
+.modal:not(.hidden) {
+    display: block !important; /* Показываем когда нужно */
+}
+
+.modal.wide {
+    max-width: 800px;
 }
 
 .modal-header {
@@ -852,29 +917,42 @@ header {
     margin: 0;
 }
 
+/* Кнопка закрытия в правом верхнем углу */
 .modal-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
     background: none;
     border: none;
-    font-size: 1.5rem;
+    font-size: 24px;
     cursor: pointer;
-    color: #a0aec0;
-    padding: 0;
+    color: #666;
     width: 30px;
     height: 30px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: color 0.3s;
+    border-radius: 50%;
+    transition: background 0.3s;
+    pointer-events: auto !important;
 }
 
 .modal-close:hover {
-    color: #4a5568;
+    background: #f1f1f1;
+    color: #333;
 }
 
 .modal-body {
     padding: 30px;
     overflow-y: auto;
     max-height: calc(90vh - 100px);
+    pointer-events: auto !important;
+}
+
+/* Предотвращаем закрытие при клике внутри окна */
+.modal-content {
+    pointer-events: auto !important; /* Разрешаем клики внутри */
+    position: relative;
 }
 
 .modal-footer {
@@ -883,6 +961,10 @@ header {
     gap: 15px;
     padding: 20px 30px;
     border-top: 2px solid #e2e8f0;
+}
+
+.modal-footer .btn {
+    pointer-events: auto !important;
 }
 
 .file-input {
@@ -912,10 +994,24 @@ header {
     overflow: hidden;
     transform: translateX(120%);
     transition: transform 0.3s ease;
+    display: none;
 }
 
-.notification.show {
+.notification:not(.hidden) {
+    display: flex !important;
     transform: translateX(0);
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
 }
 
 .notification-content {
@@ -953,6 +1049,7 @@ header {
     display: flex;
     align-items: center;
     justify-content: center;
+    pointer-events: auto !important;
 }
 
 /* Загрузчик */
@@ -968,6 +1065,11 @@ header {
     align-items: center;
     justify-content: center;
     z-index: 4000;
+    display: none;
+}
+
+.loader-overlay:not(.hidden) {
+    display: flex !important;
 }
 
 .loader {
@@ -1015,11 +1117,13 @@ header {
         opacity: 0;
         transition: all 0.3s;
         z-index: 999;
+        display: none;
     }
     
     .nav-links.active {
         transform: translateY(0);
         opacity: 1;
+        display: flex;
     }
     
     .nav-links li {
@@ -1033,6 +1137,11 @@ header {
     .hero-buttons {
         flex-direction: column;
         align-items: center;
+    }
+    
+    .hero-buttons .btn {
+        width: 100%;
+        margin-bottom: 10px;
     }
     
     .form-row {
@@ -1057,102 +1166,86 @@ header {
         bottom: 20px;
         max-width: none;
     }
-
-    /* Исправления для модальных окон */
-.modal {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 2001;
-    max-height: 80vh;
-    overflow-y: auto;
-}
-
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 2000;
-}
-
-/* Убедимся, что модальные окна видны */
-.modal:not(.hidden) {
-    display: block !important;
-}
-
-.modal-overlay:not(.hidden) {
-    display: block !important;
-}
-
-/* Кнопки на главной странице */
-.hero-buttons {
-    display: flex;
-    gap: 15px;
-    justify-content: center;
-    margin-top: 30px;
-}
-
-.features-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 30px;
-    margin-top: 30px;
-}
-
-.feature-card .btn-small {
-    margin-top: auto;
-}
-
-/* Уведомления */
-.notification {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 3000;
-}
-
-.notification.show {
-    display: flex !important;
-}
-
-/* Дерево */
-.tree-person {
-    position: absolute;
-    cursor: grab;
-    transition: transform 0.2s;
-}
-
-.tree-person.dragging {
-    cursor: grabbing;
-    z-index: 1000;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-}
-
-/* Исправление навигации на мобильных */
-@media (max-width: 768px) {
-    .nav-links {
-        flex-direction: column;
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        background: white;
-        padding: 20px;
-        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-        display: none;
-    }
-    
-    .nav-links.active {
-        display: flex;
-    }
     
     .modal {
         width: 95%;
         max-width: 95%;
+        padding: 15px;
+    }
+    
+    .modal-content {
+        padding: 15px;
+    }
+    
+    .features-grid {
+        grid-template-columns: 1fr;
     }
 }
+
+/* === ДОПОЛНИТЕЛЬНЫЕ ИСПРАВЛЕНИЯ === */
+
+/* Убираем любые перекрывающие стили */
+#main-header:not(.hidden),
+.page:not(.hidden) {
+    display: block !important;
+}
+
+/* Кнопки в модальных окнах */
+.modal .btn {
+    pointer-events: auto !important;
+}
+
+/* Формы в модальных окнах */
+.modal input,
+.modal select,
+.modal textarea,
+.modal button {
+    pointer-events: auto !important;
+}
+
+/* Убираем outline при клике */
+button:focus,
+input:focus,
+textarea:focus,
+select:focus {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+}
+
+/* Делаем все ссылки кликабельными */
+a {
+    pointer-events: auto !important;
+    cursor: pointer;
+}
+
+/* Исправление z-index для перекрывающихся элементов */
+.tree-person {
+    z-index: 1;
+}
+
+.tree-person:hover {
+    z-index: 2;
+}
+
+.tree-person.dragging {
+    z-index: 1000;
+}
+
+/* Загрузчик поверх всего */
+.loader-overlay {
+    z-index: 9999;
+}
+
+/* Модальные окна поверх всего */
+.modal-overlay {
+    z-index: 9998;
+}
+
+.modal {
+    z-index: 9999;
+}
+
+/* Уведомления поверх всего */
+.notification {
+    z-index: 10000;
 }

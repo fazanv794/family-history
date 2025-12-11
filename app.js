@@ -14,16 +14,13 @@ let dragOffset = { x: 0, y: 0 };
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 Приложение запускается...');
     
-    // Проверяем авторизацию
-    await checkAuthStatus();
-    
-    // Настраиваем обработчики СРАЗУ
+    // СНАЧАЛА настраиваем обработчики
     setupAllEventListeners();
     
-    // Закрываем уведомления при клике
-    document.querySelector('.notification-close')?.addEventListener('click', () => {
-        document.getElementById('notification')?.classList.add('hidden');
-    });
+    // ПОТОМ проверяем авторизацию
+    await checkAuthStatus();
+    
+    console.log('✅ Инициализация завершена');
 });
 
 // ========== АВТОРИЗАЦИЯ ==========
@@ -152,27 +149,20 @@ function getUserInitials(name) {
 function toggleAuthMode() {
     isRegisterMode = !isRegisterMode;
     
-    const elements = {
-        'reg-name-group': isRegisterMode,
-        'reg-confirm-group': isRegisterMode,
-        'auth-title': isRegisterMode ? 'Регистрация' : 'Вход в аккаунт',
-        'auth-submit': isRegisterMode ? 'Зарегистрироваться' : 'Войти',
-        'auth-switch-text': isRegisterMode ? 'Уже есть аккаунт? ' : 'Нет аккаунта? ',
-        'auth-switch-link': isRegisterMode ? 'Войти' : 'Зарегистрироваться'
-    };
+    // Обновляем элементы
+    const nameGroup = document.getElementById('reg-name-group');
+    const confirmGroup = document.getElementById('reg-confirm-group');
+    const authTitle = document.getElementById('auth-title');
+    const authSubmit = document.getElementById('auth-submit');
+    const authSwitchText = document.getElementById('auth-switch-text');
+    const authSwitchLink = document.getElementById('auth-switch-link');
     
-    Object.entries(elements).forEach(([id, value]) => {
-        const element = document.getElementById(id);
-        if (!element) return;
-        
-        if (id.includes('group')) {
-            element.classList.toggle('hidden', !value);
-        } else if (id.includes('title') || id.includes('submit') || id.includes('link')) {
-            element.textContent = value;
-        } else if (id.includes('text')) {
-            element.innerHTML = value;
-        }
-    });
+    if (nameGroup) nameGroup.classList.toggle('hidden', !isRegisterMode);
+    if (confirmGroup) confirmGroup.classList.toggle('hidden', !isRegisterMode);
+    if (authTitle) authTitle.textContent = isRegisterMode ? 'Регистрация' : 'Вход в аккаунт';
+    if (authSubmit) authSubmit.textContent = isRegisterMode ? 'Зарегистрироваться' : 'Войти';
+    if (authSwitchText) authSwitchText.innerHTML = isRegisterMode ? 'Уже есть аккаунт? ' : 'Нет аккаунта? ';
+    if (authSwitchLink) authSwitchLink.textContent = isRegisterMode ? 'Войти' : 'Зарегистрироваться';
     
     // Очищаем ошибки
     const authError = document.getElementById('auth-error');
@@ -213,7 +203,23 @@ async function logout() {
 function setupAllEventListeners() {
     console.log('🔧 Настройка обработчиков...');
     
-    // 1. Форма авторизации
+    // 1. Авторизация
+    setupAuthListeners();
+    
+    // 2. Навигация
+    setupNavigationListeners();
+    
+    // 3. Модальные окна
+    setupModalListeners();
+    
+    // 4. Кнопки на страницах
+    setupPageButtonListeners();
+    
+    console.log('✅ Все обработчики настроены');
+}
+
+function setupAuthListeners() {
+    // Форма авторизации
     const authForm = document.getElementById('auth-form');
     if (authForm) {
         authForm.addEventListener('submit', (e) => {
@@ -222,7 +228,7 @@ function setupAllEventListeners() {
         });
     }
     
-    // 2. Переключение режима авторизации
+    // Переключение режима авторизации
     const authSwitchLink = document.getElementById('auth-switch-link');
     if (authSwitchLink) {
         authSwitchLink.addEventListener('click', (e) => {
@@ -231,42 +237,24 @@ function setupAllEventListeners() {
         });
     }
     
-    // 3. Выход
+    // Выход
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {
-        logoutBtn.addEventListener('click', logout);
+        logoutBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            logout();
+        });
     }
-    
-    // 4. Навигация
-    setupNavigationListeners();
-    
-    // 5. Модальные окна
-    setupModalListeners();
-    
-    // 6. Кнопки на страницах
-    setupPageButtonListeners();
-    
-    console.log('✅ Обработчики настроены');
 }
 
 function setupNavigationListeners() {
     // Навигация в хедере
-    const navLinks = {
-        'home-link': 'home',
-        'tree-link': 'tree',
-        'timeline-link': 'timeline',
-        'media-link': 'media',
-        'profile-link': 'profile'
-    };
-    
-    Object.entries(navLinks).forEach(([id, page]) => {
-        const element = document.getElementById(id);
-        if (element) {
-            element.addEventListener('click', (e) => {
-                e.preventDefault();
-                showPage(page);
-            });
-        }
+    document.querySelectorAll('#home-link, #tree-link, #timeline-link, #media-link, #profile-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const page = link.id.replace('-link', '');
+            showPage(page);
+        });
     });
     
     // Мобильное меню
@@ -279,32 +267,24 @@ function setupNavigationListeners() {
     }
     
     // Кнопки на главной
-    const mainButtons = {
-        'tree-btn': 'tree',
-        'add-person-btn': () => openModal('add-person-modal'),
-        'tree-btn-2': 'tree',
-        'media-btn-2': 'media',
-        'timeline-btn-2': 'timeline',
-        'invite-btn-2': () => openModal('invite-modal')
-    };
+    document.getElementById('tree-btn')?.addEventListener('click', () => showPage('tree'));
+    document.getElementById('add-person-btn')?.addEventListener('click', () => openModal('add-person-modal'));
     
-    Object.entries(mainButtons).forEach(([selector, action]) => {
-        if (typeof action === 'function') {
-            // Обработка отдельных кнопок
-            const elements = document.querySelectorAll('.' + selector);
-            elements.forEach(el => {
-                el.addEventListener('click', action);
-            });
-        } else {
-            // Обработка кнопок навигации
-            const element = document.getElementById(selector);
-            if (element) {
-                element.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    showPage(action);
-                });
-            }
-        }
+    // Кнопки в карточках на главной
+    document.querySelectorAll('.tree-btn-2').forEach(btn => {
+        btn.addEventListener('click', () => showPage('tree'));
+    });
+    
+    document.querySelectorAll('.media-btn-2').forEach(btn => {
+        btn.addEventListener('click', () => showPage('media'));
+    });
+    
+    document.querySelectorAll('.timeline-btn-2').forEach(btn => {
+        btn.addEventListener('click', () => showPage('timeline'));
+    });
+    
+    document.querySelectorAll('.invite-btn-2').forEach(btn => {
+        btn.addEventListener('click', () => openModal('invite-modal'));
     });
 }
 
@@ -312,84 +292,80 @@ function setupModalListeners() {
     console.log('🪟 Настройка модальных окон...');
     
     // Кнопки открытия модальных окон
-    const modalButtons = {
-        'add-person-tree-btn': 'add-person-modal',
-        'add-person-empty-btn': 'add-person-modal',
-        'add-event-btn': 'add-event-modal',
-        'add-event-empty-btn': 'add-event-modal',
-        'upload-media-btn': 'upload-modal',
-        'upload-media-empty-btn': 'upload-modal',
-        'print-tree-btn': () => saveTreeAsImage()
-    };
+    const openButtons = [
+        { id: 'add-person-tree-btn', modal: 'add-person-modal' },
+        { id: 'add-person-empty-btn', modal: 'add-person-modal' },
+        { id: 'add-event-btn', modal: 'add-event-modal' },
+        { id: 'add-event-empty-btn', modal: 'add-event-modal' },
+        { id: 'upload-media-btn', modal: 'upload-modal' },
+        { id: 'upload-media-empty-btn', modal: 'upload-modal' }
+    ];
     
-    Object.entries(modalButtons).forEach(([id, action]) => {
-        const element = document.getElementById(id);
-        if (element) {
-            if (typeof action === 'function') {
-                element.addEventListener('click', action);
-            } else {
-                element.addEventListener('click', () => openModal(action));
-            }
+    openButtons.forEach(({ id, modal }) => {
+        const button = document.getElementById(id);
+        if (button) {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                openModal(modal);
+            });
         }
     });
     
-    // Закрытие модальных окон
-    document.querySelectorAll('.modal-close, .cancel-btn, .modal-overlay').forEach(el => {
-        el.addEventListener('click', closeAllModals);
+    // Кнопка сохранения дерева как картинки
+    document.getElementById('print-tree-btn')?.addEventListener('click', saveTreeAsImage);
+    
+    // Закрытие модальных окон - ИСПРАВЛЕНО!
+    document.querySelectorAll('.modal-close, .cancel-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Важно! Останавливаем всплытие
+            closeAllModals();
+        });
+    });
+    
+    // Закрытие по клику на оверлей
+    document.getElementById('modal-overlay')?.addEventListener('click', closeAllModals);
+    
+    // ЗАПРЕТ клика внутри модального окна
+    document.querySelectorAll('.modal-content').forEach(content => {
+        content.addEventListener('click', (e) => {
+            e.stopPropagation(); // Не даём клику дойти до оверлея
+        });
     });
     
     // Обработчики форм
-    const forms = {
-        'add-person-form-modal': handleAddPerson,
-        'add-event-form-modal': handleAddEvent,
-        'upload-form-modal': handleUpload,
-        'invite-form-modal': handleInvite
-    };
+    document.getElementById('add-person-form-modal')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await handleAddPerson();
+    });
     
-    Object.entries(forms).forEach(([id, handler]) => {
-        const form = document.getElementById(id);
-        if (form) {
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                await handler();
-            });
-        }
+    document.getElementById('add-event-form-modal')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await handleAddEvent();
+    });
+    
+    document.getElementById('upload-form-modal')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await handleUpload();
+    });
+    
+    document.getElementById('invite-form-modal')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await handleInvite();
     });
 }
 
 function setupPageButtonListeners() {
     // Управление деревом
-    const treeButtons = {
-        'zoom-in-btn': zoomIn,
-        'zoom-out-btn': zoomOut,
-        'reset-tree-btn': resetTree
-    };
-    
-    Object.entries(treeButtons).forEach(([id, handler]) => {
-        const element = document.getElementById(id);
-        if (element) {
-            element.addEventListener('click', handler);
-        }
-    });
+    document.getElementById('zoom-in-btn')?.addEventListener('click', zoomIn);
+    document.getElementById('zoom-out-btn')?.addEventListener('click', zoomOut);
+    document.getElementById('reset-tree-btn')?.addEventListener('click', resetTree);
     
     // Профиль
-    const profileButtons = {
-        'edit-profile-btn': editProfile,
-        'help-btn': showHelp
-    };
-    
-    Object.entries(profileButtons).forEach(([id, handler]) => {
-        const element = document.getElementById(id);
-        if (element) {
-            element.addEventListener('click', handler);
-        }
-    });
+    document.getElementById('edit-profile-btn')?.addEventListener('click', editProfile);
+    document.getElementById('help-btn')?.addEventListener('click', showHelp);
     
     // Фильтр медиа
-    const mediaFilter = document.getElementById('media-filter');
-    if (mediaFilter) {
-        mediaFilter.addEventListener('change', filterMedia);
-    }
+    document.getElementById('media-filter')?.addEventListener('change', filterMedia);
 }
 
 // ========== МОДАЛЬНЫЕ ОКНА ==========
@@ -409,9 +385,15 @@ function openModal(modalId) {
         modal.classList.remove('hidden');
         overlay.classList.remove('hidden');
         
+        // Останавливаем анимации скрытия
+        modal.style.display = 'block';
+        overlay.style.display = 'block';
+        
         // Фокус на первом поле ввода
-        const firstInput = modal.querySelector('input, textarea, select');
-        if (firstInput) firstInput.focus();
+        setTimeout(() => {
+            const firstInput = modal.querySelector('input, textarea, select');
+            if (firstInput) firstInput.focus();
+        }, 10);
     }
 }
 
@@ -421,8 +403,15 @@ function closeAllModals() {
     const overlay = document.getElementById('modal-overlay');
     const modals = document.querySelectorAll('.modal');
     
-    if (overlay) overlay.classList.add('hidden');
-    modals.forEach(modal => modal.classList.add('hidden'));
+    if (overlay) {
+        overlay.classList.add('hidden');
+        overlay.style.display = 'none';
+    }
+    
+    modals.forEach(modal => {
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+    });
     
     // Очищаем формы
     document.querySelectorAll('form').forEach(form => {
@@ -1198,3 +1187,5 @@ function filterMedia() {
 
 // Экспортируем функции для HTML
 window.selectPerson = selectPerson;
+window.openModal = openModal;
+window.closeAllModals = closeAllModals;
