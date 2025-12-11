@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Family History</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📖 Family History</h1>
+            <p>Сохрани историю своей семьи</p>
+        </header>
+
+        <main>
+            <!-- Форма входа/регистрации -->
+            <div id="auth-section" class="auth-box">
+                <h2>Вход / Регистрация</h2>
+                <div class="form-group">
+                    <input type="email" id="email" placeholder="Ваш email" class="form-input">
+                    <input type="password" id="password" placeholder="Пароль" class="form-input">
+                    <button id="login-btn" class="btn btn-primary">Войти</button>
+                    <button id="signup-btn" class="btn btn-secondary">Зарегистрироваться</button>
+                </div>
+                <div id="auth-message" class="message"></div>
+            </div>
+
+            <!-- Контент после входа -->
+            <div id="app-section" class="hidden">
+                <div class="user-info">
+                    <h2>Добро пожаловать, <span id="user-email"></span>!</h2>
+                    <button id="logout-btn" class="btn btn-logout">Выйти</button>
+                </div>
+
+                <div class="dashboard">
+                    <div class="card">
+                        <h3>👨‍👩‍👧‍👦 Семейное древо</h3>
+                        <button id="add-person-btn" class="btn">+ Добавить человека</button>
+                        <div id="persons-list" class="list"></div>
+                    </div>
+
+                    <div class="card">
+                        <h3>📝 Быстрые действия</h3>
+                        <button onclick="alert('Скоро добавим!')" class="btn">Добавить фото</button>
+                        <button onclick="alert('Скоро добавим!')" class="btn">Записать историю</button>
+                        <button onclick="alert('Скоро добавим!')" class="btn">Построить древо</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Форма добавления человека -->
+            <div id="add-person-form" class="modal hidden">
+                <div class="modal-content">
+                    <h3>Добавить члена семьи</h3>
+                    <input type="text" id="first-name" placeholder="Имя" class="form-input">
+                    <input type="text" id="last-name" placeholder="Фамилия" class="form-input">
+                    <input type="date" id="birth-date" class="form-input">
+                    <select id="gender" class="form-input">
+                        <option value="">Пол</option>
+                        <option value="male">Мужской</option>
+                        <option value="female">Женский</option>
+                        <option value="other">Другой</option>
+                    </select>
+                    <div class="modal-buttons">
+                        <button id="save-person-btn" class="btn btn-primary">Сохранить</button>
+                        <button id="cancel-person-btn" class="btn">Отмена</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>Создано с ❤️ для сохранения семейной истории</p>
+        </footer>
+    </div>
+
+    <script src="supabase.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
