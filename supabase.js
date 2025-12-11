@@ -5,37 +5,30 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 // Инициализация Supabase
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
 
-// Проверка подключения
-supabase.from('people').select('count', { count: 'exact', head: true })
-  .then(response => {
-    console.log('✅ Подключение к Supabase успешно')
-  })
-  .catch(error => {
-    console.error('❌ Ошибка подключения:', error)
-    showNotification('Ошибка подключения к базе данных', 'error')
-  })
-
-// Вспомогательные функции
+// Простая функция уведомления
 function showNotification(message, type = 'info') {
     const notification = document.getElementById('notification')
     if (!notification) {
-        console.log(`${type}: ${message}`)
+        console.log(type + ':', message)
         return
     }
     
-    notification.textContent = message
+    const text = document.getElementById('notification-text')
+    if (!text) return
+    
+    text.textContent = message
     notification.className = `notification ${type}`
     notification.classList.remove('hidden')
     
     setTimeout(() => {
         notification.classList.add('hidden')
-    }, 5000)
+    }, 4000)
 }
 
+// Простая функция загрузчика
 function showLoader(text = 'Загрузка...') {
     const loader = document.getElementById('loader')
     const loaderText = document.getElementById('loader-text')
-    
     if (loader) {
         if (loaderText) loaderText.textContent = text
         loader.classList.remove('hidden')
@@ -52,3 +45,5 @@ window.supabaseClient = supabase
 window.showNotification = showNotification
 window.showLoader = showLoader
 window.hideLoader = hideLoader
+
+console.log('✅ Supabase подключен')
