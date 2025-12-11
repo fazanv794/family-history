@@ -1057,4 +1057,102 @@ header {
         bottom: 20px;
         max-width: none;
     }
+
+    /* Исправления для модальных окон */
+.modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2001;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 2000;
+}
+
+/* Убедимся, что модальные окна видны */
+.modal:not(.hidden) {
+    display: block !important;
+}
+
+.modal-overlay:not(.hidden) {
+    display: block !important;
+}
+
+/* Кнопки на главной странице */
+.hero-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 30px;
+    margin-top: 30px;
+}
+
+.feature-card .btn-small {
+    margin-top: auto;
+}
+
+/* Уведомления */
+.notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 3000;
+}
+
+.notification.show {
+    display: flex !important;
+}
+
+/* Дерево */
+.tree-person {
+    position: absolute;
+    cursor: grab;
+    transition: transform 0.2s;
+}
+
+.tree-person.dragging {
+    cursor: grabbing;
+    z-index: 1000;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+/* Исправление навигации на мобильных */
+@media (max-width: 768px) {
+    .nav-links {
+        flex-direction: column;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        padding: 20px;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        display: none;
+    }
+    
+    .nav-links.active {
+        display: flex;
+    }
+    
+    .modal {
+        width: 95%;
+        max-width: 95%;
+    }
+}
 }
