@@ -5,29 +5,50 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 // Инициализация Supabase
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
 
-// Экспортируем для использования
-window.supabaseClient = supabase
+// Проверка подключения
+supabase.from('people').select('count', { count: 'exact', head: true })
+  .then(response => {
+    console.log('✅ Подключение к Supabase успешно')
+  })
+  .catch(error => {
+    console.error('❌ Ошибка подключения:', error)
+    showNotification('Ошибка подключения к базе данных', 'error')
+  })
 
 // Вспомогательные функции
 function showNotification(message, type = 'info') {
     const notification = document.getElementById('notification')
-    if (!notification) return
+    if (!notification) {
+        console.log(`${type}: ${message}`)
+        return
+    }
     
     notification.textContent = message
-    notification.className = `notification ${type} show`
+    notification.className = `notification ${type}`
+    notification.classList.remove('hidden')
     
     setTimeout(() => {
-        notification.classList.remove('show')
-    }, 3000)
+        notification.classList.add('hidden')
+    }, 5000)
 }
 
-window.showNotification = showNotification
-
-function showLoader(show = true) {
+function showLoader(text = 'Загрузка...') {
     const loader = document.getElementById('loader')
+    const loaderText = document.getElementById('loader-text')
+    
     if (loader) {
-        loader.classList.toggle('active', show)
+        if (loaderText) loaderText.textContent = text
+        loader.classList.remove('hidden')
     }
 }
 
+function hideLoader() {
+    const loader = document.getElementById('loader')
+    if (loader) loader.classList.add('hidden')
+}
+
+// Экспортируем
+window.supabaseClient = supabase
+window.showNotification = showNotification
 window.showLoader = showLoader
+window.hideLoader = hideLoader

@@ -3,339 +3,551 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Family History - История моей семьи</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>История моей семьи</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
 </head>
 <body>
-    <!-- Навигация -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="nav-brand">
+    <!-- Шапка (скрыта до авторизации) -->
+    <header id="main-header" class="hidden">
+        <div class="header-container container">
+            <a href="#" class="logo" onclick="showPage('home')">
                 <i class="fas fa-tree"></i>
-                <h1>Family History</h1>
-                <span class="beta">Бета</span>
-            </div>
-            <div class="nav-links" id="nav-links">
-                <a href="#family-tree" class="nav-link"><i class="fas fa-sitemap"></i> Древо</a>
-                <a href="#persons" class="nav-link"><i class="fas fa-users"></i> Люди</a>
-                <a href="#photos" class="nav-link"><i class="fas fa-images"></i> Фото</a>
-                <a href="#stories" class="nav-link"><i class="fas fa-book"></i> Истории</a>
-                <a href="#timeline" class="nav-link"><i class="fas fa-timeline"></i> Хроника</a>
-            </div>
-            <div class="nav-auth" id="nav-auth">
-                <button id="login-btn" class="btn btn-outline"><i class="fas fa-sign-in-alt"></i> Вход</button>
-                <button id="signup-btn" class="btn btn-primary"><i class="fas fa-user-plus"></i> Регистрация</button>
-                <div id="user-menu" class="user-menu" style="display: none;">
-                    <img id="user-avatar" src="https://ui-avatars.com/api/?name=User&background=667eea&color=fff" class="avatar">
-                    <span id="user-name"></span>
-                    <div class="dropdown">
-                        <a href="#profile"><i class="fas fa-user"></i> Профиль</a>
-                        <a href="#settings"><i class="fas fa-cog"></i> Настройки</a>
-                        <hr>
-                        <a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Выход</a>
-                    </div>
-                </div>
-            </div>
-            <button class="nav-toggle" id="nav-toggle">
+                История моей семьи
+            </a>
+            
+            <button class="mobile-menu-btn" onclick="toggleMenu()">
                 <i class="fas fa-bars"></i>
             </button>
+            
+            <ul class="nav-links">
+                <li><a href="#" onclick="showPage('tree')">Древо</a></li>
+                <li><a href="#" onclick="showPage('timeline')">Лента событий</a></li>
+                <li><a href="#" onclick="showPage('media')">Медиатека</a></li>
+                <li><a href="#" onclick="showPage('profile')">Мой профиль</a></li>
+            </ul>
+            
+            <div class="user-menu">
+                <span id="username">Гость</span>
+                <div class="avatar" id="user-avatar">Г</div>
+                <button class="btn btn-secondary" style="margin-left: 15px;" onclick="logout()" id="logout-btn">Выйти</button>
+            </div>
         </div>
-    </nav>
+    </header>
 
-    <!-- Форма авторизации -->
-    <div id="auth-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal">&times;</span>
-            <h2><i class="fas fa-user-circle"></i> Вход / Регистрация</h2>
-            <div class="auth-tabs">
-                <button class="tab-btn active" data-tab="login">Вход</button>
-                <button class="tab-btn" data-tab="signup">Регистрация</button>
-            </div>
-            
-            <div id="login-form" class="auth-form">
-                <input type="email" id="login-email" placeholder="Email" class="form-input">
-                <input type="password" id="login-password" placeholder="Пароль" class="form-input">
-                <button id="login-submit" class="btn btn-primary btn-block">Войти</button>
-                <div class="auth-divider">или</div>
-                <button class="btn btn-google btn-block">
-                    <i class="fab fa-google"></i> Продолжить с Google
-                </button>
-            </div>
-            
-            <div id="signup-form" class="auth-form" style="display: none;">
-                <input type="email" id="signup-email" placeholder="Email" class="form-input">
-                <input type="password" id="signup-password" placeholder="Пароль" class="form-input">
-                <input type="password" id="signup-confirm" placeholder="Подтвердите пароль" class="form-input">
-                <button id="signup-submit" class="btn btn-primary btn-block">Зарегистрироваться</button>
-            </div>
-            
-            <div id="auth-message" class="message"></div>
-        </div>
-    </div>
-
-    <!-- Основной контент -->
-    <main class="container">
-        <!-- Приветствие -->
-        <section id="welcome" class="welcome-section">
-            <div class="welcome-content">
-                <h2><i class="fas fa-heart"></i> Сохраните историю вашей семьи</h2>
-                <p>Создайте цифровое семейное древо, храните фотографии, записывайте истории и передавайте наследие будущим поколениям.</p>
-                <div class="welcome-stats">
-                    <div class="stat">
-                        <i class="fas fa-users"></i>
-                        <span id="total-persons">0</span>
-                        <small>Человек</small>
+    <!-- Главный контент -->
+    <main id="main-content">
+        <!-- Страница авторизации (видима по умолчанию) -->
+        <section id="auth-page" class="page">
+            <div class="auth-container">
+                <div class="logo-large">
+                    <i class="fas fa-tree"></i>
+                    <h1>История моей семьи</h1>
+                </div>
+                
+                <h2 id="auth-title">Вход в аккаунт</h2>
+                
+                <div class="auth-error" id="auth-error"></div>
+                
+                <form class="auth-form" id="auth-form">
+                    <div class="form-group">
+                        <label for="auth-email">Email</label>
+                        <input type="email" id="auth-email" placeholder="Введите ваш email" required>
                     </div>
-                    <div class="stat">
+                    
+                    <div class="form-group">
+                        <label for="auth-password">Пароль</label>
+                        <input type="password" id="auth-password" placeholder="Введите пароль" required>
+                    </div>
+                    
+                    <div class="form-group hidden" id="reg-name-group">
+                        <label for="auth-name">Имя и фамилия</label>
+                        <input type="text" id="auth-name" placeholder="Введите ваше имя">
+                    </div>
+                    
+                    <div class="form-group hidden" id="reg-confirm-group">
+                        <label for="auth-confirm-password">Подтверждение пароля</label>
+                        <input type="password" id="auth-confirm-password" placeholder="Повторите пароль">
+                    </div>
+                    
+                    <button type="submit" class="btn auth-submit-btn" style="width: 100%; margin-top: 20px;" id="auth-submit">
+                        Войти
+                    </button>
+                </form>
+                
+                <div class="auth-switch">
+                    <p id="auth-switch-text">
+                        Нет аккаунта? 
+                        <a href="#" id="auth-switch-link" onclick="toggleAuthMode(event)">
+                            Зарегистрироваться
+                        </a>
+                    </p>
+                </div>
+                
+                <div class="auth-features">
+                    <div class="feature">
+                        <i class="fas fa-sitemap"></i>
+                        <span>Создавайте генеалогическое древо</span>
+                    </div>
+                    <div class="feature">
                         <i class="fas fa-images"></i>
-                        <span id="total-photos">0</span>
-                        <small>Фотографий</small>
+                        <span>Храните семейные фотографии</span>
                     </div>
-                    <div class="stat">
-                        <i class="fas fa-book"></i>
-                        <span id="total-stories">0</span>
-                        <small>Историй</small>
+                    <div class="feature">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Отмечайте важные даты</span>
                     </div>
                 </div>
             </div>
         </section>
-
-        <!-- Быстрые действия -->
-        <section class="quick-actions">
-            <h3><i class="fas fa-bolt"></i> Быстрые действия</h3>
-            <div class="actions-grid">
-                <button id="add-person-quick" class="action-card">
-                    <i class="fas fa-user-plus"></i>
-                    <span>Добавить человека</span>
-                </button>
-                <button id="add-photo-quick" class="action-card">
-                    <i class="fas fa-camera"></i>
-                    <span>Добавить фото</span>
-                </button>
-                <button id="add-story-quick" class="action-card">
-                    <i class="fas fa-edit"></i>
-                    <span>Написать историю</span>
-                </button>
-                <button id="view-tree" class="action-card">
-                    <i class="fas fa-sitemap"></i>
-                    <span>Посмотреть древо</span>
-                </button>
+        
+        <!-- Главная страница (скрыта до авторизации) -->
+        <section id="home-page" class="page hidden">
+            <div class="hero">
+                <div class="container">
+                    <h1>Добро пожаловать в вашу семейную историю!</h1>
+                    <p>Создайте генеалогическое древо, сохраните воспоминания, фотографии и истории для будущих поколений.</p>
+                    <div class="hero-buttons">
+                        <button class="btn" onclick="showPage('tree')">
+                            <i class="fas fa-sitemap"></i> Моё древо
+                        </button>
+                        <button class="btn btn-secondary" onclick="openAddPersonModal()">
+                            <i class="fas fa-user-plus"></i> Добавить человека
+                        </button>
+                    </div>
+                </div>
             </div>
-        </section>
-
-        <!-- Семейное древо -->
-        <section id="family-tree" class="section">
-            <div class="section-header">
-                <h2><i class="fas fa-sitemap"></i> Семейное древо</h2>
-                <button id="generate-tree" class="btn btn-outline"><i class="fas fa-project-diagram"></i> Построить древо</button>
-            </div>
-            <div id="tree-container" class="tree-container">
-                <div class="tree-placeholder">
-                    <i class="fas fa-tree fa-3x"></i>
-                    <p>Ваше семейное древо будет отображено здесь</p>
-                    <button id="add-first-person" class="btn btn-primary">Добавить первого человека</button>
+            
+            <div class="container">
+                <div class="quick-stats">
+                    <div class="stat-card">
+                        <i class="fas fa-users"></i>
+                        <h3 id="stat-people">0</h3>
+                        <p>Людей в древе</p>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-calendar"></i>
+                        <h3 id="stat-events">0</h3>
+                        <p>Событий</p>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-images"></i>
+                        <h3 id="stat-media">0</h3>
+                        <p>Фотографий</p>
+                    </div>
+                </div>
+                
+                <div class="features">
+                    <h2>Возможности приложения</h2>
+                    <div class="features-grid">
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <i class="fas fa-sitemap"></i>
+                            </div>
+                            <h3>Генеалогическое древо</h3>
+                            <p>Создавайте интерактивное древо, добавляйте родственников, фотографии и биографии.</p>
+                            <button class="btn btn-small" onclick="showPage('tree')">Перейти</button>
+                        </div>
+                        
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <i class="fas fa-images"></i>
+                            </div>
+                            <h3>Семейный архив</h3>
+                            <p>Храните фотографии, видео и документы в одном безопасном месте.</p>
+                            <button class="btn btn-small" onclick="showPage('media')">Перейти</button>
+                        </div>
+                        
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <h3>События и даты</h3>
+                            <p>Отмечайте важные семейные события и получайте напоминания.</p>
+                            <button class="btn btn-small" onclick="showPage('timeline')">Перейти</button>
+                        </div>
+                        
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <h3>Совместная работа</h3>
+                            <p>Приглашайте родственников для совместного заполнения истории.</p>
+                            <button class="btn btn-small" onclick="openInviteModal()">Пригласить</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
-
-        <!-- Все люди -->
-        <section id="persons" class="section">
-            <div class="section-header">
-                <h2><i class="fas fa-users"></i> Все люди</h2>
-                <button id="add-person" class="btn btn-primary"><i class="fas fa-plus"></i> Добавить</button>
-            </div>
-            <div class="filter-bar">
-                <input type="text" id="search-persons" placeholder="Поиск по имени..." class="form-input">
-                <select id="filter-gender" class="form-select">
-                    <option value="">Все</option>
-                    <option value="male">Мужчины</option>
-                    <option value="female">Женщины</option>
-                </select>
-            </div>
-            <div id="persons-grid" class="persons-grid">
-                <!-- Люди загружаются здесь -->
+        
+        <!-- Страница генеалогического древа -->
+        <section id="tree-page" class="page hidden">
+            <div class="container">
+                <div class="page-header">
+                    <h2>Мое генеалогическое древо</h2>
+                    <div>
+                        <button class="btn" onclick="openAddPersonModal()">
+                            <i class="fas fa-user-plus"></i> Добавить человека
+                        </button>
+                        <button class="btn btn-secondary" onclick="printTree()">
+                            <i class="fas fa-print"></i> Печать
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="tree-controls">
+                    <button class="btn btn-small" onclick="zoomIn()"><i class="fas fa-search-plus"></i></button>
+                    <button class="btn btn-small" onclick="zoomOut()"><i class="fas fa-search-minus"></i></button>
+                    <button class="btn btn-small" onclick="resetTree()"><i class="fas fa-expand"></i></button>
+                </div>
+                
+                <div class="tree-container">
+                    <div class="tree" id="family-tree">
+                        <div class="tree-empty" id="tree-empty">
+                            <i class="fas fa-tree"></i>
+                            <h3>Древо пустое</h3>
+                            <p>Добавьте первого человека, чтобы начать создание древа</p>
+                            <button class="btn" onclick="openAddPersonModal()">Добавить человека</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="people-list">
+                    <h3>Список людей в древе</h3>
+                    <div id="people-list-container">
+                        <!-- Список людей будет здесь -->
+                    </div>
+                </div>
             </div>
         </section>
-
-        <!-- Фотографии -->
-        <section id="photos" class="section">
-            <div class="section-header">
-                <h2><i class="fas fa-images"></i> Фотографии</h2>
-                <button id="add-photo" class="btn btn-primary"><i class="fas fa-plus"></i> Добавить фото</button>
-            </div>
-            <div id="photos-grid" class="photos-grid">
-                <!-- Фото загружаются здесь -->
+        
+        <!-- Лента событий -->
+        <section id="timeline-page" class="page hidden">
+            <div class="container">
+                <div class="page-header">
+                    <h2>Лента семейных событий</h2>
+                    <button class="btn" onclick="openAddEventModal()">
+                        <i class="fas fa-plus"></i> Добавить событие
+                    </button>
+                </div>
+                
+                <div id="timeline-container">
+                    <div class="timeline-empty" id="timeline-empty">
+                        <i class="fas fa-calendar-alt"></i>
+                        <h3>Пока нет событий</h3>
+                        <p>Добавьте первое семейное событие</p>
+                        <button class="btn" onclick="openAddEventModal()">Добавить событие</button>
+                    </div>
+                </div>
             </div>
         </section>
-
-        <!-- Истории -->
-        <section id="stories" class="section">
-            <div class="section-header">
-                <h2><i class="fas fa-book"></i> Истории и воспоминания</h2>
-                <button id="add-story" class="btn btn-primary"><i class="fas fa-plus"></i> Новая история</button>
-            </div>
-            <div id="stories-list" class="stories-list">
-                <!-- Истории загружаются здесь -->
+        
+        <!-- Медиатека -->
+        <section id="media-page" class="page hidden">
+            <div class="container">
+                <div class="page-header">
+                    <h2>Семейная медиатека</h2>
+                    <button class="btn" onclick="openUploadModal()">
+                        <i class="fas fa-upload"></i> Загрузить медиа
+                    </button>
+                </div>
+                
+                <div class="media-filters">
+                    <select id="media-filter" onchange="filterMedia()">
+                        <option value="all">Все файлы</option>
+                        <option value="photo">Фотографии</option>
+                        <option value="video">Видео</option>
+                    </select>
+                </div>
+                
+                <div class="media-grid" id="media-container">
+                    <div class="media-empty" id="media-empty">
+                        <i class="fas fa-images"></i>
+                        <h3>Медиатека пуста</h3>
+                        <p>Загрузите первые фотографии вашей семьи</p>
+                        <button class="btn" onclick="openUploadModal()">Загрузить фото</button>
+                    </div>
+                </div>
             </div>
         </section>
-
-        <!-- Хронология -->
-        <section id="timeline" class="section">
-            <div class="section-header">
-                <h2><i class="fas fa-timeline"></i> Семейная хроника</h2>
-            </div>
-            <div id="timeline-container" class="timeline">
-                <!-- События загружаются здесь -->
+        
+        <!-- Профиль пользователя -->
+        <section id="profile-page" class="page hidden">
+            <div class="container">
+                <div class="page-header">
+                    <h2>Мой профиль</h2>
+                    <button class="btn" onclick="editProfile()">
+                        <i class="fas fa-edit"></i> Редактировать
+                    </button>
+                </div>
+                
+                <div class="profile-container">
+                    <div class="profile-sidebar">
+                        <div class="profile-avatar" id="profile-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <h3 id="profile-name">Загрузка...</h3>
+                        <p id="profile-email">Загрузка...</p>
+                        
+                        <div class="profile-stats">
+                            <div class="stat">
+                                <i class="fas fa-users"></i>
+                                <span id="profile-stat-people">0</span>
+                                <small>Людей</small>
+                            </div>
+                            <div class="stat">
+                                <i class="fas fa-calendar"></i>
+                                <span id="profile-stat-events">0</span>
+                                <small>Событий</small>
+                            </div>
+                            <div class="stat">
+                                <i class="fas fa-images"></i>
+                                <span id="profile-stat-media">0</span>
+                                <small>Фото</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="profile-content">
+                        <div class="card">
+                            <h3>Информация</h3>
+                            <div class="info-item">
+                                <label>Email:</label>
+                                <span id="info-email">Загрузка...</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Дата регистрации:</label>
+                                <span id="info-reg-date">Загрузка...</span>
+                            </div>
+                            <div class="info-item">
+                                <label>ID пользователя:</label>
+                                <span id="info-user-id" class="user-id">Загрузка...</span>
+                            </div>
+                        </div>
+                        
+                        <div class="card">
+                            <h3>Настройки</h3>
+                            <div class="setting-item">
+                                <label>
+                                    <input type="checkbox" id="setting-birthdays" checked>
+                                    Уведомления о днях рождения
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <label>
+                                    <input type="checkbox" id="setting-events" checked>
+                                    Уведомления о событиях
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <label>
+                                    <input type="checkbox" id="setting-invites" checked>
+                                    Уведомления о приглашениях
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="card">
+                            <h3>О приложении</h3>
+                            <p>Версия: 1.0.0</p>
+                            <p>Используется Firebase для хранения данных</p>
+                            <button class="btn btn-secondary" onclick="showHelp()">
+                                <i class="fas fa-question-circle"></i> Помощь
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
     </main>
 
     <!-- Модальные окна -->
-    <div id="add-person-modal" class="modal">
-        <div class="modal-content wide">
-            <span class="close-modal">&times;</span>
-            <h2><i class="fas fa-user-plus"></i> Добавить человека</h2>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label><i class="fas fa-user"></i> Имя *</label>
-                    <input type="text" id="person-first-name" class="form-input" required>
-                </div>
-                <div class="form-group">
-                    <label><i class="fas fa-user"></i> Фамилия</label>
-                    <input type="text" id="person-last-name" class="form-input">
-                </div>
-                <div class="form-group">
-                    <label><i class="fas fa-user"></i> Отчество</label>
-                    <input type="text" id="person-middle-name" class="form-input">
-                </div>
-                <div class="form-group">
-                    <label><i class="fas fa-venus-mars"></i> Пол</label>
-                    <select id="person-gender" class="form-input">
-                        <option value="">Выберите</option>
-                        <option value="male">Мужской</option>
-                        <option value="female">Женский</option>
-                        <option value="other">Другой</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label><i class="fas fa-birthday-cake"></i> Дата рождения</label>
-                    <input type="date" id="person-birth-date" class="form-input">
-                </div>
-                <div class="form-group">
-                    <label><i class="fas fa-cross"></i> Дата смерти</label>
-                    <input type="date" id="person-death-date" class="form-input">
-                </div>
-                <div class="form-group full-width">
-                    <label><i class="fas fa-map-marker-alt"></i> Место рождения</label>
-                    <input type="text" id="person-birth-place" class="form-input">
-                </div>
-                <div class="form-group full-width">
-                    <label><i class="fas fa-file-alt"></i> Биография</label>
-                    <textarea id="person-biography" class="form-input" rows="4" placeholder="Расскажите историю этого человека..."></textarea>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button id="save-person" class="btn btn-primary">Сохранить</button>
-                <button class="btn btn-outline cancel-modal">Отмена</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="add-photo-modal" class="modal">
+    <div id="modal-overlay" class="modal-overlay hidden" onclick="closeAllModals()"></div>
+    
+    <!-- Модальное окно добавления человека -->
+    <div id="add-person-modal" class="modal hidden">
         <div class="modal-content">
-            <span class="close-modal">&times;</span>
-            <h2><i class="fas fa-camera"></i> Добавить фотографию</h2>
-            <div class="photo-upload-area" id="photo-dropzone">
-                <i class="fas fa-cloud-upload-alt fa-3x"></i>
-                <p>Перетащите фото сюда или нажмите для выбора</p>
-                <input type="file" id="photo-file" accept="image/*" hidden>
-                <button id="browse-photo" class="btn btn-outline">Выбрать файл</button>
+            <div class="modal-header">
+                <h3>Добавить человека в древо</h3>
+                <button class="modal-close" onclick="closeModal('add-person-modal')">&times;</button>
             </div>
-            <div class="form-group">
-                <label>Описание</label>
-                <textarea id="photo-description" class="form-input" rows="3"></textarea>
-            </div>
-            <div class="form-group">
-                <label>Дата съёмки</label>
-                <input type="date" id="photo-date" class="form-input">
-            </div>
-            <div class="form-group">
-                <label>Кто на фото?</label>
-                <select id="photo-person" class="form-input" multiple>
-                    <!-- Люди загружаются динамически -->
-                </select>
-                <small>Выберите несколько людей, зажав Ctrl</small>
-            </div>
-            <div class="modal-footer">
-                <button id="upload-photo" class="btn btn-primary">Загрузить</button>
-                <button class="btn btn-outline cancel-modal">Отмена</button>
+            <div class="modal-body">
+                <form id="add-person-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="person-first-name">Имя *</label>
+                            <input type="text" id="person-first-name" placeholder="Иван" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="person-last-name">Фамилия *</label>
+                            <input type="text" id="person-last-name" placeholder="Иванов" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="person-birth-date">Дата рождения</label>
+                        <input type="date" id="person-birth-date">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="person-relation">Кем приходится вам</label>
+                        <select id="person-relation">
+                            <option value="self">Я</option>
+                            <option value="spouse">Супруг/а</option>
+                            <option value="parent">Родитель</option>
+                            <option value="child">Ребенок</option>
+                            <option value="sibling">Брат/сестра</option>
+                            <option value="grandparent">Дедушка/бабушка</option>
+                            <option value="grandchild">Внук/внучка</option>
+                            <option value="other">Другой родственник</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="person-bio">Биография (необязательно)</label>
+                        <textarea id="person-bio" rows="3" placeholder="Краткая информация о человеке..."></textarea>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('add-person-modal')">
+                            Отмена
+                        </button>
+                        <button type="submit" class="btn">
+                            Добавить в древо
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
-
-    <div id="add-story-modal" class="modal">
-        <div class="modal-content wide">
-            <span class="close-modal">&times;</span>
-            <h2><i class="fas fa-edit"></i> Новая история</h2>
-            <div class="form-group">
-                <label>Заголовок *</label>
-                <input type="text" id="story-title" class="form-input">
+    
+    <!-- Модальное окно добавления события -->
+    <div id="add-event-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Добавить семейное событие</h3>
+                <button class="modal-close" onclick="closeModal('add-event-modal')">&times;</button>
             </div>
-            <div class="form-group">
-                <label>Связанные люди</label>
-                <select id="story-persons" class="form-input" multiple>
-                    <!-- Люди загружаются динамически -->
-                </select>
-            </div>
-            <div class="form-group">
-                <label>История *</label>
-                <textarea id="story-content" class="form-input" rows="10" placeholder="Расскажите историю..."></textarea>
-            </div>
-            <div class="modal-footer">
-                <button id="save-story" class="btn btn-primary">Опубликовать</button>
-                <button class="btn btn-outline cancel-modal">Отмена</button>
+            <div class="modal-body">
+                <form id="add-event-form">
+                    <div class="form-group">
+                        <label for="event-title">Название события *</label>
+                        <input type="text" id="event-title" placeholder="Например: День рождения мамы" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="event-date">Дата события *</label>
+                        <input type="date" id="event-date" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="event-description">Описание</label>
+                        <textarea id="event-description" rows="3" placeholder="Подробности события..."></textarea>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('add-event-modal')">
+                            Отмена
+                        </button>
+                        <button type="submit" class="btn">
+                            Добавить событие
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
-
-    <!-- Футер -->
-    <footer class="footer">
-        <div class="footer-content">
-            <div class="footer-section">
-                <h3><i class="fas fa-tree"></i> Family History</h3>
-                <p>Сохраняем историю вашей семьи для будущих поколений</p>
+    
+    <!-- Модальное окно загрузки медиа -->
+    <div id="upload-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Загрузить медиафайлы</h3>
+                <button class="modal-close" onclick="closeModal('upload-modal')">&times;</button>
             </div>
-            <div class="footer-section">
-                <h4>Функции</h4>
-                <a href="#">Семейное древо</a>
-                <a href="#">Фотоархив</a>
-                <a href="#">Истории</a>
-                <a href="#">Хронология</a>
-            </div>
-            <div class="footer-section">
-                <h4>Поддержка</h4>
-                <a href="#">Помощь</a>
-                <a href="#">FAQ</a>
-                <a href="#">Контакты</a>
+            <div class="modal-body">
+                <form id="upload-form">
+                    <div class="form-group">
+                        <label for="upload-files">Выберите файлы</label>
+                        <input type="file" id="upload-files" multiple accept="image/*" class="file-input">
+                        <div class="file-hint">Можно выбрать несколько фотографий</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="upload-description">Описание (необязательно)</label>
+                        <input type="text" id="upload-description" placeholder="Что на фото?">
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('upload-modal')">
+                            Отмена
+                        </button>
+                        <button type="submit" class="btn">
+                            <i class="fas fa-upload"></i> Загрузить
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
-        <div class="footer-bottom">
-            <p>&copy; 2024 Family History. Все права защищены.</p>
-            <p>Сделано с ❤️ для семей по всему миру</p>
+    </div>
+    
+    <!-- Модальное окно приглашения -->
+    <div id="invite-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Пригласить родственника</h3>
+                <button class="modal-close" onclick="closeModal('invite-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="invite-form">
+                    <div class="form-group">
+                        <label for="invite-email">Email родственника *</label>
+                        <input type="email" id="invite-email" placeholder="email@example.com" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="invite-message">Сообщение (необязательно)</label>
+                        <textarea id="invite-message" rows="3" placeholder="Привет! Присоединяйся к нашему семейному древу..."></textarea>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('invite-modal')">
+                            Отмена
+                        </button>
+                        <button type="submit" class="btn">
+                            Отправить приглашение
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
-    </footer>
-
-    <!-- Загрузчик -->
-    <div id="loader" class="loader">
-        <div class="spinner"></div>
     </div>
 
     <!-- Уведомления -->
-    <div id="notification" class="notification"></div>
+    <div id="notification" class="notification hidden">
+        <div class="notification-content">
+            <span id="notification-text"></span>
+            <button class="notification-close" onclick="hideNotification()">&times;</button>
+        </div>
+    </div>
 
-    <script src="supabase.js"></script>
-    <script src="app.js"></script>
+    <!-- Загрузчик -->
+    <div id="loader" class="loader-overlay hidden">
+        <div class="loader"></div>
+        <div class="loader-text" id="loader-text">Загрузка...</div>
+    </div>
+
+<!-- Для сохранения дерева как картинки -->
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+
+<!-- Твои файлы -->
+<script src="supabase.js"></script>
+<script src="app.js"></script>
+
 </body>
 </html>
