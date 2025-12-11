@@ -5,116 +5,200 @@ let isRegisterMode = false
 let people = []
 let events = []
 let media = []
-let isDragging = false
-let dragElement = null
-let dragOffset = { x: 0, y: 0 }
 
 // Инициализация при загрузке
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 Приложение запускается...')
     
-    // Настраиваем обработчики
-    setupEventListeners()
+    // Настраиваем ВСЕ обработчики
+    setupAllEventListeners()
     
     // Проверяем авторизацию
-    await checkAuth()
-    
-    // Инициализируем дерево
-    initTreeDragAndDrop()
+    await checkAuthStatus()
 })
 
-// Проверка авторизации
-async function checkAuth() {
-    const { data: { user }, error } = await window.supabaseClient.auth.getUser()
+// ========== НАСТРОЙКА ВСЕХ ОБРАБОТЧИКОВ ==========
+
+function setupAllEventListeners() {
+    console.log('🔧 Настройка всех обработчиков...')
     
-    if (error) {
-        console.error('Ошибка проверки авторизации:', error)
-        showAuth()
-        return
-    }
+    // 1. Навигация
+    setupNavigationListeners()
     
-    if (user) {
-        currentUser = user
-        console.log('👤 Пользователь:', user.email)
-        setupUser(user)
-        await loadUserData()
-        showApp()
-    } else {
-        showAuth()
-    }
+    // 2. Авторизация
+    setupAuthListeners()
+    
+    // 3. Модальные окна
+    setupModalListeners()
+    
+    // 4. Кнопки на страницах
+    setupPageButtonListeners()
+    
+    console.log('✅ Все обработчики настроены')
 }
 
-// Настройка обработчиков событий
-function setupEventListeners() {
-    console.log('🔧 Настройка обработчиков...')
+function setupNavigationListeners() {
+    // Навигация в хедере
+    document.getElementById('home-link')?.addEventListener('click', (e) => {
+        e.preventDefault()
+        showPage('home')
+    })
     
-    // Форма авторизации
+    document.getElementById('tree-link')?.addEventListener('click', (e) => {
+        e.preventDefault()
+        showPage('tree')
+    })
+    
+    document.getElementById('timeline-link')?.addEventListener('click', (e) => {
+        e.preventDefault()
+        showPage('timeline')
+    })
+    
+    document.getElementById('media-link')?.addEventListener('click', (e) => {
+        e.preventDefault()
+        showPage('media')
+    })
+    
+    document.getElementById('profile-link')?.addEventListener('click', (e) => {
+        e.preventDefault()
+        showPage('profile')
+    })
+    
+    // Мобильное меню
+    document.getElementById('mobile-menu-btn')?.addEventListener('click', () => {
+        document.getElementById('nav-links')?.classList.toggle('active')
+    })
+    
+    // Кнопки на главной
+    document.getElementById('tree-btn')?.addEventListener('click', () => showPage('tree'))
+    document.querySelectorAll('.tree-btn-2').forEach(btn => {
+        btn.addEventListener('click', () => showPage('tree'))
+    })
+    
+    document.querySelectorAll('.timeline-btn-2').forEach(btn => {
+        btn.addEventListener('click', () => showPage('timeline'))
+    })
+    
+    document.querySelectorAll('.media-btn-2').forEach(btn => {
+        btn.addEventListener('click', () => showPage('media'))
+    })
+    
+    document.querySelectorAll('.invite-btn-2').forEach(btn => {
+        btn.addEventListener('click', openInviteModal)
+    })
+}
+
+function setupAuthListeners() {
     const authForm = document.getElementById('auth-form')
     if (authForm) {
         authForm.addEventListener('submit', async (e) => {
             e.preventDefault()
-            await handleAuth()
+            await handleAuthSubmit()
         })
     }
     
     // Переключение режима авторизации
-    const authSwitchLink = document.getElementById('auth-switch-link')
-    if (authSwitchLink) {
-        authSwitchLink.addEventListener('click', (e) => {
-            e.preventDefault()
-            toggleAuthMode()
-        })
-    }
-    
-    // Кнопка выхода
-    const logoutBtn = document.getElementById('logout-btn')
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', logout)
-    }
-    
-    // Формы модальных окон
-    const forms = [
-        { id: 'add-person-form', handler: handleAddPerson },
-        { id: 'add-event-form', handler: handleAddEvent },
-        { id: 'upload-form', handler: handleUpload },
-        { id: 'invite-form', handler: handleInvite }
-    ]
-    
-    forms.forEach(({ id, handler }) => {
-        const form = document.getElementById(id)
-        if (form) {
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault()
-                await handler()
-            })
-        }
+    document.getElementById('auth-switch-link')?.addEventListener('click', (e) => {
+        e.preventDefault()
+        toggleAuthMode()
     })
+    
+    // Выход
+    document.getElementById('logout-btn')?.addEventListener('click', logout)
+}
+
+function setupModalListeners() {
+    // Кнопки открытия модальных окон
+    document.getElementById('add-person-btn')?.addEventListener('click', openAddPersonModal)
+    document.getElementById('add-person-tree-btn')?.addEventListener('click', openAddPersonModal)
+    document.getElementById('add-person-empty-btn')?.addEventListener('click', openAddPersonModal)
+    
+    document.getElementById('add-event-btn')?.addEventListener('click', openAddEventModal)
+    document.getElementById('add-event-empty-btn')?.addEventListener('click', openAddEventModal)
+    
+    document.getElementById('upload-media-btn')?.addEventListener('click', openUploadModal)
+    document.getElementById('upload-media-empty-btn')?.addEventListener('click', openUploadModal)
+    
+    document.getElementById('invite-btn')?.addEventListener('click', openInviteModal)
     
     // Закрытие модальных окон
-    document.querySelectorAll('.modal-close, .modal-overlay, .btn-secondary').forEach(el => {
-        el.addEventListener('click', (e) => {
-            if (e.target.classList.contains('modal-close') || 
-                e.target.classList.contains('modal-overlay') ||
-                e.target.classList.contains('btn-secondary')) {
-                closeAllModals()
-            }
-        })
+    document.querySelectorAll('.modal-close, .cancel-btn, .modal-overlay').forEach(el => {
+        el.addEventListener('click', closeAllModals)
     })
     
-    // Навигация
-    document.querySelectorAll('.nav-links a, .feature-card button, .hero-buttons button').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault()
-            const page = e.target.closest('a, button').getAttribute('onclick')?.match(/'([^']+)'/)?.[1]
-            if (page) showPage(page)
-        })
+    // Формы в модальных окнах
+    document.getElementById('add-person-form-modal')?.addEventListener('submit', async (e) => {
+        e.preventDefault()
+        await handleAddPerson()
     })
+    
+    document.getElementById('add-event-form-modal')?.addEventListener('submit', async (e) => {
+        e.preventDefault()
+        await handleAddEvent()
+    })
+    
+    document.getElementById('upload-form-modal')?.addEventListener('submit', async (e) => {
+        e.preventDefault()
+        await handleUpload()
+    })
+    
+    document.getElementById('invite-form-modal')?.addEventListener('submit', async (e) => {
+        e.preventDefault()
+        await handleInvite()
+    })
+}
+
+function setupPageButtonListeners() {
+    // Управление деревом
+    document.getElementById('zoom-in-btn')?.addEventListener('click', zoomIn)
+    document.getElementById('zoom-out-btn')?.addEventListener('click', zoomOut)
+    document.getElementById('reset-tree-btn')?.addEventListener('click', resetTree)
+    document.getElementById('print-tree-btn')?.addEventListener('click', saveTreeAsImage)
+    
+    // Профиль
+    document.getElementById('edit-profile-btn')?.addEventListener('click', editProfile)
+    document.getElementById('help-btn')?.addEventListener('click', showHelp)
+    
+    // Фильтр медиа
+    document.getElementById('media-filter')?.addEventListener('change', filterMedia)
 }
 
 // ========== АВТОРИЗАЦИЯ ==========
 
-// Обработка авторизации
-async function handleAuth() {
+// Проверка статуса авторизации
+async function checkAuthStatus() {
+    showLoader('Проверка авторизации...')
+    
+    try {
+        const { data: { user }, error } = await window.supabaseClient.auth.getUser()
+        
+        if (error) {
+            console.log('❌ Ошибка проверки авторизации:', error.message)
+            showAuth()
+            return
+        }
+        
+        if (user) {
+            console.log('✅ Пользователь авторизован:', user.email)
+            currentUser = user
+            setupUserUI(user)
+            await loadUserData()
+            showApp()
+        } else {
+            console.log('ℹ️ Пользователь не авторизован')
+            showAuth()
+        }
+        
+    } catch (error) {
+        console.error('❌ Ошибка:', error)
+        showAuth()
+    } finally {
+        hideLoader()
+    }
+}
+
+// Обработка отправки формы авторизации
+async function handleAuthSubmit() {
     const email = document.getElementById('auth-email').value
     const password = document.getElementById('auth-password').value
     
@@ -139,21 +223,20 @@ async function handleAuth() {
                 throw new Error('Пароли не совпадают')
             }
             
-            // Регистрация в Supabase
             const { data, error } = await window.supabaseClient.auth.signUp({
                 email,
                 password,
                 options: {
                     data: {
-                        name: name,
-                        avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=667eea&color=fff`
+                        name: name
                     }
                 }
             })
             
             if (error) throw error
             
-            showNotification('✅ Регистрация успешна! Проверьте email для подтверждения.', 'success')
+            window.showNotification('✅ Регистрация успешна! Проверьте email для подтверждения.', 'success')
+            toggleAuthMode() // Возвращаемся к форме входа
             
         } else {
             // ВХОД
@@ -164,7 +247,11 @@ async function handleAuth() {
             
             if (error) throw error
             
-            showNotification('✅ Вход выполнен!', 'success')
+            window.showNotification('✅ Вход выполнен!', 'success')
+            currentUser = data.user
+            setupUserUI(data.user)
+            await loadUserData()
+            showApp()
         }
         
     } catch (error) {
@@ -175,27 +262,29 @@ async function handleAuth() {
     }
 }
 
-// Настройка пользователя
-function setupUser(user) {
+// Настройка интерфейса пользователя
+function setupUserUI(user) {
+    const displayName = user.user_metadata?.name || user.email?.split('@')[0] || 'Пользователь'
+    
+    // Шапка
     const usernameElement = document.getElementById('username')
     const userAvatar = document.getElementById('user-avatar')
+    
+    if (usernameElement) usernameElement.textContent = displayName
+    if (userAvatar) userAvatar.textContent = getUserInitials(displayName)
+    
+    // Профиль
     const profileName = document.getElementById('profile-name')
     const profileEmail = document.getElementById('profile-email')
     const infoEmail = document.getElementById('info-email')
     const infoUserId = document.getElementById('info-user-id')
     const infoRegDate = document.getElementById('info-reg-date')
     
-    // Имя пользователя
-    const displayName = user.user_metadata?.name || user.email?.split('@')[0] || 'Пользователь'
-    
-    if (usernameElement) usernameElement.textContent = displayName
-    if (userAvatar) userAvatar.textContent = getUserInitials(displayName)
     if (profileName) profileName.textContent = displayName
     if (profileEmail) profileEmail.textContent = user.email
     if (infoEmail) infoEmail.textContent = user.email
     if (infoUserId) infoUserId.textContent = user.id.substring(0, 8) + '...'
     
-    // Дата регистрации
     if (infoRegDate && user.created_at) {
         const date = new Date(user.created_at)
         infoRegDate.textContent = date.toLocaleDateString('ru-RU')
@@ -207,7 +296,7 @@ function getUserInitials(name) {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
 }
 
-// ========== РАБОТА С ДАННЫМИ ==========
+// ========== ЗАГРУЗКА ДАННЫХ ==========
 
 // Загрузка данных пользователя
 async function loadUserData() {
@@ -221,6 +310,7 @@ async function loadUserData() {
             .from('family_trees')
             .select('*')
             .eq('owner_id', currentUser.id)
+            .limit(1)
         
         if (treeError) throw treeError
         
@@ -245,7 +335,7 @@ async function loadUserData() {
         
     } catch (error) {
         console.error('❌ Ошибка загрузки данных:', error)
-        showNotification('Ошибка загрузки данных', 'error')
+        window.showNotification('Ошибка загрузки данных', 'error')
     } finally {
         hideLoader()
     }
@@ -253,95 +343,119 @@ async function loadUserData() {
 
 // Создание семейного дерева
 async function createFamilyTree() {
-    const { data: tree, error } = await window.supabaseClient
-        .from('family_trees')
-        .insert([
-            {
-                name: 'Моя семья',
-                owner_id: currentUser.id,
-                members: [currentUser.id]
-            }
-        ])
-        .select()
-        .single()
-    
-    if (error) throw error
-    
-    currentTree = tree
-    
-    // Добавляем самого пользователя в дерево
-    await addPerson({
-        first_name: currentUser.user_metadata?.name?.split(' ')[0] || 'Я',
-        last_name: currentUser.user_metadata?.name?.split(' ')[1] || '',
-        relation: 'self',
-        is_user: true,
-        x: 400,
-        y: 300,
-        color: '#8b4513'
-    })
-    
-    showNotification('✅ Семейное дерево создано!', 'success')
+    try {
+        const { data: tree, error } = await window.supabaseClient
+            .from('family_trees')
+            .insert([
+                {
+                    name: 'Моя семья',
+                    owner_id: currentUser.id,
+                    members: [currentUser.id]
+                }
+            ])
+            .select()
+            .single()
+        
+        if (error) throw error
+        
+        currentTree = tree
+        
+        // Добавляем самого пользователя в дерево
+        await addPerson({
+            first_name: currentUser.user_metadata?.name?.split(' ')[0] || 'Я',
+            last_name: currentUser.user_metadata?.name?.split(' ')[1] || '',
+            relation: 'self',
+            is_user: true,
+            x: 400,
+            y: 300,
+            color: '#8b4513'
+        })
+        
+        window.showNotification('✅ Семейное дерево создано!', 'success')
+        
+    } catch (error) {
+        console.error('❌ Ошибка создания дерева:', error)
+        throw error
+    }
 }
 
 // Загрузка людей
 async function loadPeople() {
-    if (!currentTree) return
+    if (!currentTree) return []
     
-    const { data, error } = await window.supabaseClient
-        .from('people')
-        .select('*')
-        .eq('tree_id', currentTree.id)
-    
-    if (error) throw error
-    
-    people = data || []
-    console.log('👥 Загружено людей:', people.length)
-    
-    renderTree()
-    return people
+    try {
+        const { data, error } = await window.supabaseClient
+            .from('people')
+            .select('*')
+            .eq('tree_id', currentTree.id)
+        
+        if (error) throw error
+        
+        people = data || []
+        console.log('👥 Загружено людей:', people.length)
+        
+        renderTree()
+        return people
+        
+    } catch (error) {
+        console.error('❌ Ошибка загрузки людей:', error)
+        return []
+    }
 }
 
 // Загрузка событий
 async function loadEvents() {
-    if (!currentTree) return
+    if (!currentTree) return []
     
-    const { data, error } = await window.supabaseClient
-        .from('events')
-        .select('*')
-        .eq('tree_id', currentTree.id)
-        .order('event_date', { ascending: false })
-    
-    if (error) throw error
-    
-    events = data || []
-    console.log('📅 Загружено событий:', events.length)
-    
-    renderTimeline()
-    return events
+    try {
+        const { data, error } = await window.supabaseClient
+            .from('events')
+            .select('*')
+            .eq('tree_id', currentTree.id)
+            .order('event_date', { ascending: false })
+        
+        if (error) throw error
+        
+        events = data || []
+        console.log('📅 Загружено событий:', events.length)
+        
+        renderTimeline()
+        return events
+        
+    } catch (error) {
+        console.error('❌ Ошибка загрузки событий:', error)
+        return []
+    }
 }
 
 // Загрузка медиа
 async function loadMedia() {
-    if (!currentTree) return
+    if (!currentTree) return []
     
-    const { data, error } = await window.supabaseClient
-        .from('media')
-        .select('*')
-        .eq('tree_id', currentTree.id)
-        .order('uploaded_at', { ascending: false })
-    
-    if (error) throw error
-    
-    media = data || []
-    console.log('🖼️ Загружено медиа:', media.length)
-    
-    renderMedia()
-    return media
+    try {
+        const { data, error } = await window.supabaseClient
+            .from('media')
+            .select('*')
+            .eq('tree_id', currentTree.id)
+            .order('uploaded_at', { ascending: false })
+        
+        if (error) throw error
+        
+        media = data || []
+        console.log('🖼️ Загружено медиа:', media.length)
+        
+        renderMedia()
+        return media
+        
+    } catch (error) {
+        console.error('❌ Ошибка загрузки медиа:', error)
+        return []
+    }
 }
 
 // ========== ОТОБРАЖЕНИЕ ДАННЫХ ==========
 
-// Рендеринг дерева с перетаскиванием
+// Рендеринг дерева
 function renderTree() {
     const treeContainer = document.getElementById('family-tree')
     const treeEmpty = document.getElementById('tree-empty')
@@ -383,32 +497,26 @@ function renderTree() {
     html += '</div>'
     treeContainer.innerHTML = html
     
-    // Инициализируем перетаскивание для новых элементов
+    // Инициализируем перетаскивание
     initTreeDragAndDrop()
 }
 
 // Инициализация перетаскивания
 function initTreeDragAndDrop() {
     const draggables = document.querySelectorAll('.draggable')
-    const visualization = document.getElementById('tree-visualization')
-    
-    if (!visualization) return
     
     draggables.forEach(draggable => {
         draggable.addEventListener('mousedown', startDrag)
-        draggable.addEventListener('touchstart', startDragTouch)
     })
     
-    // Обработчики для мыши
     document.addEventListener('mousemove', drag)
     document.addEventListener('mouseup', stopDrag)
-    
-    // Обработчики для тач-устройств
-    document.addEventListener('touchmove', dragTouch)
-    document.addEventListener('touchend', stopDrag)
 }
 
-// Начало перетаскивания
+let isDragging = false
+let dragElement = null
+let dragOffset = { x: 0, y: 0 }
+
 function startDrag(e) {
     e.preventDefault()
     isDragging = true
@@ -424,24 +532,6 @@ function startDrag(e) {
     dragElement.classList.add('dragging')
 }
 
-// Начало перетаскивания (тач)
-function startDragTouch(e) {
-    e.preventDefault()
-    isDragging = true
-    dragElement = e.target.closest('.tree-person')
-    
-    if (!dragElement) return
-    
-    const touch = e.touches[0]
-    const rect = dragElement.getBoundingClientRect()
-    dragOffset.x = touch.clientX - rect.left
-    dragOffset.y = touch.clientY - rect.top
-    
-    dragElement.style.zIndex = '1000'
-    dragElement.classList.add('dragging')
-}
-
-// Перетаскивание
 function drag(e) {
     if (!isDragging || !dragElement) return
     
@@ -452,7 +542,6 @@ function drag(e) {
     let x = e.clientX - rect.left - dragOffset.x
     let y = e.clientY - rect.top - dragOffset.y
     
-    // Ограничиваем перемещение в пределах контейнера
     x = Math.max(0, Math.min(x, visualization.clientWidth - dragElement.clientWidth))
     y = Math.max(0, Math.min(y, visualization.clientHeight - dragElement.clientHeight))
     
@@ -460,33 +549,12 @@ function drag(e) {
     dragElement.style.top = y + 'px'
 }
 
-// Перетаскивание (тач)
-function dragTouch(e) {
-    if (!isDragging || !dragElement) return
-    
-    const visualization = document.getElementById('tree-visualization')
-    if (!visualization) return
-    
-    const touch = e.touches[0]
-    const rect = visualization.getBoundingClientRect()
-    let x = touch.clientX - rect.left - dragOffset.x
-    let y = touch.clientY - rect.top - dragOffset.y
-    
-    // Ограничиваем перемещение в пределах контейнера
-    x = Math.max(0, Math.min(x, visualization.clientWidth - dragElement.clientWidth))
-    y = Math.max(0, Math.min(y, visualization.clientHeight - dragElement.clientHeight))
-    
-    dragElement.style.left = x + 'px'
-    dragElement.style.top = y + 'px'
-}
-
-// Остановка перетаскивания
 async function stopDrag() {
     if (!isDragging || !dragElement) return
     
     isDragging = false
     
-    // Сохраняем позицию в базе данных
+    // Сохраняем позицию
     const personId = dragElement.dataset.id
     const x = parseInt(dragElement.style.left)
     const y = parseInt(dragElement.style.top)
@@ -500,7 +568,6 @@ async function stopDrag() {
     dragElement = null
 }
 
-// Сохранение позиции человека
 async function savePersonPosition(personId, x, y) {
     try {
         const { error } = await window.supabaseClient
@@ -651,7 +718,7 @@ async function handleAddPerson() {
     const biography = document.getElementById('person-bio').value.trim()
     
     if (!firstName || !lastName) {
-        showNotification('Заполните имя и фамилию', 'error')
+        window.showNotification('Заполните имя и фамилию', 'error')
         return
     }
     
@@ -670,7 +737,7 @@ async function handleAddPerson() {
         })
         
         closeAllModals()
-        showNotification('✅ Человек добавлен в древо!', 'success')
+        window.showNotification('✅ Человек добавлен в древо!', 'success')
         
         await loadPeople()
         updateStats()
@@ -678,7 +745,7 @@ async function handleAddPerson() {
         
     } catch (error) {
         console.error('❌ Ошибка добавления человека:', error)
-        showNotification('Ошибка: ' + error.message, 'error')
+        window.showNotification('Ошибка: ' + error.message, 'error')
     } finally {
         hideLoader()
     }
@@ -691,7 +758,7 @@ async function handleAddEvent() {
     const description = document.getElementById('event-description').value.trim()
     
     if (!title || !date) {
-        showNotification('Заполните название и дату события', 'error')
+        window.showNotification('Заполните название и дату события', 'error')
         return
     }
     
@@ -711,14 +778,14 @@ async function handleAddEvent() {
         if (error) throw error
         
         closeAllModals()
-        showNotification('✅ Событие добавлено!', 'success')
+        window.showNotification('✅ Событие добавлено!', 'success')
         
         await loadEvents()
         updateStats()
         
     } catch (error) {
         console.error('❌ Ошибка добавления события:', error)
-        showNotification('Ошибка: ' + error.message, 'error')
+        window.showNotification('Ошибка: ' + error.message, 'error')
     } finally {
         hideLoader()
     }
@@ -730,7 +797,7 @@ async function handleUpload() {
     const description = document.getElementById('upload-description').value.trim()
     
     if (files.length === 0) {
-        showNotification('Выберите файлы для загрузки', 'error')
+        window.showNotification('Выберите файлы для загрузки', 'error')
         return
     }
     
@@ -739,24 +806,22 @@ async function handleUpload() {
     try {
         for (let i = 0; i < files.length; i++) {
             const file = files[i]
-            
-            // Создаем уникальное имя файла
             const fileName = `${Date.now()}_${file.name}`
             const filePath = `media/${currentUser.id}/${fileName}`
             
-            // Загружаем в Supabase Storage
+            // Загружаем в Storage
             const { data: uploadData, error: uploadError } = await window.supabaseClient.storage
                 .from('media')
                 .upload(filePath, file)
             
             if (uploadError) throw uploadError
             
-            // Получаем публичный URL
+            // Получаем URL
             const { data: urlData } = window.supabaseClient.storage
                 .from('media')
                 .getPublicUrl(filePath)
             
-            // Сохраняем информацию в базу
+            // Сохраняем в базу
             const { error: dbError } = await window.supabaseClient
                 .from('media')
                 .insert([{
@@ -772,14 +837,14 @@ async function handleUpload() {
         }
         
         closeAllModals()
-        showNotification('✅ Файлы успешно загружены!', 'success')
+        window.showNotification('✅ Файлы успешно загружены!', 'success')
         
         await loadMedia()
         updateStats()
         
     } catch (error) {
         console.error('❌ Ошибка загрузки:', error)
-        showNotification('Ошибка загрузки: ' + error.message, 'error')
+        window.showNotification('Ошибка загрузки: ' + error.message, 'error')
     } finally {
         hideLoader()
     }
@@ -791,7 +856,7 @@ async function handleInvite() {
     const message = document.getElementById('invite-message').value.trim()
     
     if (!email) {
-        showNotification('Введите email', 'error')
+        window.showNotification('Введите email', 'error')
         return
     }
     
@@ -810,11 +875,11 @@ async function handleInvite() {
         if (error) throw error
         
         closeAllModals()
-        showNotification('✅ Приглашение отправлено!', 'success')
+        window.showNotification('✅ Приглашение отправлено!', 'success')
         
     } catch (error) {
         console.error('❌ Ошибка отправки приглашения:', error)
-        showNotification('Ошибка: ' + error.message, 'error')
+        window.showNotification('Ошибка: ' + error.message, 'error')
     } finally {
         hideLoader()
     }
@@ -848,11 +913,11 @@ async function addPerson(personData) {
 
 // Выбор человека в дереве
 function selectPerson(personId) {
-    if (isDragging) return // Не выделяем при перетаскивании
+    if (isDragging) return
     
     const person = people.find(p => p.id === personId)
     if (person) {
-        showNotification(`Выбран: ${person.first_name} ${person.last_name}`, 'info')
+        window.showNotification(`Выбран: ${person.first_name} ${person.last_name}`, 'info')
     }
 }
 
@@ -860,29 +925,27 @@ function selectPerson(personId) {
 function saveTreeAsImage() {
     const treeContainer = document.querySelector('.tree-container')
     if (!treeContainer) {
-        showNotification('Дерево не найдено', 'error')
+        window.showNotification('Дерево не найдено', 'error')
         return
     }
     
     showLoader('Сохранение дерева...')
     
-    // Используем html2canvas для создания картинки
     if (typeof html2canvas !== 'undefined') {
         html2canvas(treeContainer).then(canvas => {
             const link = document.createElement('a')
             link.download = `family-tree-${new Date().toISOString().split('T')[0]}.png`
             link.href = canvas.toDataURL('image/png')
             link.click()
-            showNotification('✅ Дерево сохранено как картинка!', 'success')
+            window.showNotification('✅ Дерево сохранено как картинка!', 'success')
             hideLoader()
         }).catch(error => {
             console.error('Ошибка сохранения картинки:', error)
-            showNotification('Ошибка сохранения картинки', 'error')
+            window.showNotification('Ошибка сохранения картинки', 'error')
             hideLoader()
         })
     } else {
-        // Если html2canvas не подключен, предлагаем установить
-        showNotification('Для сохранения картинки подключите библиотеку html2canvas', 'info')
+        window.showNotification('Для сохранения картинки подключите библиотеку html2canvas', 'info')
         hideLoader()
     }
 }
@@ -1042,19 +1105,19 @@ async function logout() {
         events = []
         media = []
         
-        showNotification('Вы вышли из аккаунта', 'info')
+        window.showNotification('Вы вышли из аккаунта', 'info')
         showAuth()
         
     } catch (error) {
         console.error('❌ Ошибка при выходе:', error)
-        showNotification('Ошибка при выходе: ' + error.message, 'error')
+        window.showNotification('Ошибка при выходе: ' + error.message, 'error')
     }
 }
 
 // Открытие модальных окон
 function openAddPersonModal() {
     if (!currentUser) {
-        showNotification('Сначала войдите в аккаунт', 'error')
+        window.showNotification('Сначала войдите в аккаунт', 'error')
         return
     }
     document.getElementById('modal-overlay').classList.remove('hidden')
@@ -1063,7 +1126,7 @@ function openAddPersonModal() {
 
 function openAddEventModal() {
     if (!currentUser) {
-        showNotification('Сначала войдите в аккаунт', 'error')
+        window.showNotification('Сначала войдите в аккаунт', 'error')
         return
     }
     document.getElementById('modal-overlay').classList.remove('hidden')
@@ -1072,7 +1135,7 @@ function openAddEventModal() {
 
 function openUploadModal() {
     if (!currentUser) {
-        showNotification('Сначала войдите в аккаунт', 'error')
+        window.showNotification('Сначала войдите в аккаунт', 'error')
         return
     }
     document.getElementById('modal-overlay').classList.remove('hidden')
@@ -1081,7 +1144,7 @@ function openUploadModal() {
 
 function openInviteModal() {
     if (!currentUser) {
-        showNotification('Сначала войдите в аккаунт', 'error')
+        window.showNotification('Сначала войдите в аккаунт', 'error')
         return
     }
     document.getElementById('modal-overlay').classList.remove('hidden')
@@ -1096,7 +1159,11 @@ function closeAllModals() {
     })
     
     // Очищаем формы
-    document.querySelectorAll('form').forEach(form => form.reset())
+    document.querySelectorAll('form').forEach(form => {
+        if (form.id !== 'auth-form') {
+            form.reset()
+        }
+    })
 }
 
 // Управление деревом
@@ -1125,10 +1192,6 @@ function resetTree() {
     }
 }
 
-function printTree() {
-    saveTreeAsImage()
-}
-
 // Показать ошибку авторизации
 function showAuthError(message) {
     const errorDiv = document.getElementById('auth-error')
@@ -1142,7 +1205,7 @@ function showAuthError(message) {
 
 // Управление меню
 function toggleMenu() {
-    const navLinks = document.querySelector('.nav-links')
+    const navLinks = document.getElementById('nav-links')
     if (navLinks) {
         navLinks.classList.toggle('active')
     }
@@ -1150,14 +1213,17 @@ function toggleMenu() {
 
 // Дополнительные функции
 function editProfile() {
-    showNotification('Редактирование профиля в разработке', 'info')
+    window.showNotification('Редактирование профиля в разработке', 'info')
 }
 
 function showHelp() {
-    showNotification('Раздел помощи в разработке', 'info')
+    window.showNotification('Раздел помощи в разработке', 'info')
 }
 
 function filterMedia() {
     const filter = document.getElementById('media-filter').value
-    showNotification(`Фильтр: ${filter}`, 'info')
+    window.showNotification(`Фильтр: ${filter}`, 'info')
 }
+
+// Экспортируем функции для HTML
+window.selectPerson = selectPerson
