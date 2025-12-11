@@ -6,36 +6,32 @@
     <title>История моей семьи</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+    <!-- УДАЛЕНО: Firebase SDK -->
 </head>
 <body>
     <!-- Шапка (скрыта до авторизации) -->
     <header id="main-header" class="hidden">
         <div class="header-container container">
-            <a href="#" class="logo" onclick="showPage('home')">
+            <a href="#" class="logo" id="home-link">
                 <i class="fas fa-tree"></i>
                 История моей семьи
             </a>
             
-            <button class="mobile-menu-btn" onclick="toggleMenu()">
+            <button class="mobile-menu-btn" id="mobile-menu-btn">
                 <i class="fas fa-bars"></i>
             </button>
             
-            <ul class="nav-links">
-                <li><a href="#" onclick="showPage('tree')">Древо</a></li>
-                <li><a href="#" onclick="showPage('timeline')">Лента событий</a></li>
-                <li><a href="#" onclick="showPage('media')">Медиатека</a></li>
-                <li><a href="#" onclick="showPage('profile')">Мой профиль</a></li>
+            <ul class="nav-links" id="nav-links">
+                <li><a href="#" id="tree-link">Древо</a></li>
+                <li><a href="#" id="timeline-link">Лента событий</a></li>
+                <li><a href="#" id="media-link">Медиатека</a></li>
+                <li><a href="#" id="profile-link">Мой профиль</a></li>
             </ul>
             
             <div class="user-menu">
                 <span id="username">Гость</span>
                 <div class="avatar" id="user-avatar">Г</div>
-                <button class="btn btn-secondary" style="margin-left: 15px;" onclick="logout()" id="logout-btn">Выйти</button>
+                <button class="btn btn-secondary" style="margin-left: 15px;" id="logout-btn">Выйти</button>
             </div>
         </div>
     </header>
@@ -52,7 +48,7 @@
                 
                 <h2 id="auth-title">Вход в аккаунт</h2>
                 
-                <div class="auth-error" id="auth-error"></div>
+                <div class="auth-error" id="auth-error" style="display: none;"></div>
                 
                 <form class="auth-form" id="auth-form">
                     <div class="form-group">
@@ -83,7 +79,7 @@
                 <div class="auth-switch">
                     <p id="auth-switch-text">
                         Нет аккаунта? 
-                        <a href="#" id="auth-switch-link" onclick="toggleAuthMode(event)">
+                        <a href="#" id="auth-switch-link">
                             Зарегистрироваться
                         </a>
                     </p>
@@ -113,10 +109,10 @@
                     <h1>Добро пожаловать в вашу семейную историю!</h1>
                     <p>Создайте генеалогическое древо, сохраните воспоминания, фотографии и истории для будущих поколений.</p>
                     <div class="hero-buttons">
-                        <button class="btn" onclick="showPage('tree')">
+                        <button class="btn" id="tree-btn">
                             <i class="fas fa-sitemap"></i> Моё древо
                         </button>
-                        <button class="btn btn-secondary" onclick="openAddPersonModal()">
+                        <button class="btn btn-secondary" id="add-person-btn">
                             <i class="fas fa-user-plus"></i> Добавить человека
                         </button>
                     </div>
@@ -151,7 +147,7 @@
                             </div>
                             <h3>Генеалогическое древо</h3>
                             <p>Создавайте интерактивное древо, добавляйте родственников, фотографии и биографии.</p>
-                            <button class="btn btn-small" onclick="showPage('tree')">Перейти</button>
+                            <button class="btn btn-small tree-btn-2">Перейти</button>
                         </div>
                         
                         <div class="feature-card">
@@ -160,7 +156,7 @@
                             </div>
                             <h3>Семейный архив</h3>
                             <p>Храните фотографии, видео и документы в одном безопасном месте.</p>
-                            <button class="btn btn-small" onclick="showPage('media')">Перейти</button>
+                            <button class="btn btn-small media-btn-2">Перейти</button>
                         </div>
                         
                         <div class="feature-card">
@@ -169,7 +165,7 @@
                             </div>
                             <h3>События и даты</h3>
                             <p>Отмечайте важные семейные события и получайте напоминания.</p>
-                            <button class="btn btn-small" onclick="showPage('timeline')">Перейти</button>
+                            <button class="btn btn-small timeline-btn-2">Перейти</button>
                         </div>
                         
                         <div class="feature-card">
@@ -178,7 +174,7 @@
                             </div>
                             <h3>Совместная работа</h3>
                             <p>Приглашайте родственников для совместного заполнения истории.</p>
-                            <button class="btn btn-small" onclick="openInviteModal()">Пригласить</button>
+                            <button class="btn btn-small invite-btn-2">Пригласить</button>
                         </div>
                     </div>
                 </div>
@@ -191,19 +187,19 @@
                 <div class="page-header">
                     <h2>Мое генеалогическое древо</h2>
                     <div>
-                        <button class="btn" onclick="openAddPersonModal()">
+                        <button class="btn" id="add-person-tree-btn">
                             <i class="fas fa-user-plus"></i> Добавить человека
                         </button>
-                        <button class="btn btn-secondary" onclick="printTree()">
-                            <i class="fas fa-print"></i> Печать
+                        <button class="btn btn-secondary" id="print-tree-btn">
+                            <i class="fas fa-print"></i> Сохранить как картинку
                         </button>
                     </div>
                 </div>
                 
                 <div class="tree-controls">
-                    <button class="btn btn-small" onclick="zoomIn()"><i class="fas fa-search-plus"></i></button>
-                    <button class="btn btn-small" onclick="zoomOut()"><i class="fas fa-search-minus"></i></button>
-                    <button class="btn btn-small" onclick="resetTree()"><i class="fas fa-expand"></i></button>
+                    <button class="btn btn-small" id="zoom-in-btn"><i class="fas fa-search-plus"></i></button>
+                    <button class="btn btn-small" id="zoom-out-btn"><i class="fas fa-search-minus"></i></button>
+                    <button class="btn btn-small" id="reset-tree-btn"><i class="fas fa-expand"></i></button>
                 </div>
                 
                 <div class="tree-container">
@@ -212,7 +208,7 @@
                             <i class="fas fa-tree"></i>
                             <h3>Древо пустое</h3>
                             <p>Добавьте первого человека, чтобы начать создание древа</p>
-                            <button class="btn" onclick="openAddPersonModal()">Добавить человека</button>
+                            <button class="btn" id="add-person-empty-btn">Добавить человека</button>
                         </div>
                     </div>
                 </div>
@@ -231,7 +227,7 @@
             <div class="container">
                 <div class="page-header">
                     <h2>Лента семейных событий</h2>
-                    <button class="btn" onclick="openAddEventModal()">
+                    <button class="btn" id="add-event-btn">
                         <i class="fas fa-plus"></i> Добавить событие
                     </button>
                 </div>
@@ -241,7 +237,7 @@
                         <i class="fas fa-calendar-alt"></i>
                         <h3>Пока нет событий</h3>
                         <p>Добавьте первое семейное событие</p>
-                        <button class="btn" onclick="openAddEventModal()">Добавить событие</button>
+                        <button class="btn" id="add-event-empty-btn">Добавить событие</button>
                     </div>
                 </div>
             </div>
@@ -252,13 +248,13 @@
             <div class="container">
                 <div class="page-header">
                     <h2>Семейная медиатека</h2>
-                    <button class="btn" onclick="openUploadModal()">
+                    <button class="btn" id="upload-media-btn">
                         <i class="fas fa-upload"></i> Загрузить медиа
                     </button>
                 </div>
                 
                 <div class="media-filters">
-                    <select id="media-filter" onchange="filterMedia()">
+                    <select id="media-filter">
                         <option value="all">Все файлы</option>
                         <option value="photo">Фотографии</option>
                         <option value="video">Видео</option>
@@ -270,7 +266,7 @@
                         <i class="fas fa-images"></i>
                         <h3>Медиатека пуста</h3>
                         <p>Загрузите первые фотографии вашей семьи</p>
-                        <button class="btn" onclick="openUploadModal()">Загрузить фото</button>
+                        <button class="btn" id="upload-media-empty-btn">Загрузить фото</button>
                     </div>
                 </div>
             </div>
@@ -281,7 +277,7 @@
             <div class="container">
                 <div class="page-header">
                     <h2>Мой профиль</h2>
-                    <button class="btn" onclick="editProfile()">
+                    <button class="btn" id="edit-profile-btn">
                         <i class="fas fa-edit"></i> Редактировать
                     </button>
                 </div>
@@ -355,8 +351,8 @@
                         <div class="card">
                             <h3>О приложении</h3>
                             <p>Версия: 1.0.0</p>
-                            <p>Используется Firebase для хранения данных</p>
-                            <button class="btn btn-secondary" onclick="showHelp()">
+                            <p>Используется Supabase для хранения данных</p>
+                            <button class="btn btn-secondary" id="help-btn">
                                 <i class="fas fa-question-circle"></i> Помощь
                             </button>
                         </div>
@@ -367,17 +363,17 @@
     </main>
 
     <!-- Модальные окна -->
-    <div id="modal-overlay" class="modal-overlay hidden" onclick="closeAllModals()"></div>
+    <div id="modal-overlay" class="modal-overlay hidden"></div>
     
     <!-- Модальное окно добавления человека -->
     <div id="add-person-modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Добавить человека в древо</h3>
-                <button class="modal-close" onclick="closeModal('add-person-modal')">&times;</button>
+                <button class="modal-close">&times;</button>
             </div>
             <div class="modal-body">
-                <form id="add-person-form">
+                <form id="add-person-form-modal">
                     <div class="form-row">
                         <div class="form-group">
                             <label for="person-first-name">Имя *</label>
@@ -414,7 +410,7 @@
                     </div>
                     
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" onclick="closeModal('add-person-modal')">
+                        <button type="button" class="btn btn-secondary cancel-btn">
                             Отмена
                         </button>
                         <button type="submit" class="btn">
@@ -431,10 +427,10 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Добавить семейное событие</h3>
-                <button class="modal-close" onclick="closeModal('add-event-modal')">&times;</button>
+                <button class="modal-close">&times;</button>
             </div>
             <div class="modal-body">
-                <form id="add-event-form">
+                <form id="add-event-form-modal">
                     <div class="form-group">
                         <label for="event-title">Название события *</label>
                         <input type="text" id="event-title" placeholder="Например: День рождения мамы" required>
@@ -451,7 +447,7 @@
                     </div>
                     
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" onclick="closeModal('add-event-modal')">
+                        <button type="button" class="btn btn-secondary cancel-btn">
                             Отмена
                         </button>
                         <button type="submit" class="btn">
@@ -468,10 +464,10 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Загрузить медиафайлы</h3>
-                <button class="modal-close" onclick="closeModal('upload-modal')">&times;</button>
+                <button class="modal-close">&times;</button>
             </div>
             <div class="modal-body">
-                <form id="upload-form">
+                <form id="upload-form-modal">
                     <div class="form-group">
                         <label for="upload-files">Выберите файлы</label>
                         <input type="file" id="upload-files" multiple accept="image/*" class="file-input">
@@ -484,7 +480,7 @@
                     </div>
                     
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" onclick="closeModal('upload-modal')">
+                        <button type="button" class="btn btn-secondary cancel-btn">
                             Отмена
                         </button>
                         <button type="submit" class="btn">
@@ -501,10 +497,10 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Пригласить родственника</h3>
-                <button class="modal-close" onclick="closeModal('invite-modal')">&times;</button>
+                <button class="modal-close">&times;</button>
             </div>
             <div class="modal-body">
-                <form id="invite-form">
+                <form id="invite-form-modal">
                     <div class="form-group">
                         <label for="invite-email">Email родственника *</label>
                         <input type="email" id="invite-email" placeholder="email@example.com" required>
@@ -516,7 +512,7 @@
                     </div>
                     
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" onclick="closeModal('invite-modal')">
+                        <button type="button" class="btn btn-secondary cancel-btn">
                             Отмена
                         </button>
                         <button type="submit" class="btn">
@@ -532,7 +528,7 @@
     <div id="notification" class="notification hidden">
         <div class="notification-content">
             <span id="notification-text"></span>
-            <button class="notification-close" onclick="hideNotification()">&times;</button>
+            <button class="notification-close">&times;</button>
         </div>
     </div>
 
@@ -542,12 +538,14 @@
         <div class="loader-text" id="loader-text">Загрузка...</div>
     </div>
 
-<!-- Для сохранения дерева как картинки -->
-<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-
-<!-- Твои файлы -->
-<script src="supabase.js"></script>
-<script src="app.js"></script>
-
+    <!-- Подключаем библиотеки -->
+    <!-- Для сохранения дерева как картинки -->
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <!-- Supabase SDK -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <!-- Подключаем наши файлы -->
+    <script src="supabase.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
