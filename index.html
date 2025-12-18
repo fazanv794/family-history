@@ -6,7 +6,6 @@
     <title>История моей семьи</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- УДАЛЕНО: Firebase SDK -->
 </head>
 <body>
     <!-- Шапка (скрыта до авторизации) -->
@@ -38,8 +37,94 @@
 
     <!-- Главный контент -->
     <main id="main-content">
-        <!-- Страница авторизации (видима по умолчанию) -->
-        <section id="auth-page" class="page">
+        <!-- Новый лендинг -->
+        <section id="landing-page" class="page">
+            <div class="hero">
+                <div class="container">
+                    <div class="logo-large">
+                        <i class="fas fa-tree"></i>
+                        <h1>История моей семьи</h1>
+                    </div>
+                    <h2>Создайте и сохраните историю вашей семьи</h2>
+                    <p>Инструмент для создания генеалогического древа, хранения семейных фотографий и воспоминаний</p>
+                    
+                    <div class="hero-buttons">
+                        <button class="btn btn-primary" id="try-demo-btn">
+                            <i class="fas fa-eye"></i> Попробовать демо
+                        </button>
+                        <button class="btn" id="go-to-auth-btn">
+                            <i class="fas fa-sign-in-alt"></i> Войти / Регистрация
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="container">
+                <div class="features">
+                    <h2>Возможности приложения</h2>
+                    <div class="features-grid">
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <i class="fas fa-sitemap"></i>
+                            </div>
+                            <h3>Генеалогическое древо</h3>
+                            <p>Создавайте интерактивное древо с автопостроением, добавляйте родственников, фотографии и биографии.</p>
+                        </div>
+                        
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <i class="fas fa-images"></i>
+                            </div>
+                            <h3>Семейный архив</h3>
+                            <p>Храните фотографии, видео и документы в одном безопасном месте. Добавляйте фото к каждому родственнику.</p>
+                        </div>
+                        
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <h3>Лента событий</h3>
+                            <p>Отмечайте важные семейные события, дни рождения и получайте напоминания.</p>
+                        </div>
+                        
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <i class="fas fa-print"></i>
+                            </div>
+                            <h3>Экспорт и печать</h3>
+                            <p>Сохраняйте древо в виде картинки, PDF или распечатывайте для семейного архива.</p>
+                        </div>
+                        
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <h3>Совместная работа</h3>
+                            <p>Приглашайте родственников для совместного заполнения истории.</p>
+                        </div>
+                        
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <h3>Безопасность</h3>
+                            <p>Ваши данные защищены. Только вы и приглашенные родственники имеют доступ.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="cta-section">
+                        <h3>Начните создавать историю своей семьи сегодня</h3>
+                        <p>Присоединяйтесь к тысячам семей, которые сохраняют свои истории</p>
+                        <button class="btn btn-large" id="start-now-btn">
+                            <i class="fas fa-rocket"></i> Начать сейчас
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Страница авторизации -->
+        <section id="auth-page" class="page hidden">
             <div class="auth-container">
                 <div class="logo-large">
                     <i class="fas fa-tree"></i>
@@ -102,7 +187,7 @@
             </div>
         </section>
         
-        <!-- Главная страница (скрыта до авторизации) -->
+        <!-- Главная страница -->
         <section id="home-page" class="page hidden">
             <div class="hero">
                 <div class="container">
@@ -186,20 +271,49 @@
             <div class="container">
                 <div class="page-header">
                     <h2>Мое генеалогическое древо</h2>
-                    <div>
+                    <div class="tree-actions">
+                        <button class="btn" id="auto-tree-btn">
+                            <i class="fas fa-magic"></i> Автопостроение
+                        </button>
                         <button class="btn" id="add-person-tree-btn">
                             <i class="fas fa-user-plus"></i> Добавить человека
                         </button>
                         <button class="btn btn-secondary" id="print-tree-btn">
-                            <i class="fas fa-print"></i> Сохранить как картинку
+                            <i class="fas fa-print"></i> Печать
+                        </button>
+                        <button class="btn btn-success" id="save-image-btn">
+                            <i class="fas fa-camera"></i> Сохранить как картинку
                         </button>
                     </div>
                 </div>
                 
                 <div class="tree-controls">
-                    <button class="btn btn-small" id="zoom-in-btn"><i class="fas fa-search-plus"></i></button>
-                    <button class="btn btn-small" id="zoom-out-btn"><i class="fas fa-search-minus"></i></button>
-                    <button class="btn btn-small" id="reset-tree-btn"><i class="fas fa-expand"></i></button>
+                    <div class="view-controls">
+                        <button class="btn btn-small" id="vertical-view-btn">
+                            <i class="fas fa-arrows-alt-v"></i> Вертикально
+                        </button>
+                        <button class="btn btn-small active" id="horizontal-view-btn">
+                            <i class="fas fa-arrows-alt-h"></i> Горизонтально
+                        </button>
+                        <button class="btn btn-small" id="radial-view-btn">
+                            <i class="fas fa-circle"></i> Радиально
+                        </button>
+                    </div>
+                    
+                    <div class="zoom-controls">
+                        <button class="btn btn-small" id="zoom-in-btn">
+                            <i class="fas fa-search-plus"></i>
+                        </button>
+                        <button class="btn btn-small" id="zoom-out-btn">
+                            <i class="fas fa-search-minus"></i>
+                        </button>
+                        <button class="btn btn-small" id="reset-tree-btn">
+                            <i class="fas fa-expand"></i>
+                        </button>
+                        <button class="btn btn-small" id="fit-tree-btn">
+                            <i class="fas fa-compress"></i>
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="tree-container">
@@ -207,16 +321,35 @@
                         <div class="tree-empty" id="tree-empty">
                             <i class="fas fa-tree"></i>
                             <h3>Древо пустое</h3>
-                            <p>Добавьте первого человека, чтобы начать создание древа</p>
-                            <button class="btn" id="add-person-empty-btn">Добавить человека</button>
+                            <p>Начните создавать свое семейное древо</p>
+                            <div class="empty-buttons">
+                                <button class="btn" id="add-person-empty-btn">
+                                    <i class="fas fa-user-plus"></i> Добавить первого человека
+                                </button>
+                                <button class="btn btn-secondary" id="auto-start-btn">
+                                    <i class="fas fa-magic"></i> Автопостроение
+                                </button>
+                            </div>
+                        </div>
+                        <div id="tree-visualization-container">
+                            <svg id="tree-lines" width="100%" height="100%"></svg>
+                            <div id="tree-nodes"></div>
                         </div>
                     </div>
                 </div>
                 
-                <div class="people-list">
-                    <h3>Список людей в древе</h3>
-                    <div id="people-list-container">
-                        <!-- Список людей будет здесь -->
+                <div class="tree-stats">
+                    <div class="stat">
+                        <i class="fas fa-users"></i>
+                        <span id="tree-people-count">0</span> человек
+                    </div>
+                    <div class="stat">
+                        <i class="fas fa-arrows-alt-h"></i>
+                        <span id="tree-generations">0</span> поколений
+                    </div>
+                    <div class="stat">
+                        <i class="fas fa-camera"></i>
+                        <span id="tree-photos-count">0</span> фото
                     </div>
                 </div>
             </div>
@@ -362,6 +495,35 @@
         </section>
     </main>
 
+    <!-- Подвал -->
+    <footer id="main-footer" class="hidden">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4><i class="fas fa-tree"></i> История моей семьи</h4>
+                    <p>Создайте и сохраните историю вашей семьи для будущих поколений</p>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Разработчик</h4>
+                    <p>Студент [Ваше имя]</p>
+                    <p>Дипломный проект 2024</p>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Контакты</h4>
+                    <p><i class="fas fa-envelope"></i> familyhistory@example.com</p>
+                    <p><i class="fas fa-phone"></i> +7 (XXX) XXX-XX-XX</p>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2024 История моей семьи. Все права защищены.</p>
+                <p>Дипломный проект по веб-разработке</p>
+            </div>
+        </div>
+    </footer>
+
     <!-- Модальные окна -->
     <div id="modal-overlay" class="modal-overlay hidden"></div>
     
@@ -415,6 +577,159 @@
                         </button>
                         <button type="submit" class="btn">
                             Добавить в древо
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Модальное окно автопостроения дерева -->
+    <div id="auto-tree-modal" class="modal hidden wide">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Автопостроение генеалогического древа</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="auto-tree-form-modal">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="auto-generations">Кол-во поколений</label>
+                            <select id="auto-generations">
+                                <option value="2">2 поколения (родители + дети)</option>
+                                <option value="3" selected>3 поколения (бабушки/дедушки + родители + дети)</option>
+                                <option value="4">4 поколения (прабабушки/прадедушки + ...)</option>
+                                <option value="5">5 поколений</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="auto-style">Стиль дерева</label>
+                            <select id="auto-style">
+                                <option value="vertical">Вертикальное (сверху вниз)</option>
+                                <option value="horizontal" selected>Горизонтальное (слева направо)</option>
+                                <option value="radial">Радиальное (круговое)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="auto-center-person">Центральный человек</label>
+                        <select id="auto-center-person">
+                            <option value="self">Я (пользователь)</option>
+                            <option value="oldest">Самый старший родственник</option>
+                            <option value="custom">Выбрать из списка...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="auto-show-photos" checked>
+                            Показывать фотографии
+                        </label>
+                        <label style="margin-left: 20px;">
+                            <input type="checkbox" id="auto-show-dates" checked>
+                            Показывать даты
+                        </label>
+                        <label style="margin-left: 20px;">
+                            <input type="checkbox" id="auto-show-lines" checked>
+                            Показывать линии связей
+                        </label>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary cancel-btn">
+                            Отмена
+                        </button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-magic"></i> Построить дерево
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Модальное окно редактирования человека -->
+    <div id="edit-person-modal" class="modal hidden wide">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Редактирование родственника</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-person-form-modal">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="edit-person-first-name">Имя *</label>
+                            <input type="text" id="edit-person-first-name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-person-last-name">Фамилия *</label>
+                            <input type="text" id="edit-person-last-name" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="edit-person-birth-date">Дата рождения</label>
+                            <input type="date" id="edit-person-birth-date">
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-person-death-date">Дата смерти (если нет)</label>
+                            <input type="date" id="edit-person-death-date">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="edit-person-relation">Связь с вами</label>
+                            <select id="edit-person-relation">
+                                <option value="self">Я</option>
+                                <option value="spouse">Супруг/а</option>
+                                <option value="parent">Родитель</option>
+                                <option value="child">Ребенок</option>
+                                <option value="sibling">Брат/сестра</option>
+                                <option value="grandparent">Дедушка/бабушка</option>
+                                <option value="grandchild">Внук/внучка</option>
+                                <option value="aunt_uncle">Тетя/дядя</option>
+                                <option value="cousin">Двоюродный брат/сестра</option>
+                                <option value="other">Другой родственник</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="edit-person-gender">Пол</label>
+                            <select id="edit-person-gender">
+                                <option value="male">Мужской</option>
+                                <option value="female">Женский</option>
+                                <option value="other">Другой</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-person-photo">Фотография</label>
+                        <input type="file" id="edit-person-photo" accept="image/*" class="file-input">
+                        <div class="file-hint">Загрузите фотографию родственника</div>
+                        <div id="edit-person-photo-preview" class="photo-preview"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-person-bio">Биография</label>
+                        <textarea id="edit-person-bio" rows="4" placeholder="Расскажите о жизни родственника..."></textarea>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-danger" id="delete-person-btn">
+                            <i class="fas fa-trash"></i> Удалить
+                        </button>
+                        <button type="button" class="btn btn-secondary cancel-btn">
+                            Отмена
+                        </button>
+                        <button type="submit" class="btn">
+                            <i class="fas fa-save"></i> Сохранить изменения
                         </button>
                     </div>
                 </form>
@@ -539,13 +854,12 @@
     </div>
 
     <!-- Подключаем библиотеки -->
-    <!-- Для сохранения дерева как картинки -->
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-    <!-- Supabase SDK -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     
     <!-- Подключаем наши файлы -->
     <script src="supabase.js"></script>
+    <script src="tree-engine.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
