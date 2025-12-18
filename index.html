@@ -16,10 +16,9 @@
     
     <div id="output" style="margin-top: 20px; padding: 10px; border: 1px solid #ccc; min-height: 100px;"></div>
 
-    <!-- СНАЧАЛА библиотека Supabase -->
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- UMD версия библиотеки -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     
-    <!-- ПОТОМ наш скрипт -->
     <script>
         // Простой вывод в HTML
         function log(msg) {
@@ -30,41 +29,50 @@
         
         log('1. Страница загружена');
         
-        // Проверяем, загрузилась ли библиотека
-        if (typeof createClient === 'undefined') {
-            log('❌ createClient не определен!');
-            log('Пробуем альтернативный CDN...');
-            
-            // Пробуем другой CDN
-            const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js';
-            script.onload = function() {
-                log('✅ Библиотека загружена через jsdelivr');
-                initSupabase();
-            };
-            script.onerror = function() {
-                log('❌ Ошибка загрузки библиотеки');
-            };
-            document.head.appendChild(script);
-        } else {
-            log('✅ createClient доступен');
+        // Ждем загрузки библиотеки
+        setTimeout(() => {
             initSupabase();
-        }
+        }, 100);
         
         function initSupabase() {
             log('2. Инициализируем Supabase...');
             
-            // Твои ключи (короткая версия для теста)
+            // Проверяем, как загрузилась библиотека
+            if (typeof supabase !== 'undefined') {
+                log('✅ Библиотека доступна как "supabase"');
+            } else if (window.supabase) {
+                log('✅ Библиотека доступна как "window.supabase"');
+            } else {
+                log('❌ Библиотека не загрузилась');
+                return;
+            }
+            
+            // Твои ключи
             const SUPABASE_URL = 'https://ejbdehqypaotjnsiunny.supabase.co';
             const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVqYmRlaHF5cGFvdGpuc2l1bm55Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0MDg2MzQsImV4cCI6MjA4MDk4NDYzNH0.hDWtZLUtMgg266d4LpFsKaOfKF1zAPt1JFN8OtqbLFk';
             
             try {
-                // Создаем клиент
-                const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+                // СПОСОБ 1: Используем глобальный supabase
+                let supabaseClient;
+                
+                if (typeof supabase !== 'undefined' && supabase.createClient) {
+                    // Библиотека экспортирует себя как глобальную переменную supabase
+                    supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                    log('Создано через supabase.createClient()');
+                } 
+                else if (window.supabase && window.supabase.createClient) {
+                    // Или через window.supabase
+                    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                    log('Создано через window.supabase.createClient()');
+                }
+                else {
+                    log('❌ Не могу найти метод createClient');
+                    return;
+                }
                 
                 // Сохраняем глобально
-                window.supabase = supabase;
-                log('✅ Supabase создан');
+                window.supabase = supabaseClient;
+                log('✅ Supabase клиент создан');
                 
                 // Тестируем подключение
                 testConnection();
@@ -105,7 +113,8 @@
         document.getElementById('checkBtn').onclick = function() {
             log('--- Проверка статуса ---');
             log('window.supabase: ' + (window.supabase ? 'есть' : 'нет'));
-            log('createClient: ' + (typeof createClient));
+            log('typeof supabase: ' + typeof supabase);
+            log('supabase.createClient: ' + (supabase && supabase.createClient ? 'есть' : 'нет'));
         };
         document.getElementById('loginBtn').onclick = function() {
             log('Кнопка входа нажата');
