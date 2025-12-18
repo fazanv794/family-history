@@ -4,53 +4,207 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Мое Приложение</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Мое Приложение</h1>
-        
-        <div id="authStatus">
-            <p>Статус: <span id="statusText">Проверка...</span></p>
-            <p>Email: <span id="userEmail"></span></p>
+    <!-- Лоадер -->
+    <div id="loader" class="loader">
+        <div class="loader-content">
+            <div class="spinner"></div>
+            <div id="loader-text" class="loader-text">Загрузка...</div>
         </div>
-        
-        <div>
-            <button id="loginBtn" style="display: none;">Войти</button>
-            <button id="logoutBtn" style="display: none;">Выйти</button>
-            <button id="checkStatusBtn">Проверить статус</button>
-        </div>
-        
-        <!-- Форма входа (опционально) -->
-        <form id="loginForm" style="margin-top: 20px; display: none;">
-            <input type="email" name="email" placeholder="Email" required>
-            <input type="password" name="password" placeholder="Пароль" required>
-            <button type="submit">Войти</button>
-        </form>
     </div>
-    
-    <!-- Лоадер (добавьте стили) -->
-    <div id="loader" style="display: none;">
-        <div>Загрузка...</div>
-    </div>
-    
-    <!-- Уведомления (добавьте стили) -->
-    <div id="notification" style="display: none;"></div>
 
-    <!-- 1. Сначала библиотека Supabase -->
+    <!-- Уведомления -->
+    <div id="notification" class="notification hidden">
+        <div class="notification-content">
+            <i id="notification-icon" class="notification-icon"></i>
+            <span id="notification-text" class="notification-text"></span>
+            <button class="notification-close" onclick="hideNotification()">&times;</button>
+        </div>
+    </div>
+
+    <!-- Модальное окно входа -->
+    <div id="loginModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Вход в систему</h2>
+                <button class="modal-close" onclick="closeModal('loginModal')">&times;</button>
+            </div>
+            <form id="loginForm" class="modal-form">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required 
+                           placeholder="ваш@email.com">
+                </div>
+                <div class="form-group">
+                    <label for="password">Пароль</label>
+                    <input type="password" id="password" name="password" required 
+                           placeholder="Введите пароль">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-sign-in-alt"></i> Войти
+                </button>
+            </form>
+            <div class="modal-footer">
+                <p>Нет аккаунта? <a href="#" onclick="showRegisterModal()">Зарегистрироваться</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно регистрации -->
+    <div id="registerModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Регистрация</h2>
+                <button class="modal-close" onclick="closeModal('registerModal')">&times;</button>
+            </div>
+            <form id="registerForm" class="modal-form">
+                <div class="form-group">
+                    <label for="regName">Имя</label>
+                    <input type="text" id="regName" name="name" required 
+                           placeholder="Ваше имя">
+                </div>
+                <div class="form-group">
+                    <label for="regEmail">Email</label>
+                    <input type="email" id="regEmail" name="email" required 
+                           placeholder="ваш@email.com">
+                </div>
+                <div class="form-group">
+                    <label for="regPassword">Пароль</label>
+                    <input type="password" id="regPassword" name="password" required 
+                           placeholder="Не менее 6 символов">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-user-plus"></i> Зарегистрироваться
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Основной контент -->
+    <div class="container">
+        <!-- Хедер -->
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-database"></i>
+                <span>Supabase App</span>
+            </div>
+            <nav class="nav">
+                <ul>
+                    <li><a href="#" id="navHome"><i class="fas fa-home"></i> Главная</a></li>
+                    <li><a href="#" id="navProfile"><i class="fas fa-user"></i> Профиль</a></li>
+                    <li><a href="#" id="navData"><i class="fas fa-table"></i> Данные</a></li>
+                    <li><a href="#" id="navSettings"><i class="fas fa-cog"></i> Настройки</a></li>
+                </ul>
+            </nav>
+            <div class="auth-buttons">
+                <button id="loginBtn" class="btn btn-outline">
+                    <i class="fas fa-sign-in-alt"></i> Войти
+                </button>
+                <button id="logoutBtn" class="btn btn-danger hidden">
+                    <i class="fas fa-sign-out-alt"></i> Выйти
+                </button>
+                <div id="userProfile" class="user-profile hidden">
+                    <img id="userAvatar" src="https://ui-avatars.com/api/?name=User&background=random" 
+                         alt="Аватар" class="avatar">
+                    <span id="userName" class="user-name"></span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Основной контент -->
+        <main class="main-content">
+            <div class="welcome-section" id="welcomeSection">
+                <h1>Добро пожаловать!</h1>
+                <p>Используйте кнопки выше для входа или регистрации.</p>
+                <div class="features">
+                    <div class="feature-card">
+                        <i class="fas fa-shield-alt"></i>
+                        <h3>Безопасность</h3>
+                        <p>Защищенное хранение данных</p>
+                    </div>
+                    <div class="feature-card">
+                        <i class="fas fa-bolt"></i>
+                        <h3>Скорость</h3>
+                        <p>Быстрая работа приложения</p>
+                    </div>
+                    <div class="feature-card">
+                        <i class="fas fa-sync"></i>
+                        <h3>Синхронизация</h3>
+                        <p>Данные всегда актуальны</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Контент для авторизованных пользователей -->
+            <div id="userContent" class="user-content hidden">
+                <div class="dashboard">
+                    <h2>Личный кабинет</h2>
+                    <div class="dashboard-grid">
+                        <div class="dashboard-card">
+                            <h3><i class="fas fa-user-circle"></i> Информация профиля</h3>
+                            <div class="user-info">
+                                <p><strong>Email:</strong> <span id="displayEmail"></span></p>
+                                <p><strong>ID:</strong> <span id="displayId"></span></p>
+                                <p><strong>Дата регистрации:</strong> <span id="displayCreated"></span></p>
+                            </div>
+                        </div>
+                        <div class="dashboard-card">
+                            <h3><i class="fas fa-tachometer-alt"></i> Быстрые действия</h3>
+                            <div class="quick-actions">
+                                <button id="refreshBtn" class="btn btn-secondary">
+                                    <i class="fas fa-sync"></i> Обновить
+                                </button>
+                                <button id="addDataBtn" class="btn btn-success">
+                                    <i class="fas fa-plus"></i> Добавить данные
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Таблица данных -->
+                <div class="data-section">
+                    <h3><i class="fas fa-table"></i> Ваши данные</h3>
+                    <div class="table-container">
+                        <table id="dataTable" class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Название</th>
+                                    <th>Описание</th>
+                                    <th>Дата создания</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dataTableBody">
+                                <tr>
+                                    <td colspan="5" class="empty-table">
+                                        <i class="fas fa-database"></i>
+                                        <p>Данные отсутствуют</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Футер -->
+        <footer class="footer">
+            <p>&copy; 2024 Supabase App. Все права защищены.</p>
+            <p>Версия 1.0.0</p>
+        </footer>
+    </div>
+
+    <!-- Библиотека Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     
-    <!-- 2. Наш supabase.js -->
+    <!-- Наши скрипты -->
     <script src="supabase.js"></script>
-    
-    <!-- 3. Наш app.js -->
     <script src="app.js"></script>
-    
-    <script>
-        // Дополнительная проверка
-        document.getElementById('checkStatusBtn').onclick = async function() {
-            const status = await checkAuthStatus();
-            alert(status ? 'Авторизован как ' + status.email : 'Не авторизован');
-        };
-    </script>
 </body>
 </html>
