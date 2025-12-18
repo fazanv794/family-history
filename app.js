@@ -8,6 +8,24 @@ let media = [];
 
 // ========== ИНИЦИАЛИЗАЦИЯ ==========
 
+// Добавьте в начале app.js или в отдельный файл utils.js
+window.showLoader = function() {
+    const loader = document.getElementById('loader');
+    if (loader) {
+        loader.style.display = 'flex';
+    } else {
+        console.warn('Элемент loader не найден');
+        // Создайте loader динамически или проверьте HTML
+    }
+}
+
+window.hideLoader = function() {
+    const loader = document.getElementById('loader');
+    if (loader) {
+        loader.style.display = 'none';
+    }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 Приложение запускается...');
     
@@ -27,22 +45,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function checkAuthStatus() {
     try {
-        const { data: { user }, error } = await window.supabaseClient.auth.getUser();
+        const { data, error } = await supabase.auth.getSession();
+        // исправьте на window.supabase если используете глобальную переменную
+        // или убедитесь что supabase инициализирован
+        if (error) throw error;
         
-        if (error) {
-            console.log('❌ Ошибка проверки авторизации:', error.message);
-            return;
+        if (data.session) {
+            console.log('Пользователь авторизован');
+            // Действия при авторизации
+        } else {
+            console.log('Пользователь не авторизован');
+            // Действия при отсутствии авторизации
         }
-        
-        if (user) {
-            console.log('✅ Пользователь авторизован:', user.email);
-            currentUser = user;
-            setupUserUI(user);
-            await loadUserData();
-        }
-        
     } catch (error) {
-        console.error('❌ Ошибка:', error);
+        console.error('Ошибка проверки авторизации:', error);
     }
 }
 
