@@ -3,64 +3,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Supabase App - Восстановление</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; padding: 20px; }
-        .container { max-width: 800px; margin: 0 auto; }
-        button { padding: 10px 20px; margin: 10px 5px; cursor: pointer; }
-        .user-info { margin: 20px 0; padding: 15px; background: #f0f0f0; }
-    </style>
+    <title>Supabase Fix</title>
 </head>
 <body>
-    <div class="container">
-        <h1>Supabase App - Восстановление</h1>
-        
-        <div class="user-info" id="userInfo">
-            <p>Статус: <span id="status">Проверка...</span></p>
-            <p id="userEmail"></p>
-        </div>
-        
-        <div>
-            <button id="loginBtn">Войти</button>
-            <button id="logoutBtn">Выйти</button>
-            <button id="checkBtn">Проверить статус</button>
-        </div>
-        
-        <div style="margin-top: 20px;">
-            <h3>Консоль браузера (F12):</h3>
-            <div id="console" style="background: #000; color: #0f0; padding: 10px; height: 200px; overflow: auto; font-family: monospace;"></div>
-        </div>
+    <h1>Тест Supabase</h1>
+    <div>
+        <button id="testBtn">Тест подключения</button>
+        <button id="checkBtn">Проверить статус</button>
+        <button id="loginBtn">Войти</button>
+        <button id="logoutBtn">Выйти</button>
     </div>
-
-    <!-- 1. Библиотека Supabase -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     
-    <!-- 2. Наш supabase.js -->
-    <script src="supabase.js"></script>
-    
-    <!-- 3. Наш app.js -->
-    <script src="app.js"></script>
+    <div id="output" style="margin-top: 20px; padding: 10px; border: 1px solid #ccc; min-height: 100px;"></div>
 
+    <!-- СНАЧАЛА библиотека Supabase -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <!-- ПОТОМ наш скрипт -->
     <script>
-        // Перехват console.log для отображения в HTML
-        const originalLog = console.log;
-        const consoleDiv = document.getElementById('console');
+        // Простой вывод в HTML
+        function log(msg) {
+            const output = document.getElementById('output');
+            output.innerHTML += msg + '<br>';
+            console.log(msg);
+        }
         
-        console.log = function(...args) {
-            originalLog.apply(console, args);
-            if (consoleDiv) {
-                const message = args.map(arg => 
-                    typeof arg === 'object' ? JSON.stringify(arg) : arg
-                ).join(' ');
-                consoleDiv.innerHTML += message + '<br>';
-                consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        log('1. Страница загружена');
+        
+        // Проверяем, загрузилась ли библиотека
+        if (typeof createClient === 'undefined') {
+            log('❌ createClient не определен!');
+            log('Пробуем альтернативный CDN...');
+            
+            // Пробуем другой CDN
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js';
+            script.onload = function() {
+                log('✅ Библиотека загружена через jsdelivr');
+                initSupabase();
+            };
+            script.onerror = function() {
+                log('❌ Ошибка загрузки библиотеки');
+            };
+            document.head.appendChild(script);
+        } else {
+            log('✅ createClient доступен');
+            initSupabase();
+        }
+        
+        function initSupabase() {
+            log('2. Инициализируем Supabase...');
+            
+            // Твои ключи (короткая версия для теста)
+            const SUPABASE_URL = 'https://ejbdehqypaotjnsiunny.supabase.co';
+            const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVqYmRlaHF5cGFvdGpuc2l1bm55Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0MDg2MzQsImV4cCI6MjA4MDk4NDYzNH0.hDWtZLUtMgg266d4LpFsKaOfKF1zAPt1JFN8OtqbLFk';
+            
+            try {
+                // Создаем клиент
+                const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+                
+                // Сохраняем глобально
+                window.supabase = supabase;
+                log('✅ Supabase создан');
+                
+                // Тестируем подключение
+                testConnection();
+                
+            } catch (error) {
+                log('❌ Ошибка создания клиента: ' + error.message);
             }
-        };
+        }
         
-        // Перехват ошибок
-        window.onerror = function(msg, url, line) {
-            console.log('❌ Ошибка: ' + msg + ' на строке ' + line);
+        async function testConnection() {
+            log('3. Тестируем подключение...');
+            
+            if (!window.supabase) {
+                log('❌ window.supabase не определен');
+                return;
+            }
+            
+            try {
+                const { data, error } = await window.supabase.auth.getSession();
+                
+                if (error) {
+                    log('❌ Ошибка getSession: ' + error.message);
+                } else {
+                    log('✅ getSession успешен');
+                    if (data.session) {
+                        log('👤 Пользователь авторизован: ' + data.session.user.email);
+                    } else {
+                        log('👤 Пользователь не авторизован');
+                    }
+                }
+            } catch (error) {
+                log('❌ Ошибка теста: ' + error.message);
+            }
+        }
+        
+        // Назначаем обработчики кнопок
+        document.getElementById('testBtn').onclick = testConnection;
+        document.getElementById('checkBtn').onclick = function() {
+            log('--- Проверка статуса ---');
+            log('window.supabase: ' + (window.supabase ? 'есть' : 'нет'));
+            log('createClient: ' + (typeof createClient));
+        };
+        document.getElementById('loginBtn').onclick = function() {
+            log('Кнопка входа нажата');
+        };
+        document.getElementById('logoutBtn').onclick = async function() {
+            log('Кнопка выхода нажата');
+            if (window.supabase) {
+                const { error } = await window.supabase.auth.signOut();
+                if (error) {
+                    log('❌ Ошибка выхода: ' + error.message);
+                } else {
+                    log('✅ Выход выполнен');
+                }
+            }
         };
     </script>
 </body>
