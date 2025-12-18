@@ -1,68 +1,45 @@
-// ТВОИ КЛЮЧИ
-const SUPABASE_URL = 'https://ejbdehqypaotjnsiunny.supabase.co'
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVqYmRlaHF5cGFvdGpuc2l1bm55Iwiwcm9sZSI6ImFub24iLCJpYXQiOjE3NjU0MDg2MzQsImV4cCI6MjA4MDk4NDYzNH0.hDWtZLUtMgg266d4LpFsKaOfKF1zAPt1JFN8OtqbLFk'
+// supabase.js - очищенная версия
 
-// Проверка, не инициализирован ли уже Supabase
-if (typeof window.supabase !== 'undefined') {
-    console.warn('⚠️ Supabase уже был инициализирован ранее');
-    window.supabaseClient = window.supabase;
+// Проверяем, не загружен ли уже Supabase
+if (typeof createClient === 'undefined') {
+    console.error('❌ Библиотека Supabase не загружена! Проверьте подключение в HTML');
+} else if (typeof window.supabase !== 'undefined') {
+    console.log('ℹ️ Supabase уже инициализирован, используем существующий');
 } else {
+    // Ключи из твоего проекта
+    const SUPABASE_URL = 'https://ejbdehqypaotjnsiunny.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVqYmRlaHF5cGFvdGpuc2l1bm55Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0MDg2MzQsImV4cCI6MjA4MDk4NDYzNH0.hDWtZLUtMgg266d4LpFsKaOfKF1zAPt1JFN8OtqbLFk';
+    
     try {
-        // Инициализация Supabase - ИСПРАВЛЕННАЯ СТРОКА
-        const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+        // Инициализация
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
             auth: {
                 persistSession: true,
-                autoRefreshToken: true,
-                detectSessionInUrl: true
+                autoRefreshToken: true
             }
         });
-
-        // Сохраняем в глобальном объекте window
+        
+        // Делаем доступным глобально
         window.supabase = supabase;
-        window.supabaseClient = supabase;
-
-        console.log('✅ Supabase подключен');
+        console.log('✅ Supabase инициализирован успешно');
     } catch (error) {
-        console.error('❌ Ошибка подключения к Supabase:', error);
+        console.error('❌ Ошибка инициализации Supabase:', error);
     }
 }
 
-// Простая функция уведомления
-function showNotification(message, type = 'info') {
-    const notification = document.getElementById('notification');
-    if (!notification) {
-        console.log(type + ':', message);
-        return;
-    }
-    
-    const text = document.getElementById('notification-text');
-    if (!text) return;
-    
-    text.textContent = message;
-    notification.className = `notification ${type}`;
-    notification.classList.remove('hidden');
-    
-    setTimeout(() => {
-        notification.classList.add('hidden');
-    }, 4000);
+// Функции уведомлений (опционально)
+if (!window.showNotification) {
+    window.showNotification = function(message, type = 'info') {
+        console.log(`${type}: ${message}`);
+        alert(message); // временное решение
+    };
 }
 
-// Простая функция загрузчика
-function showLoader(text = 'Загрузка...') {
-    const loader = document.getElementById('loader');
-    const loaderText = document.getElementById('loader-text');
-    if (loader) {
-        if (loaderText) loaderText.textContent = text;
-        loader.classList.remove('hidden');
-    }
+if (!window.showLoader) {
+    window.showLoader = function() {
+        console.log('showLoader called');
+    };
+    window.hideLoader = function() {
+        console.log('hideLoader called');
+    };
 }
-
-function hideLoader() {
-    const loader = document.getElementById('loader');
-    if (loader) loader.classList.add('hidden');
-}
-
-// Экспортируем функции
-window.showNotification = showNotification;
-window.showLoader = showLoader;
-window.hideLoader = hideLoader;
