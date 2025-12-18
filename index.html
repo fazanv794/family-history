@@ -3,132 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Supabase Fix</title>
+    <title>Мое Приложение</title>
 </head>
 <body>
-    <h1>Тест Supabase</h1>
-    <div>
-        <button id="testBtn">Тест подключения</button>
-        <button id="checkBtn">Проверить статус</button>
-        <button id="loginBtn">Войти</button>
-        <button id="logoutBtn">Выйти</button>
+    <div class="container">
+        <h1>Мое Приложение</h1>
+        
+        <div id="authStatus">
+            <p>Статус: <span id="statusText">Проверка...</span></p>
+            <p>Email: <span id="userEmail"></span></p>
+        </div>
+        
+        <div>
+            <button id="loginBtn" style="display: none;">Войти</button>
+            <button id="logoutBtn" style="display: none;">Выйти</button>
+            <button id="checkStatusBtn">Проверить статус</button>
+        </div>
+        
+        <!-- Форма входа (опционально) -->
+        <form id="loginForm" style="margin-top: 20px; display: none;">
+            <input type="email" name="email" placeholder="Email" required>
+            <input type="password" name="password" placeholder="Пароль" required>
+            <button type="submit">Войти</button>
+        </form>
     </div>
     
-    <div id="output" style="margin-top: 20px; padding: 10px; border: 1px solid #ccc; min-height: 100px;"></div>
+    <!-- Лоадер (добавьте стили) -->
+    <div id="loader" style="display: none;">
+        <div>Загрузка...</div>
+    </div>
+    
+    <!-- Уведомления (добавьте стили) -->
+    <div id="notification" style="display: none;"></div>
 
-    <!-- UMD версия библиотеки -->
+    <!-- 1. Сначала библиотека Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     
+    <!-- 2. Наш supabase.js -->
+    <script src="supabase.js"></script>
+    
+    <!-- 3. Наш app.js -->
+    <script src="app.js"></script>
+    
     <script>
-        // Простой вывод в HTML
-        function log(msg) {
-            const output = document.getElementById('output');
-            output.innerHTML += msg + '<br>';
-            console.log(msg);
-        }
-        
-        log('1. Страница загружена');
-        
-        // Ждем загрузки библиотеки
-        setTimeout(() => {
-            initSupabase();
-        }, 100);
-        
-        function initSupabase() {
-            log('2. Инициализируем Supabase...');
-            
-            // Проверяем, как загрузилась библиотека
-            if (typeof supabase !== 'undefined') {
-                log('✅ Библиотека доступна как "supabase"');
-            } else if (window.supabase) {
-                log('✅ Библиотека доступна как "window.supabase"');
-            } else {
-                log('❌ Библиотека не загрузилась');
-                return;
-            }
-            
-            // Твои ключи
-            const SUPABASE_URL = 'https://ejbdehqypaotjnsiunny.supabase.co';
-            const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVqYmRlaHF5cGFvdGpuc2l1bm55Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0MDg2MzQsImV4cCI6MjA4MDk4NDYzNH0.hDWtZLUtMgg266d4LpFsKaOfKF1zAPt1JFN8OtqbLFk';
-            
-            try {
-                // СПОСОБ 1: Используем глобальный supabase
-                let supabaseClient;
-                
-                if (typeof supabase !== 'undefined' && supabase.createClient) {
-                    // Библиотека экспортирует себя как глобальную переменную supabase
-                    supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                    log('Создано через supabase.createClient()');
-                } 
-                else if (window.supabase && window.supabase.createClient) {
-                    // Или через window.supabase
-                    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                    log('Создано через window.supabase.createClient()');
-                }
-                else {
-                    log('❌ Не могу найти метод createClient');
-                    return;
-                }
-                
-                // Сохраняем глобально
-                window.supabase = supabaseClient;
-                log('✅ Supabase клиент создан');
-                
-                // Тестируем подключение
-                testConnection();
-                
-            } catch (error) {
-                log('❌ Ошибка создания клиента: ' + error.message);
-            }
-        }
-        
-        async function testConnection() {
-            log('3. Тестируем подключение...');
-            
-            if (!window.supabase) {
-                log('❌ window.supabase не определен');
-                return;
-            }
-            
-            try {
-                const { data, error } = await window.supabase.auth.getSession();
-                
-                if (error) {
-                    log('❌ Ошибка getSession: ' + error.message);
-                } else {
-                    log('✅ getSession успешен');
-                    if (data.session) {
-                        log('👤 Пользователь авторизован: ' + data.session.user.email);
-                    } else {
-                        log('👤 Пользователь не авторизован');
-                    }
-                }
-            } catch (error) {
-                log('❌ Ошибка теста: ' + error.message);
-            }
-        }
-        
-        // Назначаем обработчики кнопок
-        document.getElementById('testBtn').onclick = testConnection;
-        document.getElementById('checkBtn').onclick = function() {
-            log('--- Проверка статуса ---');
-            log('window.supabase: ' + (window.supabase ? 'есть' : 'нет'));
-            log('typeof supabase: ' + typeof supabase);
-            log('supabase.createClient: ' + (supabase && supabase.createClient ? 'есть' : 'нет'));
-        };
-        document.getElementById('loginBtn').onclick = function() {
-            log('Кнопка входа нажата');
-        };
-        document.getElementById('logoutBtn').onclick = async function() {
-            log('Кнопка выхода нажата');
-            if (window.supabase) {
-                const { error } = await window.supabase.auth.signOut();
-                if (error) {
-                    log('❌ Ошибка выхода: ' + error.message);
-                } else {
-                    log('✅ Выход выполнен');
-                }
-            }
+        // Дополнительная проверка
+        document.getElementById('checkStatusBtn').onclick = async function() {
+            const status = await checkAuthStatus();
+            alert(status ? 'Авторизован как ' + status.email : 'Не авторизован');
         };
     </script>
 </body>
