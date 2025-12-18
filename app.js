@@ -5,19 +5,19 @@ let isRegisterMode = false;
 let people = [];
 let events = [];
 let media = [];
-let isDragging = false;
-let dragElement = null;
-let dragOffset = { x: 0, y: 0 };
 
 // ========== ИНИЦИАЛИЗАЦИЯ ==========
 
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 Приложение запускается...');
     
-    // СНАЧАЛА настраиваем обработчики
+    // Показываем лендинг по умолчанию
+    showLanding();
+    
+    // Настраиваем обработчики
     setupAllEventListeners();
     
-    // ПОТОМ проверяем авторизацию
+    // Проверяем авторизацию (но не показываем сразу)
     await checkAuthStatus();
     
     console.log('✅ Инициализация завершена');
@@ -31,7 +31,6 @@ async function checkAuthStatus() {
         
         if (error) {
             console.log('❌ Ошибка проверки авторизации:', error.message);
-            showAuth();
             return;
         }
         
@@ -40,15 +39,10 @@ async function checkAuthStatus() {
             currentUser = user;
             setupUserUI(user);
             await loadUserData();
-            showApp();
-        } else {
-            console.log('ℹ️ Пользователь не авторизован');
-            showAuth();
         }
         
     } catch (error) {
         console.error('❌ Ошибка:', error);
-        showAuth();
     }
 }
 
@@ -190,7 +184,7 @@ async function logout() {
         media = [];
         
         window.showNotification('Вы вышли из аккаунта', 'info');
-        showAuth();
+        showLanding();
         
     } catch (error) {
         console.error('❌ Ошибка при выходе:', error);
@@ -198,24 +192,86 @@ async function logout() {
     }
 }
 
+// ========== НОВАЯ ЛОГИКА ==========
+
+function showLanding() {
+    // Скрываем все, показываем лендинг
+    document.getElementById('landing-page').classList.remove('hidden');
+    document.getElementById('auth-page').classList.add('hidden');
+    document.getElementById('main-header').classList.add('hidden');
+    document.getElementById('main-footer').classList.add('hidden');
+    
+    ['home', 'tree', 'timeline', 'media', 'profile'].forEach(page => {
+        const element = document.getElementById(page + '-page');
+        if (element) element.classList.add('hidden');
+    });
+}
+
+function showAuthPage() {
+    document.getElementById('landing-page').classList.add('hidden');
+    document.getElementById('auth-page').classList.remove('hidden');
+}
+
+function showApp() {
+    document.getElementById('landing-page').classList.add('hidden');
+    document.getElementById('auth-page').classList.add('hidden');
+    document.getElementById('main-header').classList.remove('hidden');
+    document.getElementById('main-footer').classList.remove('hidden');
+    showPage('home');
+}
+
 // ========== ОБРАБОТЧИКИ СОБЫТИЙ ==========
 
 function setupAllEventListeners() {
     console.log('🔧 Настройка обработчиков...');
     
-    // 1. Авторизация
+    // 1. Лендинг
+    setupLandingListeners();
+    
+    // 2. Авторизация
     setupAuthListeners();
     
-    // 2. Навигация
+    // 3. Навигация
     setupNavigationListeners();
     
-    // 3. Модальные окна
+    // 4. Модальные окна
     setupModalListeners();
     
-    // 4. Кнопки на страницах
+    // 5. Кнопки на страницах
     setupPageButtonListeners();
     
     console.log('✅ Все обработчики настроены');
+}
+
+function setupLandingListeners() {
+    // Кнопка "Попробовать демо"
+    document.getElementById('try-demo-btn')?.addEventListener('click', async () => {
+        window.showLoader('Загрузка демо...');
+        
+        // Создаем демо-данные
+        await createDemoData();
+        
+        // Показываем интерфейс приложения
+        showApp();
+        showPage('tree');
+        
+        // Через секунду предлагаем автопостроение
+        setTimeout(() => {
+            openModal('auto-tree-modal');
+        }, 1000);
+        
+        window.hideLoader();
+    });
+    
+    // Кнопка "Войти / Регистрация"
+    document.getElementById('go-to-auth-btn')?.addEventListener('click', () => {
+        showAuthPage();
+    });
+    
+    // Кнопка "Начать сейчас"
+    document.getElementById('start-now-btn')?.addEventListener('click', () => {
+        showAuthPage();
+    });
 }
 
 function setupAuthListeners() {
@@ -295,10 +351,13 @@ function setupModalListeners() {
     const openButtons = [
         { id: 'add-person-tree-btn', modal: 'add-person-modal' },
         { id: 'add-person-empty-btn', modal: 'add-person-modal' },
+        { id: 'add-person-btn', modal: 'add-person-modal' },
         { id: 'add-event-btn', modal: 'add-event-modal' },
         { id: 'add-event-empty-btn', modal: 'add-event-modal' },
         { id: 'upload-media-btn', modal: 'upload-modal' },
-        { id: 'upload-media-empty-btn', modal: 'upload-modal' }
+        { id: 'upload-media-empty-btn', modal: 'upload-modal' },
+        { id: 'auto-tree-btn', modal: 'auto-tree-modal' },
+        { id: 'auto-start-btn', modal: 'auto-tree-modal' }
     ];
     
     openButtons.forEach(({ id, modal }) => {
@@ -312,12 +371,15 @@ function setupModalListeners() {
     });
     
     // Кнопка сохранения дерева как картинки
-    document.getElementById('print-tree-btn')?.addEventListener('click', saveTreeAsImage);
+    document.getElementById('save-image-btn')?.addEventListener('click', saveTreeAsImage);
     
-    // Закрытие модальных окон - ИСПРАВЛЕНО!
+    // Кнопка печати
+    document.getElementById('print-tree-btn')?.addEventListener('click', printTree);
+    
+    // Закрытие модальных окон
     document.querySelectorAll('.modal-close, .cancel-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            e.stopPropagation(); // Важно! Останавливаем всплытие
+            e.stopPropagation();
             closeAllModals();
         });
     });
@@ -325,10 +387,10 @@ function setupModalListeners() {
     // Закрытие по клику на оверлей
     document.getElementById('modal-overlay')?.addEventListener('click', closeAllModals);
     
-    // ЗАПРЕТ клика внутри модального окна
+    // Запрет клика внутри модального окна
     document.querySelectorAll('.modal-content').forEach(content => {
         content.addEventListener('click', (e) => {
-            e.stopPropagation(); // Не даём клику дойти до оверлея
+            e.stopPropagation();
         });
     });
     
@@ -352,6 +414,28 @@ function setupModalListeners() {
         e.preventDefault();
         await handleInvite();
     });
+    
+    document.getElementById('auto-tree-form-modal')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await window.autoBuildTree();
+        closeAllModals();
+    });
+    
+    document.getElementById('edit-person-form-modal')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await handleEditPerson();
+    });
+    
+    // Удаление человека
+    document.getElementById('delete-person-btn')?.addEventListener('click', async () => {
+        if (confirm('Вы уверены, что хотите удалить этого родственника?')) {
+            window.showNotification('Родственник удален', 'success');
+            closeAllModals();
+        }
+    });
+    
+    // Загрузка фото
+    document.getElementById('edit-person-photo')?.addEventListener('change', handlePhotoUpload);
 }
 
 function setupPageButtonListeners() {
@@ -359,6 +443,12 @@ function setupPageButtonListeners() {
     document.getElementById('zoom-in-btn')?.addEventListener('click', zoomIn);
     document.getElementById('zoom-out-btn')?.addEventListener('click', zoomOut);
     document.getElementById('reset-tree-btn')?.addEventListener('click', resetTree);
+    document.getElementById('fit-tree-btn')?.addEventListener('click', fitTree);
+    
+    // Виды отображения
+    document.getElementById('vertical-view-btn')?.addEventListener('click', () => setTreeView('vertical'));
+    document.getElementById('horizontal-view-btn')?.addEventListener('click', () => setTreeView('horizontal'));
+    document.getElementById('radial-view-btn')?.addEventListener('click', () => setTreeView('radial'));
     
     // Профиль
     document.getElementById('edit-profile-btn')?.addEventListener('click', editProfile);
@@ -373,7 +463,8 @@ function setupPageButtonListeners() {
 function openModal(modalId) {
     console.log('📂 Открываем модальное окно:', modalId);
     
-    if (!currentUser) {
+    // Для демо-режима разрешаем все
+    if (!currentUser && modalId !== 'auto-tree-modal') {
         window.showNotification('Сначала войдите в аккаунт', 'error');
         return;
     }
@@ -419,6 +510,154 @@ function closeAllModals() {
             form.reset();
         }
     });
+    
+    // Очищаем превью фото
+    const preview = document.getElementById('edit-person-photo-preview');
+    if (preview) preview.innerHTML = '';
+}
+
+// ========== ДЕМО-ДАННЫЕ ==========
+
+async function createDemoData() {
+    // Создаем демо-пользователя
+    currentUser = {
+        id: 'demo_user_12345',
+        email: 'demo@family-history.com',
+        user_metadata: { 
+            name: 'Демо Пользователь',
+            avatar: 'ДП'
+        },
+        created_at: new Date().toISOString()
+    };
+    
+    // Создаем демо-дерево
+    currentTree = {
+        id: 'demo_tree_12345',
+        name: 'Демо-семья Ивановых',
+        owner_id: 'demo_user_12345',
+        created_at: new Date().toISOString()
+    };
+    
+    // Создаем демо-людей с фото
+    people = [
+        {
+            id: 'person_1',
+            tree_id: 'demo_tree_12345',
+            first_name: 'Иван',
+            last_name: 'Иванов',
+            birth_date: '1980-05-15',
+            relation: 'self',
+            gender: 'male',
+            x: 400,
+            y: 300,
+            color: '#4299e1',
+            photo_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+            biography: 'Основатель семейного древа. Родился в Москве.'
+        },
+        {
+            id: 'person_2',
+            tree_id: 'demo_tree_12345',
+            first_name: 'Мария',
+            last_name: 'Иванова',
+            birth_date: '1982-08-20',
+            relation: 'spouse',
+            gender: 'female',
+            x: 650,
+            y: 300,
+            color: '#d69e2e',
+            photo_url: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
+            biography: 'Любящая жена и мать. Преподаватель музыки.'
+        },
+        {
+            id: 'person_3',
+            tree_id: 'demo_tree_12345',
+            first_name: 'Алексей',
+            last_name: 'Иванов',
+            birth_date: '2005-03-10',
+            relation: 'child',
+            gender: 'male',
+            x: 525,
+            y: 500,
+            color: '#4299e1',
+            photo_url: 'https://images.unsplash.com/photo-1507591064344-4c6ce005-128?w=150&h=150&fit=crop&crop=face',
+            biography: 'Студент университета. Увлекается программированием.'
+        },
+        {
+            id: 'person_4',
+            tree_id: 'demo_tree_12345',
+            first_name: 'Анна',
+            last_name: 'Иванова',
+            birth_date: '2008-07-22',
+            relation: 'child',
+            gender: 'female',
+            x: 525,
+            y: 550,
+            color: '#d69e2e',
+            photo_url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&h=150&fit=crop&crop=face',
+            biography: 'Школьница. Занимается танцами и рисованием.'
+        }
+    ];
+    
+    // Демо-события
+    events = [
+        {
+            id: 'event_1',
+            tree_id: 'demo_tree_12345',
+            title: 'Свадьба Ивана и Марии',
+            event_date: '2004-06-12',
+            description: 'Торжественная церемония в московском загсе',
+            created_by: 'demo_user_12345',
+            created_at: '2023-01-15'
+        },
+        {
+            id: 'event_2',
+            tree_id: 'demo_tree_12345',
+            title: 'Рождение Алексея',
+            event_date: '2005-03-10',
+            description: 'Родился первый ребенок в семье',
+            created_by: 'demo_user_12345',
+            created_at: '2023-01-16'
+        },
+        {
+            id: 'event_3',
+            tree_id: 'demo_tree_12345',
+            title: 'Рождение Анны',
+            event_date: '2008-07-22',
+            description: 'Родилась дочь Анна',
+            created_by: 'demo_user_12345',
+            created_at: '2023-01-17'
+        }
+    ];
+    
+    // Демо-медиа
+    media = [
+        {
+            id: 'media_1',
+            tree_id: 'demo_tree_12345',
+            name: 'Свадебное фото',
+            type: 'photo',
+            url: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=300&h=200&fit=crop',
+            description: 'Иван и Мария в день свадьбы',
+            uploaded_by: 'demo_user_12345',
+            uploaded_at: '2023-01-15'
+        },
+        {
+            id: 'media_2',
+            tree_id: 'demo_tree_12345',
+            name: 'Семейный отдых',
+            type: 'photo',
+            url: 'https://images.unsplash.com/photo-1529255484355-cb73c33c04bb?w=300&h=200&fit=crop',
+            description: 'Отдых на море всей семьей',
+            uploaded_by: 'demo_user_12345',
+            uploaded_at: '2023-01-16'
+        }
+    ];
+    
+    // Настраиваем UI
+    setupUserUI(currentUser);
+    
+    // Показываем уведомление
+    window.showNotification('✅ Демо-режим активирован! Вы можете тестировать все функции приложения.', 'success');
 }
 
 // ========== ЗАГРУЗКА ДАННЫХ ==========
@@ -429,32 +668,40 @@ async function loadUserData() {
     window.showLoader('Загрузка данных...');
     
     try {
-        // Ищем дерево пользователя
-        const { data: trees, error: treeError } = await window.supabaseClient
-            .from('family_trees')
-            .select('*')
-            .eq('owner_id', currentUser.id)
-            .limit(1);
-        
-        if (treeError) throw treeError;
-        
-        if (trees && trees.length > 0) {
-            currentTree = trees[0];
-            console.log('🌳 Дерево загружено:', currentTree.id);
-            
-            // Загружаем все данные
-            await Promise.all([
-                loadPeople(),
-                loadEvents(),
-                loadMedia()
-            ]);
-            
+        // Если это демо-пользователь, не загружаем из Supabase
+        if (currentUser.id === 'demo_user_12345') {
             updateStats();
             updatePeopleList();
-            
+            renderTimeline();
+            renderMedia();
         } else {
-            // Создаем новое дерево
-            await createFamilyTree();
+            // Ищем дерево пользователя
+            const { data: trees, error: treeError } = await window.supabaseClient
+                .from('family_trees')
+                .select('*')
+                .eq('owner_id', currentUser.id)
+                .limit(1);
+            
+            if (treeError) throw treeError;
+            
+            if (trees && trees.length > 0) {
+                currentTree = trees[0];
+                console.log('🌳 Дерево загружено:', currentTree.id);
+                
+                // Загружаем все данные
+                await Promise.all([
+                    loadPeople(),
+                    loadEvents(),
+                    loadMedia()
+                ]);
+                
+                updateStats();
+                updatePeopleList();
+                
+            } else {
+                // Создаем новое дерево
+                await createFamilyTree();
+            }
         }
         
     } catch (error) {
@@ -516,7 +763,6 @@ async function loadPeople() {
         people = data || [];
         console.log('👥 Загружено людей:', people.length);
         
-        renderTree();
         return people;
         
     } catch (error) {
@@ -629,6 +875,25 @@ async function handleAddEvent() {
     window.showLoader('Добавление события...');
     
     try {
+        // Для демо-режима
+        if (currentUser.id === 'demo_user_12345') {
+            events.push({
+                id: 'event_' + Date.now(),
+                tree_id: currentTree.id,
+                title: title,
+                event_date: date,
+                description: description,
+                created_by: currentUser.id,
+                created_at: new Date().toISOString()
+            });
+            
+            renderTimeline();
+            updateStats();
+            closeAllModals();
+            window.showNotification('✅ Событие добавлено!', 'success');
+            return;
+        }
+        
         const { error } = await window.supabaseClient
             .from('events')
             .insert([{
@@ -667,7 +932,39 @@ async function handleUpload() {
     window.showLoader('Загрузка файлов...');
     
     try {
-        // Для теста - просто сохраняем информацию о файле
+        // Для демо-режима
+        if (currentUser.id === 'demo_user_12345') {
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const reader = new FileReader();
+                
+                reader.onload = (e) => {
+                    media.push({
+                        id: 'media_' + Date.now() + i,
+                        tree_id: currentTree.id,
+                        name: file.name,
+                        type: 'photo',
+                        url: e.target.result,
+                        description: description,
+                        uploaded_by: currentUser.id,
+                        uploaded_at: new Date().toISOString()
+                    });
+                    
+                    if (i === files.length - 1) {
+                        renderMedia();
+                        updateStats();
+                        closeAllModals();
+                        window.showNotification('✅ Файлы успешно загружены!', 'success');
+                        window.hideLoader();
+                    }
+                };
+                
+                reader.readAsDataURL(file);
+            }
+            return;
+        }
+        
+        // Для реального режима (упрощенная версия)
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
             
@@ -736,7 +1033,108 @@ async function handleInvite() {
     }
 }
 
+async function handleEditPerson() {
+    const firstName = document.getElementById('edit-person-first-name').value.trim();
+    const lastName = document.getElementById('edit-person-last-name').value.trim();
+    const birthDate = document.getElementById('edit-person-birth-date').value;
+    const deathDate = document.getElementById('edit-person-death-date').value;
+    const relation = document.getElementById('edit-person-relation').value;
+    const gender = document.getElementById('edit-person-gender').value;
+    const biography = document.getElementById('edit-person-bio').value.trim();
+    
+    if (!firstName || !lastName) {
+        window.showNotification('Заполните имя и фамилию', 'error');
+        return;
+    }
+    
+    window.showLoader('Сохранение изменений...');
+    
+    try {
+        // Для демо-режима обновляем локально
+        if (currentUser.id === 'demo_user_12345') {
+            // Находим и обновляем человека
+            const personIndex = people.findIndex(p => 
+                p.first_name === firstName && p.last_name === lastName
+            );
+            
+            if (personIndex !== -1) {
+                people[personIndex] = {
+                    ...people[personIndex],
+                    first_name: firstName,
+                    last_name: lastName,
+                    birth_date: birthDate,
+                    death_date: deathDate,
+                    relation: relation,
+                    gender: gender,
+                    biography: biography
+                };
+            }
+            
+            closeAllModals();
+            window.showNotification('✅ Изменения сохранены!', 'success');
+            
+            // Перестраиваем дерево если оно было построено
+            if (window.treeEngine && window.treeEngine.treeData) {
+                await window.treeEngine.autoBuildTree({
+                    generations: window.treeEngine.generations,
+                    style: window.treeEngine.layout,
+                    centerPerson: 'self',
+                    showPhotos: true,
+                    showDates: true,
+                    showLines: true
+                });
+            }
+        } else {
+            // Для реального режима
+            window.showNotification('Редактирование в реальном режиме будет доступно позже', 'info');
+        }
+        
+    } catch (error) {
+        console.error('❌ Ошибка сохранения:', error);
+        window.showNotification('Ошибка: ' + error.message, 'error');
+    } finally {
+        window.hideLoader();
+    }
+}
+
+async function handlePhotoUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        const preview = document.getElementById('edit-person-photo-preview');
+        if (preview) {
+            preview.innerHTML = `<img src="${event.target.result}" alt="Превью">`;
+        }
+    };
+    reader.readAsDataURL(file);
+}
+
 async function addPerson(personData) {
+    // Для демо-режима
+    if (currentUser.id === 'demo_user_12345') {
+        const newPerson = {
+            id: 'person_' + Date.now(),
+            tree_id: currentTree.id,
+            first_name: personData.first_name,
+            last_name: personData.last_name,
+            birth_date: personData.birth_date,
+            relation: personData.relation,
+            biography: personData.biography,
+            x: personData.x,
+            y: personData.y,
+            color: personData.color,
+            is_user: personData.is_user || false,
+            user_id: personData.user_id || null,
+            gender: personData.relation === 'spouse' ? (people.find(p => p.relation === 'self')?.gender === 'male' ? 'female' : 'male') : 'male'
+        };
+        
+        people.push(newPerson);
+        return newPerson;
+    }
+    
+    // Для реального режима
     const { data, error } = await window.supabaseClient
         .from('people')
         .insert([{
@@ -760,128 +1158,6 @@ async function addPerson(personData) {
 }
 
 // ========== ОТОБРАЖЕНИЕ ДАННЫХ ==========
-
-function renderTree() {
-    const treeContainer = document.getElementById('family-tree');
-    const treeEmpty = document.getElementById('tree-empty');
-    
-    if (!treeContainer) return;
-    
-    if (people.length === 0) {
-        if (treeEmpty) treeEmpty.style.display = 'flex';
-        treeContainer.innerHTML = '';
-        return;
-    }
-    
-    if (treeEmpty) treeEmpty.style.display = 'none';
-    
-    let html = '<div class="tree-visualization" id="tree-visualization">';
-    
-    people.forEach((person, index) => {
-        const left = person.x || 50 + (index % 5) * 180;
-        const top = person.y || 50 + Math.floor(index / 5) * 150;
-        
-        html += `
-            <div class="tree-person draggable" 
-                 data-id="${person.id}"
-                 style="left: ${left}px; top: ${top}px; border-color: ${person.color || '#8b4513'}"
-                 onclick="selectPerson('${person.id}')">
-                <div class="tree-person-avatar" style="background-color: ${person.color || '#8b4513'}">
-                    ${person.first_name?.[0] || '?'}
-                </div>
-                <div class="tree-person-name">
-                    ${person.first_name || ''} ${person.last_name || ''}
-                </div>
-                <div class="tree-person-relation">
-                    ${getRelationLabel(person.relation)}
-                </div>
-            </div>
-        `;
-    });
-    
-    html += '</div>';
-    treeContainer.innerHTML = html;
-    
-    // Инициализируем перетаскивание
-    initTreeDragAndDrop();
-}
-
-function initTreeDragAndDrop() {
-    const draggables = document.querySelectorAll('.draggable');
-    
-    draggables.forEach(draggable => {
-        draggable.addEventListener('mousedown', startDrag);
-    });
-    
-    document.addEventListener('mousemove', drag);
-    document.addEventListener('mouseup', stopDrag);
-}
-
-function startDrag(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    isDragging = true;
-    dragElement = e.target.closest('.tree-person');
-    
-    if (!dragElement) return;
-    
-    const rect = dragElement.getBoundingClientRect();
-    dragOffset.x = e.clientX - rect.left;
-    dragOffset.y = e.clientY - rect.top;
-    
-    dragElement.style.zIndex = '1000';
-    dragElement.classList.add('dragging');
-}
-
-function drag(e) {
-    if (!isDragging || !dragElement) return;
-    
-    const visualization = document.getElementById('tree-visualization');
-    if (!visualization) return;
-    
-    const rect = visualization.getBoundingClientRect();
-    let x = e.clientX - rect.left - dragOffset.x;
-    let y = e.clientY - rect.top - dragOffset.y;
-    
-    x = Math.max(0, Math.min(x, visualization.clientWidth - dragElement.clientWidth));
-    y = Math.max(0, Math.min(y, visualization.clientHeight - dragElement.clientHeight));
-    
-    dragElement.style.left = x + 'px';
-    dragElement.style.top = y + 'px';
-}
-
-async function stopDrag() {
-    if (!isDragging || !dragElement) return;
-    
-    isDragging = false;
-    
-    // Сохраняем позицию
-    const personId = dragElement.dataset.id;
-    const x = parseInt(dragElement.style.left);
-    const y = parseInt(dragElement.style.top);
-    
-    if (personId && !isNaN(x) && !isNaN(y)) {
-        await savePersonPosition(personId, x, y);
-    }
-    
-    dragElement.style.zIndex = '';
-    dragElement.classList.remove('dragging');
-    dragElement = null;
-}
-
-async function savePersonPosition(personId, x, y) {
-    try {
-        const { error } = await window.supabaseClient
-            .from('people')
-            .update({ x, y })
-            .eq('id', personId);
-        
-        if (error) throw error;
-    } catch (error) {
-        console.error('❌ Ошибка сохранения позиции:', error);
-    }
-}
 
 function renderTimeline() {
     const container = document.getElementById('timeline-container');
@@ -1007,15 +1283,6 @@ function updatePeopleList() {
 
 // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
 
-function selectPerson(personId) {
-    if (isDragging) return;
-    
-    const person = people.find(p => p.id === personId);
-    if (person) {
-        window.showNotification(`Выбран: ${person.first_name} ${person.last_name}`, 'info');
-    }
-}
-
 function saveTreeAsImage() {
     const treeContainer = document.querySelector('.tree-container');
     if (!treeContainer) {
@@ -1026,7 +1293,11 @@ function saveTreeAsImage() {
     window.showLoader('Сохранение дерева...');
     
     if (typeof html2canvas !== 'undefined') {
-        html2canvas(treeContainer).then(canvas => {
+        html2canvas(treeContainer, {
+            backgroundColor: '#f8fafc',
+            scale: 2,
+            useCORS: true
+        }).then(canvas => {
             const link = document.createElement('a');
             link.download = `family-tree-${new Date().toISOString().split('T')[0]}.png`;
             link.href = canvas.toDataURL('image/png');
@@ -1044,19 +1315,42 @@ function saveTreeAsImage() {
     }
 }
 
-function getRelationLabel(relation) {
-    const labels = {
-        'self': 'Я',
-        'spouse': 'Супруг/а',
-        'parent': 'Родитель',
-        'child': 'Ребенок',
-        'sibling': 'Брат/сестра',
-        'grandparent': 'Дедушка/бабушка',
-        'grandchild': 'Внук/внучка',
-        'other': 'Родственник'
-    };
+function printTree() {
+    const treeContainer = document.querySelector('.tree-container');
+    if (!treeContainer) {
+        window.showNotification('Дерево не найдено', 'error');
+        return;
+    }
     
-    return labels[relation] || relation;
+    window.showLoader('Подготовка к печати...');
+    
+    // Создаем временный iframe для печати
+    const printContent = treeContainer.innerHTML;
+    const originalContent = document.body.innerHTML;
+    
+    document.body.innerHTML = `
+        <div style="padding: 20px; max-width: 1000px; margin: 0 auto;">
+            <h1 style="text-align: center; margin-bottom: 30px;">Генеалогическое древо</h1>
+            <div style="background: white; padding: 20px; border-radius: 10px;">
+                ${printContent}
+            </div>
+            <p style="text-align: center; margin-top: 30px; color: #666;">
+                Создано в приложении "История моей семьи"<br>
+                ${new Date().toLocaleDateString('ru-RU')}
+            </p>
+        </div>
+    `;
+    
+    window.print();
+    
+    // Возвращаем исходное содержимое
+    document.body.innerHTML = originalContent;
+    
+    // Переинициализируем обработчики
+    setupAllEventListeners();
+    
+    window.hideLoader();
+    window.showNotification('✅ Готово к печати!', 'success');
 }
 
 function getRandomColor() {
@@ -1084,48 +1378,6 @@ function getAuthErrorMessage(errorMessage) {
 
 // ========== УПРАВЛЕНИЕ ИНТЕРФЕЙСОМ ==========
 
-function showApp() {
-    const authPage = document.getElementById('auth-page');
-    const mainHeader = document.getElementById('main-header');
-    const homePage = document.getElementById('home-page');
-    
-    if (authPage) authPage.classList.add('hidden');
-    if (mainHeader) mainHeader.classList.remove('hidden');
-    if (homePage) homePage.classList.remove('hidden');
-    
-    // Скрываем другие страницы
-    ['tree', 'timeline', 'media', 'profile'].forEach(page => {
-        const element = document.getElementById(page + '-page');
-        if (element) element.classList.add('hidden');
-    });
-}
-
-function showAuth() {
-    const authPage = document.getElementById('auth-page');
-    const mainHeader = document.getElementById('main-header');
-    
-    if (authPage) authPage.classList.remove('hidden');
-    if (mainHeader) mainHeader.classList.add('hidden');
-    
-    // Скрываем все страницы приложения
-    ['home', 'tree', 'timeline', 'media', 'profile'].forEach(page => {
-        const element = document.getElementById(page + '-page');
-        if (element) element.classList.add('hidden');
-    });
-    
-    // Сбрасываем режим
-    isRegisterMode = false;
-    const nameGroup = document.getElementById('reg-name-group');
-    const confirmGroup = document.getElementById('reg-confirm-group');
-    
-    if (nameGroup) nameGroup.classList.add('hidden');
-    if (confirmGroup) confirmGroup.classList.add('hidden');
-    
-    // Очищаем форму
-    const authForm = document.getElementById('auth-form');
-    if (authForm) authForm.reset();
-}
-
 function showPage(pageId) {
     console.log('📄 Переключение на страницу:', pageId);
     
@@ -1139,36 +1391,73 @@ function showPage(pageId) {
     const pageElement = document.getElementById(pageId + '-page');
     if (pageElement) {
         pageElement.classList.remove('hidden');
+        
+        // Если это страница дерева и есть данные, показываем их
+        if (pageId === 'tree' && people.length > 0) {
+            updatePeopleList();
+        }
     }
     
-    // Обновляем данные если нужно
-    if (pageId === 'tree') {
-        updatePeopleList();
-    }
+    // Скрываем мобильное меню
+    const navLinks = document.getElementById('nav-links');
+    if (navLinks) navLinks.classList.remove('active');
 }
 
 function zoomIn() {
-    const tree = document.querySelector('.tree-visualization');
-    if (tree) {
-        const currentScale = parseFloat(tree.style.transform?.replace('scale(', '') || 1);
-        tree.style.transform = `scale(${currentScale + 0.1})`;
+    const container = document.getElementById('tree-visualization-container');
+    if (container) {
+        const currentScale = parseFloat(container.style.transform?.replace('scale(', '')?.replace(')', '') || 1);
+        container.style.transform = `scale(${currentScale + 0.1})`;
     }
 }
 
 function zoomOut() {
-    const tree = document.querySelector('.tree-visualization');
-    if (tree) {
-        const currentScale = parseFloat(tree.style.transform?.replace('scale(', '') || 1);
+    const container = document.getElementById('tree-visualization-container');
+    if (container) {
+        const currentScale = parseFloat(container.style.transform?.replace('scale(', '')?.replace(')', '') || 1);
         if (currentScale > 0.5) {
-            tree.style.transform = `scale(${currentScale - 0.1})`;
+            container.style.transform = `scale(${currentScale - 0.1})`;
         }
     }
 }
 
 function resetTree() {
-    const tree = document.querySelector('.tree-visualization');
-    if (tree) {
-        tree.style.transform = 'scale(1)';
+    const container = document.getElementById('tree-visualization-container');
+    if (container) {
+        container.style.transform = 'scale(1)';
+        container.style.left = '0px';
+        container.style.top = '0px';
+    }
+}
+
+function fitTree() {
+    const container = document.getElementById('tree-visualization-container');
+    if (container) {
+        container.style.transform = 'scale(0.8)';
+        container.style.left = '50px';
+        container.style.top = '50px';
+    }
+}
+
+function setTreeView(view) {
+    // Обновляем активные кнопки
+    document.querySelectorAll('.view-controls .btn-small').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    const activeBtn = document.getElementById(`${view}-view-btn`);
+    if (activeBtn) activeBtn.classList.add('active');
+    
+    // Если есть построенное дерево, перестраиваем с новым видом
+    if (window.treeEngine && window.treeEngine.treeData) {
+        window.treeEngine.autoBuildTree({
+            generations: window.treeEngine.generations,
+            style: view,
+            centerPerson: 'self',
+            showPhotos: true,
+            showDates: true,
+            showLines: true
+        });
     }
 }
 
@@ -1186,6 +1475,14 @@ function filterMedia() {
 }
 
 // Экспортируем функции для HTML
-window.selectPerson = selectPerson;
+window.selectPerson = (personId) => {
+    const allPeople = window.treeEngine?.collectAllPeople(window.treeEngine.treeData) || [];
+    const person = allPeople.find(p => p.id === personId) || people.find(p => p.id === personId);
+    
+    if (person) {
+        window.showNotification(`Выбран: ${person.first_name} ${person.last_name}`, 'info');
+    }
+};
+
 window.openModal = openModal;
 window.closeAllModals = closeAllModals;
