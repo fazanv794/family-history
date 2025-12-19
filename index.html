@@ -6,7 +6,6 @@
     <title>История моей семьи</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- УДАЛЕНО: Firebase SDK -->
 </head>
 <body>
     <!-- Шапка (скрыта до авторизации) -->
@@ -152,224 +151,197 @@
                         
                         <div class="feature-card">
                             <div class="feature-icon">
-                                <i class="fas fa-images"></i>
-                            </div>
-                            <h3>Семейный архив</h3>
-                            <p>Храните фотографии, видео и документы в одном безопасном месте.</p>
-                            <button class="btn btn-small media-btn-2">Перейти</button>
-                        </div>
-                        
-                        <div class="feature-card">
-                            <div class="feature-icon">
                                 <i class="fas fa-calendar-alt"></i>
                             </div>
-                            <h3>События и даты</h3>
-                            <p>Отмечайте важные семейные события и получайте напоминания.</p>
+                            <h3>Лента событий</h3>
+                            <p>Отмечайте важные даты, дни рождения, свадьбы и другие семейные события.</p>
                             <button class="btn btn-small timeline-btn-2">Перейти</button>
                         </div>
                         
                         <div class="feature-card">
                             <div class="feature-icon">
-                                <i class="fas fa-users"></i>
+                                <i class="fas fa-images"></i>
                             </div>
-                            <h3>Совместная работа</h3>
-                            <p>Приглашайте родственников для совместного заполнения истории.</p>
-                            <button class="btn btn-small invite-btn-2">Пригласить</button>
+                            <h3>Медиатека</h3>
+                            <p>Храните и организуйте семейные фотографии и документы.</p>
+                            <button class="btn btn-small media-btn-2">Перейти</button>
+                        </div>
+                        
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <i class="fas fa-user-circle"></i>
+                            </div>
+                            <h3>Мой профиль</h3>
+                            <p>Управляйте аккаунтом и настройками приложения.</p>
+                            <button class="btn btn-small profile-btn-2">Перейти</button>
                         </div>
                     </div>
                 </div>
             </div>
         </section>
         
-        <!-- Страница генеалогического древа -->
+        <!-- Страница древа -->
         <section id="tree-page" class="page hidden">
             <div class="container">
-                <div class="page-header">
-                    <h2>Мое генеалогическое древо</h2>
-                    <div>
-                        <button class="btn" id="add-person-tree-btn">
-                            <i class="fas fa-user-plus"></i> Добавить человека
-                        </button>
-                        <button class="btn btn-secondary" id="print-tree-btn">
-                            <i class="fas fa-print"></i> Сохранить как картинку
-                        </button>
-                    </div>
-                </div>
-                
+                <h2>Генеалогическое древо</h2>
                 <div class="tree-controls">
-                    <button class="btn btn-small" id="zoom-in-btn"><i class="fas fa-search-plus"></i></button>
-                    <button class="btn btn-small" id="zoom-out-btn"><i class="fas fa-search-minus"></i></button>
-                    <button class="btn btn-small" id="reset-tree-btn"><i class="fas fa-expand"></i></button>
-                </div>
-                
-                <div class="tree-container">
-                    <div class="tree" id="family-tree">
-                        <div class="tree-empty" id="tree-empty">
-                            <i class="fas fa-tree"></i>
-                            <h3>Древо пустое</h3>
-                            <p>Добавьте первого человека, чтобы начать создание древа</p>
-                            <button class="btn" id="add-person-empty-btn">Добавить человека</button>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="people-list">
-                    <h3>Список людей в древе</h3>
-                    <div id="people-list-container">
-                        <!-- Список людей будет здесь -->
-                    </div>
-                </div>
-            </div>
-        </section>
-        
-        <!-- Лента событий -->
-        <section id="timeline-page" class="page hidden">
-            <div class="container">
-                <div class="page-header">
-                    <h2>Лента семейных событий</h2>
-                    <button class="btn" id="add-event-btn">
-                        <i class="fas fa-plus"></i> Добавить событие
+                    <button class="btn" onclick="window.autoBuildTree()">
+                        <i class="fas fa-magic"></i> Автопостроение
+                    </button>
+                    <button class="btn btn-secondary" id="add-person-tree-btn">
+                        <i class="fas fa-user-plus"></i> Добавить человека
+                    </button>
+                    <button class="btn btn-secondary" id="save-tree-btn">
+                        <i class="fas fa-save"></i> Сохранить как картинку
                     </button>
                 </div>
                 
-                <div id="timeline-container">
-                    <div class="timeline-empty" id="timeline-empty">
-                        <i class="fas fa-calendar-alt"></i>
-                        <h3>Пока нет событий</h3>
-                        <p>Добавьте первое семейное событие</p>
-                        <button class="btn" id="add-event-empty-btn">Добавить событие</button>
-                    </div>
-                </div>
-            </div>
-        </section>
-        
-        <!-- Медиатека -->
-        <section id="media-page" class="page hidden">
-            <div class="container">
-                <div class="page-header">
-                    <h2>Семейная медиатека</h2>
-                    <button class="btn" id="upload-media-btn">
-                        <i class="fas fa-upload"></i> Загрузить медиа
-                    </button>
-                </div>
-                
-                <div class="media-filters">
-                    <select id="media-filter">
-                        <option value="all">Все файлы</option>
-                        <option value="photo">Фотографии</option>
-                        <option value="video">Видео</option>
-                    </select>
-                </div>
-                
-                <div class="media-grid" id="media-container">
-                    <div class="media-empty" id="media-empty">
-                        <i class="fas fa-images"></i>
-                        <h3>Медиатека пуста</h3>
-                        <p>Загрузите первые фотографии вашей семьи</p>
-                        <button class="btn" id="upload-media-empty-btn">Загрузить фото</button>
-                    </div>
-                </div>
-            </div>
-        </section>
-        
-        <!-- Профиль пользователя -->
-        <section id="profile-page" class="page hidden">
-            <div class="container">
-                <div class="page-header">
-                    <h2>Мой профиль</h2>
-                    <button class="btn" id="edit-profile-btn">
-                        <i class="fas fa-edit"></i> Редактировать
-                    </button>
-                </div>
-                
-                <div class="profile-container">
-                    <div class="profile-sidebar">
-                        <div class="profile-avatar" id="profile-avatar">
-                            <i class="fas fa-user"></i>
-                        </div>
-                        <h3 id="profile-name">Загрузка...</h3>
-                        <p id="profile-email">Загрузка...</p>
-                        
-                        <div class="profile-stats">
-                            <div class="stat">
-                                <i class="fas fa-users"></i>
-                                <span id="profile-stat-people">0</span>
-                                <small>Людей</small>
-                            </div>
-                            <div class="stat">
-                                <i class="fas fa-calendar"></i>
-                                <span id="profile-stat-events">0</span>
-                                <small>Событий</small>
-                            </div>
-                            <div class="stat">
-                                <i class="fas fa-images"></i>
-                                <span id="profile-stat-media">0</span>
-                                <small>Фото</small>
-                            </div>
-                        </div>
+                <div class="tree-auto-options">
+                    <div class="form-group">
+                        <label for="auto-generations">Поколения</label>
+                        <select id="auto-generations">
+                            <option value="3">3 поколения</option>
+                            <option value="4">4 поколения</option>
+                            <option value="5">5 поколений</option>
+                        </select>
                     </div>
                     
-                    <div class="profile-content">
-                        <div class="card">
-                            <h3>Информация</h3>
+                    <div class="form-group">
+                        <label for="auto-style">Стиль</label>
+                        <select id="auto-style">
+                            <option value="horizontal">Горизонтальный</option>
+                            <option value="vertical">Вертикальный</option>
+                            <option value="circular">Круговой</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="auto-center-person">Центр</label>
+                        <select id="auto-center-person">
+                            <option value="self">Я</option>
+                            <option value="oldest">Самый старший</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="auto-show-photos" checked>
+                        <label for="auto-show-photos">Показывать фото</label>
+                    </div>
+                    
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="auto-show-dates" checked>
+                        <label for="auto-show-dates">Показывать даты</label>
+                    </div>
+                    
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="auto-show-lines" checked>
+                        <label for="auto-show-lines">Показывать линии</label>
+                    </div>
+                </div>
+                
+                <div class="tree-visualization-container" id="tree-visualization-container">
+                    <!-- Здесь будет дерево -->
+                </div>
+                
+                <div class="tree-stats">
+                    <div class="stat-card">
+                        <i class="fas fa-users"></i>
+                        <h3 id="tree-people-count">0</h3>
+                        <p>Людей</p>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-images"></i>
+                        <h3 id="tree-photos-count">0</h3>
+                        <p>Фотографий</p>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-layer-group"></i>
+                        <h3 id="tree-generations">0</h3>
+                        <p>Поколений</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Страница ленты событий -->
+        <section id="timeline-page" class="page hidden">
+            <div class="container">
+                <h2>Лента событий</h2>
+                <button class="btn" id="add-event-btn">
+                    <i class="fas fa-plus"></i> Добавить событие
+                </button>
+                
+                <div class="timeline-container" id="timeline-container">
+                    <!-- События здесь -->
+                </div>
+            </div>
+        </section>
+        
+        <!-- Страница медиатеки -->
+        <section id="media-page" class="page hidden">
+            <div class="container">
+                <h2>Медиатека</h2>
+                <div class="media-controls">
+                    <button class="btn" id="upload-media-btn">
+                        <i class="fas fa-upload"></i> Загрузить фото
+                    </button>
+                    <input type="text" id="media-filter" placeholder="Поиск по описанию...">
+                </div>
+                
+                <div class="media-grid" id="media-grid">
+                    <!-- Фото здесь -->
+                </div>
+            </div>
+        </section>
+        
+        <!-- Страница профиля -->
+        <section id="profile-page" class="page hidden">
+            <div class="container">
+                <div class="profile-container">
+                    <div class="profile-avatar">
+                        <div class="avatar large" id="profile-avatar">П</div>
+                        <h2 id="profile-name">Имя Фамилия</h2>
+                        <p id="profile-email">email@example.com</p>
+                    </div>
+                    
+                    <div class="profile-info">
+                        <h3>Информация об аккаунте</h3>
+                        <div class="info-grid">
                             <div class="info-item">
-                                <label>Email:</label>
-                                <span id="info-email">Загрузка...</span>
+                                <i class="fas fa-envelope"></i>
+                                <span>Email: <span id="info-email"></span></span>
                             </div>
                             <div class="info-item">
-                                <label>Дата регистрации:</label>
-                                <span id="info-reg-date">Загрузка...</span>
+                                <i class="fas fa-user"></i>
+                                <span>ID: <span id="info-user-id"></span></span>
                             </div>
                             <div class="info-item">
-                                <label>ID пользователя:</label>
-                                <span id="info-user-id" class="user-id">Загрузка...</span>
+                                <i class="fas fa-calendar"></i>
+                                <span>Регистрация: <span id="info-reg-date"></span></span>
                             </div>
                         </div>
                         
-                        <div class="card">
-                            <h3>Настройки</h3>
-                            <div class="setting-item">
-                                <label>
-                                    <input type="checkbox" id="setting-birthdays" checked>
-                                    Уведомления о днях рождения
-                                </label>
-                            </div>
-                            <div class="setting-item">
-                                <label>
-                                    <input type="checkbox" id="setting-events" checked>
-                                    Уведомления о событиях
-                                </label>
-                            </div>
-                            <div class="setting-item">
-                                <label>
-                                    <input type="checkbox" id="setting-invites" checked>
-                                    Уведомления о приглашениях
-                                </label>
-                            </div>
-                        </div>
-                        
-                        <div class="card">
-                            <h3>О приложении</h3>
-                            <p>Версия: 1.0.0</p>
-                            <p>Используется Supabase для хранения данных</p>
-                            <button class="btn btn-secondary" id="help-btn">
-                                <i class="fas fa-question-circle"></i> Помощь
-                            </button>
-                        </div>
+                        <h3>Действия</h3>
+                        <button class="btn full-width" id="edit-profile-btn">
+                            <i class="fas fa-edit"></i> Редактировать профиль
+                        </button>
+                        <button class="btn btn-secondary full-width" id="invite-btn">
+                            <i class="fas fa-user-plus"></i> Пригласить родственника
+                        </button>
+                        <button class="btn btn-danger full-width" id="logout-profile-btn">
+                            <i class="fas fa-sign-out-alt"></i> Выйти
+                        </button>
                     </div>
                 </div>
             </div>
         </section>
     </main>
-
-    <!-- Модальные окна -->
-    <div id="modal-overlay" class="modal-overlay hidden"></div>
     
     <!-- Модальное окно добавления человека -->
     <div id="add-person-modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Добавить человека в древо</h3>
+                <h3>Добавить человека</h3>
                 <button class="modal-close">&times;</button>
             </div>
             <div class="modal-body">
@@ -377,21 +349,41 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="person-first-name">Имя *</label>
-                            <input type="text" id="person-first-name" placeholder="Иван" required>
+                            <input type="text" id="person-first-name" placeholder="Имя" required>
                         </div>
                         <div class="form-group">
-                            <label for="person-last-name">Фамилия *</label>
-                            <input type="text" id="person-last-name" placeholder="Иванов" required>
+                            <label for="person-last-name">Фамилия</label>
+                            <input type="text" id="person-last-name" placeholder="Фамилия">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="person-birth-date">Дата рождения</label>
+                            <input type="date" id="person-birth-date">
+                        </div>
+                        <div class="form-group">
+                            <label for="person-death-date">Дата смерти</label>
+                            <input type="date" id="person-death-date">
                         </div>
                     </div>
                     
                     <div class="form-group">
-                        <label for="person-birth-date">Дата рождения</label>
-                        <input type="date" id="person-birth-date">
+                        <label for="person-gender">Пол</label>
+                        <select id="person-gender">
+                            <option value="">Не указан</option>
+                            <option value="male">Мужской</option>
+                            <option value="female">Женский</option>
+                        </select>
                     </div>
                     
                     <div class="form-group">
-                        <label for="person-relation">Кем приходится вам</label>
+                        <label for="person-photo">Фото (URL или файл)</label>
+                        <input type="file" id="person-photo" accept="image/*">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="person-relation">Родство *</label>
                         <select id="person-relation">
                             <option value="self">Я</option>
                             <option value="spouse">Супруг/а</option>
@@ -546,6 +538,7 @@
     
     <!-- Подключаем наши файлы -->
     <script src="supabase.js"></script>
+    <script src="tree-engine.js"></script> <!-- FIX: Добавил подключение tree-engine.js -->
     <script src="app.js"></script>
 </body>
 </html>
