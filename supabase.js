@@ -1,6 +1,6 @@
 // КОНФИГУРАЦИЯ SUPABASE - ЗАМЕНИТЕ НА ВАШИ КЛЮЧИ
-const SUPABASE_URL = 'https://your-project-id.supabase.co'; // ЗАМЕНИТЕ
-const SUPABASE_KEY = 'your-anon-key-here'; // ЗАМЕНИТЕ
+const SUPABASE_URL = 'https://szwsvtxkhlacrarplgtn.supabase.co'; // ЗАМЕНИТЕ
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6d3N2dHhraGxhY3JhcnBsZ3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxMzA1NjAsImV4cCI6MjA4MTcwNjU2MH0.dcRnrqlA4Iz1RthtFT7wL_KGorGz4lHnMMsWCP8i-ns'; // ЗАМЕНИТЕ
 
 // Инициализация Supabase
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
