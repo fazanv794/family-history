@@ -1,9 +1,9 @@
-// ТВОИ КЛЮЧИ - ЗАМЕНИ НА НОВЫЕ ИЗ SUPABASE DASHBOARD
-const SUPABASE_URL = 'https://szwsvtxkhlacrarplgtn.supabase.co'; // FIX: Замени на новый URL
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6d3N2dHhraGxhY3JhcnBsZ3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxMzA1NjAsImV4cCI6MjA4MTcwNjU2MH0.dcRnrqlA4Iz1RthtFT7wL_KGorGz4lHnMMsWCP8i-ns'; // FIX: Замени на новый anon key
+// КОНФИГУРАЦИЯ SUPABASE - ЗАМЕНИТЕ НА ВАШИ КЛЮЧИ
+const SUPABASE_URL = 'https://your-project-id.supabase.co'; // ЗАМЕНИТЕ
+const SUPABASE_KEY = 'your-anon-key-here'; // ЗАМЕНИТЕ
 
 // Инициализация Supabase
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY); // FIX: Добавил инициализацию
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // Простая функция уведомления
 function showNotification(message, type = 'info') {
@@ -20,10 +20,22 @@ function showNotification(message, type = 'info') {
     notification.className = `notification ${type}`;
     notification.classList.remove('hidden');
     
+    // Автоматическое скрытие
     setTimeout(() => {
         notification.classList.add('hidden');
     }, 4000);
 }
+
+// Закрытие уведомления по клику
+document.addEventListener('DOMContentLoaded', () => {
+    const closeBtn = document.querySelector('.notification-close');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            const notification = document.getElementById('notification');
+            if (notification) notification.classList.add('hidden');
+        });
+    }
+});
 
 // Простая функция загрузчика
 function showLoader(text = 'Загрузка...') {
