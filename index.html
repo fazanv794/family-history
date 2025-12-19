@@ -59,7 +59,7 @@
                             <i class="fas fa-sitemap"></i>
                         </div>
                         <h3>Интерактивное древо</h3>
-                        <p>Создавайте, редактируйте и визуализируйте ваше генеалогическое древо с фотографиями и биографиями.</p>
+                        <p>Создавайте, редактируете и визуализируете ваше генеалогическое древо с фотографиями и биографиями.</p>
                     </div>
                     
                     <div class="feature-card">
@@ -205,43 +205,22 @@
     <script>
         // Простые функции для навигации лендинга
         function showContactModal() {
-            alert('Контакты: support@family-history.ru\nТелефон: +7 (999) 999-99-99');
-        }
-        
-        function showTermsModal() {
-            alert('Пользовательское соглашение будет отображено здесь');
-        }
-        
-        function showPrivacyModal() {
-            alert('Политика конфиденциальности будет отображена здесь');
-        }
-        
-        // Мобильное меню для лендинга
-        document.getElementById('landing-mobile-btn')?.addEventListener('click', function() {
-            document.querySelector('#landing-header .nav-links').classList.toggle('active');
-        });
-        
-        // Кнопка "Попробовать построить дерево"
-        document.getElementById('try-tree-btn')?.addEventListener('click', () => {
-            // Создаем модальное окно для построения дерева без регистрации
             const modalHtml = `
-                <div class="modal show" id="try-tree-modal">
+                <div class="modal show">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h3>Построить демо-древо</h3>
+                            <h3>Контакты</h3>
                             <button class="modal-close">&times;</button>
                         </div>
                         <div class="modal-body">
-                            <p>Хотите попробовать построить генеалогическое древо без регистрации?</p>
-                            <p>Мы создадим демо-древо с примерными данными.</p>
-                            <div style="display: flex; flex-direction: column; gap: 15px; margin-top: 20px;">
-                                <button class="btn" id="create-demo-tree-btn">
-                                    <i class="fas fa-tree"></i> Создать демо-древо
-                                </button>
-                                <button class="btn btn-outline" id="go-to-register-btn">
-                                    <i class="fas fa-user-plus"></i> Зарегистрироваться
-                                </button>
-                            </div>
+                            <p><strong>Email:</strong> support@family-history.ru</p>
+                            <p><strong>Телефон:</strong> +7 (999) 999-99-99</p>
+                            <p><strong>Техническая поддержка:</strong> круглосуточно</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary cancel-btn">
+                                Закрыть
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -252,82 +231,272 @@
                 overlay.innerHTML = modalHtml;
                 overlay.classList.remove('hidden');
                 
-                // Обработчики кнопок
-                document.getElementById('create-demo-tree-btn')?.addEventListener('click', () => {
-                    // Создаем демо-древо
-                    createDemoTree();
+                // Закрытие
+                document.querySelector('.modal-close')?.addEventListener('click', () => {
                     overlay.classList.add('hidden');
                 });
                 
-                document.getElementById('go-to-register-btn')?.addEventListener('click', () => {
-                    window.location.href = 'auth.html?mode=register';
+                document.querySelector('.cancel-btn')?.addEventListener('click', () => {
+                    overlay.classList.add('hidden');
                 });
+            }
+        }
+        
+        function showTermsModal() {
+            const modalHtml = `
+                <div class="modal show">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3>Пользовательское соглашение</h3>
+                            <button class="modal-close">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Здесь будет текст пользовательского соглашения...</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary cancel-btn">
+                                Закрыть
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            const overlay = document.getElementById('modal-overlay');
+            if (overlay) {
+                overlay.innerHTML = modalHtml;
+                overlay.classList.remove('hidden');
                 
                 // Закрытие
                 document.querySelector('.modal-close')?.addEventListener('click', () => {
                     overlay.classList.add('hidden');
                 });
+                
+                document.querySelector('.cancel-btn')?.addEventListener('click', () => {
+                    overlay.classList.add('hidden');
+                });
+            }
+        }
+        
+        function showPrivacyModal() {
+            const modalHtml = `
+                <div class="modal show">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3>Политика конфиденциальности</h3>
+                            <button class="modal-close">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Здесь будет текст политики конфиденциальности...</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary cancel-btn">
+                                Закрыть
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            const overlay = document.getElementById('modal-overlay');
+            if (overlay) {
+                overlay.innerHTML = modalHtml;
+                overlay.classList.remove('hidden');
+                
+                // Закрытие
+                document.querySelector('.modal-close')?.addEventListener('click', () => {
+                    overlay.classList.add('hidden');
+                });
+                
+                document.querySelector('.cancel-btn')?.addEventListener('click', () => {
+                    overlay.classList.add('hidden');
+                });
+            }
+        }
+        
+        // Мобильное меню для лендинга
+        document.getElementById('landing-mobile-btn')?.addEventListener('click', function() {
+            const navLinks = document.querySelector('#landing-header .nav-links');
+            if (navLinks) {
+                navLinks.classList.toggle('active');
             }
         });
         
+        // Кнопка "Попробовать построить дерево"
+        document.getElementById('try-tree-btn')?.addEventListener('click', () => {
+            // Создаем демо-дерево
+            createDemoTree();
+        });
+        
         function createDemoTree() {
-            // Создаем демо-данные для дерева
-            const demoData = {
-                people: [
-                    {
-                        id: 'demo_1',
-                        first_name: 'Иван',
-                        last_name: 'Иванов',
-                        birth_date: '1990-01-15',
-                        gender: 'male',
-                        relation: 'self',
-                        photo_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80'
-                    },
-                    {
-                        id: 'demo_2',
-                        first_name: 'Мария',
-                        last_name: 'Иванова',
-                        birth_date: '1992-03-22',
-                        gender: 'female',
-                        relation: 'spouse',
-                        photo_url: 'https://images.unsplash.com/photo-1494790108755-2616b786d4d4?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80'
-                    },
-                    {
-                        id: 'demo_3',
-                        first_name: 'Алексей',
-                        last_name: 'Иванов',
-                        birth_date: '2015-07-10',
-                        gender: 'male',
-                        relation: 'child',
-                        photo_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80'
-                    }
-                ],
-                events: [
-                    {
-                        id: 'demo_1',
-                        title: 'День рождения Ивана',
-                        date: '1990-01-15',
-                        event_type: 'birthday',
-                        description: 'День рождения основателя семьи'
-                    }
-                ]
-            };
-            
-            // Показываем уведомление
-            if (window.showNotification) {
-                window.showNotification('✅ Демо-древо создано! Теперь вы можете посмотреть как работает платформа.', 'success');
+            // Показываем загрузчик
+            if (window.showLoader) {
+                window.showLoader('Создание демо-дерева...');
             } else {
-                alert('✅ Демо-древо создано! Теперь вы можете посмотреть как работает платформа.');
+                showLoader('Создание демо-дерева...');
             }
             
-            // Через 2 секунды предлагаем зарегистрироваться
-            setTimeout(() => {
-                if (window.showNotification) {
-                    window.showNotification('Для сохранения данных и доступа ко всем функциям зарегистрируйтесь!', 'info');
-                } else {
-                    alert('Для сохранения данных и доступа ко всем функциям зарегистрируйтесь!');
+            try {
+                // Создаем демо-пользователя в localStorage
+                const demoUser = {
+                    id: 'demo_user_' + Date.now(),
+                    email: 'demo@family-history.ru',
+                    user_metadata: {
+                        name: 'Демо Пользователь',
+                        full_name: 'Демо Пользователь'
+                    },
+                    created_at: new Date().toISOString()
+                };
+                
+                localStorage.setItem('family_tree_user', JSON.stringify(demoUser));
+                localStorage.setItem('family_tree_email', 'demo@family-history.ru');
+                localStorage.setItem('family_tree_password', 'demopassword123');
+                
+                // Создаем демо-данные
+                const demoData = {
+                    people: [
+                        {
+                            id: 'demo_1',
+                            first_name: 'Иван',
+                            last_name: 'Иванов',
+                            birth_date: '1990-01-15',
+                            gender: 'male',
+                            relation: 'self',
+                            photo_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80',
+                            biography: 'Основатель семейного древа',
+                            created_at: new Date().toISOString()
+                        },
+                        {
+                            id: 'demo_2',
+                            first_name: 'Мария',
+                            last_name: 'Иванова',
+                            birth_date: '1992-03-22',
+                            gender: 'female',
+                            relation: 'spouse',
+                            photo_url: 'https://images.unsplash.com/photo-1494790108755-2616b786d4d4?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80',
+                            created_at: new Date().toISOString()
+                        },
+                        {
+                            id: 'demo_3',
+                            first_name: 'Алексей',
+                            last_name: 'Иванов',
+                            birth_date: '2015-07-10',
+                            gender: 'male',
+                            relation: 'child',
+                            photo_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80',
+                            created_at: new Date().toISOString()
+                        }
+                    ]
+                };
+                
+                // Сохраняем демо-данные
+                const allData = JSON.parse(localStorage.getItem('family_tree_data') || '{}');
+                if (!allData.people) allData.people = [];
+                allData.people.push(...demoData.people);
+                localStorage.setItem('family_tree_data', JSON.stringify(allData));
+                
+                // Устанавливаем глобальные переменные
+                if (!window.supabaseClient) {
+                    window.supabaseClient = {
+                        auth: {
+                            getUser: async () => {
+                                return { data: { user: demoUser }, error: null };
+                            }
+                        }
+                    };
                 }
-            }, 3000);
+                
+                window.currentUser = demoUser;
+                window.people = demoData.people;
+                window.events = [];
+                window.media = [];
+                
+                if (window.showNotification) {
+                    window.showNotification('✅ Демо-дерево создано! Переходим в приложение...', 'success');
+                } else {
+                    showNotification('✅ Демо-дерево создано! Переходим в приложение...', 'success');
+                }
+                
+                // Перенаправляем в приложение
+                setTimeout(() => {
+                    window.location.href = 'app.html';
+                }, 1500);
+                
+            } catch (error) {
+                console.error('Ошибка создания демо-дерева:', error);
+                if (window.showNotification) {
+                    window.showNotification('Ошибка создания демо-дерева: ' + error.message, 'error');
+                } else {
+                    showNotification('Ошибка создания демо-дерева: ' + error.message, 'error');
+                }
+            } finally {
+                if (window.hideLoader) {
+                    window.hideLoader();
+                } else {
+                    hideLoader();
+                }
+            }
+        }
+        
+        // Вспомогательные функции для уведомлений и загрузчика
+        function showNotification(message, type = 'info') {
+            let notification = document.getElementById('notification');
+            if (!notification) {
+                notification = document.createElement('div');
+                notification.id = 'notification';
+                notification.className = 'notification';
+                notification.innerHTML = `
+                    <div class="notification-content">
+                        <span id="notification-text">${message}</span>
+                        <button class="notification-close">&times;</button>
+                    </div>
+                `;
+                document.body.appendChild(notification);
+                
+                notification.querySelector('.notification-close').addEventListener('click', () => {
+                    notification.classList.remove('show');
+                });
+            }
+            
+            const text = document.getElementById('notification-text');
+            if (text) {
+                text.textContent = message;
+            }
+            
+            notification.className = `notification ${type}`;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 4000);
+        }
+        
+        function showLoader(text = 'Загрузка...') {
+            let loader = document.getElementById('loader');
+            if (!loader) {
+                loader = document.createElement('div');
+                loader.id = 'loader';
+                loader.className = 'loader-overlay hidden';
+                loader.innerHTML = `
+                    <div class="loader"></div>
+                    <div class="loader-text" id="loader-text">${text}</div>
+                `;
+                document.body.appendChild(loader);
+            }
+            
+            const loaderText = document.getElementById('loader-text');
+            if (loaderText) {
+                loaderText.textContent = text;
+            }
+            
+            loader.classList.remove('hidden');
+        }
+        
+        function hideLoader() {
+            const loader = document.getElementById('loader');
+            if (loader) {
+                loader.classList.add('hidden');
+            }
         }
         
         // Закрытие модальных окон по клику на оверлей

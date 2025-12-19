@@ -1126,6 +1126,78 @@ function getEventIcon(eventType) {
         'holiday': 'fas fa-gift',
         'other': 'fas fa-calendar'
     };
+
+    // Функция для создания демо-дерева из лендинга
+window.createDemoTree = function() {
+    // Проверяем, есть ли функция в локальном контексте
+    if (typeof createDemoTree === 'function') {
+        return createDemoTree();
+    }
+    
+    // Иначе создаем базовую реализацию
+    try {
+        // Создаем демо-пользователя
+        const demoUser = {
+            id: 'demo_user_' + Date.now(),
+            email: 'demo@family-history.ru',
+            user_metadata: { name: 'Демо Пользователь' },
+            created_at: new Date().toISOString()
+        };
+        
+        localStorage.setItem('family_tree_user', JSON.stringify(demoUser));
+        localStorage.setItem('family_tree_email', 'demo@family-history.ru');
+        localStorage.setItem('family_tree_password', 'demopassword123');
+        
+        // Создаем демо-данные
+        const demoData = {
+            people: [
+                {
+                    id: 'demo_1',
+                    first_name: 'Иван',
+                    last_name: 'Иванов',
+                    birth_date: '1990-01-15',
+                    gender: 'male',
+                    relation: 'self',
+                    photo_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80',
+                    biography: 'Основатель семейного древа',
+                    created_at: new Date().toISOString()
+                },
+                {
+                    id: 'demo_2',
+                    first_name: 'Мария',
+                    last_name: 'Иванова',
+                    birth_date: '1992-03-22',
+                    gender: 'female',
+                    relation: 'spouse',
+                    photo_url: 'https://images.unsplash.com/photo-1494790108755-2616b786d4d4?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80',
+                    created_at: new Date().toISOString()
+                }
+            ]
+        };
+        
+        // Сохраняем данные
+        const allData = JSON.parse(localStorage.getItem('family_tree_data') || '{}');
+        allData.people = demoData.people;
+        localStorage.setItem('family_tree_data', JSON.stringify(allData));
+        
+        // Устанавливаем глобальные переменные
+        window.currentUser = demoUser;
+        window.people = demoData.people;
+        window.events = [];
+        window.media = [];
+        
+        window.showNotification('✅ Демо-дерево создано! Переходим в приложение...', 'success');
+        
+        // Перенаправляем
+        setTimeout(() => {
+            window.location.href = 'app.html';
+        }, 1500);
+        
+    } catch (error) {
+        console.error('Ошибка создания демо-дерева:', error);
+        window.showNotification('Ошибка создания демо-дерева', 'error');
+    }
+};
     
     return icons[eventType] || 'fas fa-calendar';
 }
