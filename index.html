@@ -330,37 +330,172 @@
     <script src="supabase.js"></script>
     <script src="app.js"></script>
     
-    <script>
-        // Простые функции для навигации лендинга
-        function showContactModal() {
-            alert('Контакты: support@family-history.ru\nТелефон: +7 (999) 999-99-99');
-        }
+<!-- ... предыдущий HTML код ... -->
+
+<script>
+    // Простые функции для навигации лендинга
+    function showContactModal() {
+        const modalHtml = `
+            <div class="modal show">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Контакты</h3>
+                        <button class="modal-close">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <p><strong>Email:</strong> support@family-history.ru</p>
+                        <p><strong>Телефон:</strong> +7 (999) 999-99-99</p>
+                        <p><strong>Техническая поддержка:</strong> круглосуточно</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary cancel-btn">
+                            Закрыть
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
         
-        function showTermsModal() {
-            alert('Пользовательское соглашение будет отображено здесь');
-        }
-        
-        function showPrivacyModal() {
-            alert('Политика конфиденциальности будет отображена здесь');
-        }
-        
-        // Мобильное меню для лендинга
-        document.getElementById('landing-mobile-btn')?.addEventListener('click', function() {
-            document.querySelector('#landing-header .nav-links').classList.toggle('active');
-        });
-        
-        // Демо кнопки функций
-        document.querySelectorAll('.feature-demo-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const feature = e.target.dataset.feature;
-                alert('Демо функции "' + feature + '"');
+        const overlay = document.getElementById('modal-overlay');
+        if (overlay) {
+            overlay.innerHTML = modalHtml;
+            overlay.classList.add('show');
+            
+            // Закрытие
+            document.querySelector('.modal-close')?.addEventListener('click', () => {
+                overlay.classList.remove('show');
             });
-        });
+            
+            document.querySelector('.cancel-btn')?.addEventListener('click', () => {
+                overlay.classList.remove('show');
+            });
+        }
+    }
+    
+    function showTermsModal() {
+        const modalHtml = `
+            <div class="modal show">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Пользовательское соглашение</h3>
+                        <button class="modal-close">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Здесь будет текст пользовательского соглашения...</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary cancel-btn">
+                            Закрыть
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
         
-        // Кнопка демо
-        document.getElementById('watch-demo-btn')?.addEventListener('click', () => {
-            alert('Запуск демо-режима...\n\nДля тестирования перейдите в раздел авторизации и используйте:\nEmail: demo@example.com\nПароль: demo123');
+        const overlay = document.getElementById('modal-overlay');
+        if (overlay) {
+            overlay.innerHTML = modalHtml;
+            overlay.classList.add('show');
+            
+            // Закрытие
+            document.querySelector('.modal-close')?.addEventListener('click', () => {
+                overlay.classList.remove('show');
+            });
+            
+            document.querySelector('.cancel-btn')?.addEventListener('click', () => {
+                overlay.classList.remove('show');
+            });
+        }
+    }
+    
+    function showPrivacyModal() {
+        const modalHtml = `
+            <div class="modal show">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Политика конфиденциальности</h3>
+                        <button class="modal-close">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Здесь будет текст политики конфиденциальности...</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary cancel-btn">
+                            Закрыть
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        const overlay = document.getElementById('modal-overlay');
+        if (overlay) {
+            overlay.innerHTML = modalHtml;
+            overlay.classList.add('show');
+            
+            // Закрытие
+            document.querySelector('.modal-close')?.addEventListener('click', () => {
+                overlay.classList.remove('show');
+            });
+            
+            document.querySelector('.cancel-btn')?.addEventListener('click', () => {
+                overlay.classList.remove('show');
+            });
+        }
+    }
+    
+    // Мобильное меню для лендинга
+    document.getElementById('landing-mobile-btn')?.addEventListener('click', function() {
+        document.querySelector('#landing-header .nav-links').classList.toggle('active');
+    });
+    
+    // Демо кнопки функций
+    document.querySelectorAll('.feature-demo-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const feature = e.target.dataset.feature || e.target.closest('.feature-demo-btn').dataset.feature;
+            
+            const messages = {
+                'tree': 'Демо построения генеалогического древа',
+                'media': 'Демо загрузки семейных фотографий',
+                'timeline': 'Демо ленты семейных событий',
+                'chat': 'Демо семейного чата',
+                'print': 'Демо печати генеалогического древа',
+                'notifications': 'Демо умных уведомлений'
+            };
+            
+            const message = messages[feature] || 'Демо функции';
+            
+            // Используем функцию showNotification из app.js
+            if (window.showNotification) {
+                window.showNotification(message + '. Для тестирования зарегистрируйтесь.', 'info');
+            } else {
+                alert(message + '. Для тестирования зарегистрируйтесь.');
+            }
         });
-    </script>
+    });
+    
+    // Кнопка демо
+    document.getElementById('watch-demo-btn')?.addEventListener('click', () => {
+        if (window.showNotification) {
+            window.showNotification('Запуск демо-режима... Для тестирования зарегистрируйтесь или войдите в аккаунт.', 'info');
+        } else {
+            alert('Запуск демо-режима... Для тестирования зарегистрируйтесь или войдите в аккаунт.');
+        }
+    });
+    
+    // Закрытие модальных окон по клику на оверлей
+    document.getElementById('modal-overlay')?.addEventListener('click', (e) => {
+        if (e.target.id === 'modal-overlay') {
+            e.target.classList.remove('show');
+        }
+    });
+    
+    // Закрытие по ESC
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            document.getElementById('modal-overlay')?.classList.remove('show');
+        }
+    });
+</script>
 </body>
 </html>

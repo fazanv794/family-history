@@ -8,10 +8,10 @@ if (typeof supabase === 'undefined') {
 }
 
 // Глобальные переменные
-let currentUser = null;
-let people = [];
-let events = [];
-let media = [];
+window.currentUser = null;
+window.people = [];
+window.events = [];
+window.media = [];
 
 // Инициализация для всех страниц
 document.addEventListener('DOMContentLoaded', async () => {
@@ -27,6 +27,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Обновляем UI пользователя
         updateUserUI();
         
+        // Загружаем данные если пользователь авторизован
+        if (window.currentUser) {
+            await loadUserData();
+        }
+        
         console.log('✅ Страница инициализирована');
     } catch (error) {
         console.error('❌ Ошибка инициализации:', error);
@@ -36,7 +41,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Проверка авторизации для защищенных страниц
 async function checkAuthForProtectedPages() {
     const protectedPages = ['app.html', 'tree.html', 'timeline.html', 'media.html', 'profile.html'];
-    const currentPage = window.location.pathname.split('/').pop();
+    const currentPage = window.location.pathname.split('/').pop() || 'index.html';
     
     if (protectedPages.includes(currentPage)) {
         console.log('🔒 Проверка авторизации для защищенной страницы:', currentPage);
@@ -56,7 +61,7 @@ async function checkAuthForProtectedPages() {
                 return;
             }
             
-            currentUser = user;
+            window.currentUser = user;
             console.log('✅ Пользователь авторизован:', user.email);
             
         } catch (error) {
@@ -79,11 +84,27 @@ function redirectToAuth() {
 
 // Обновление UI пользователя
 function updateUserUI() {
-    if (!currentUser) return;
+    if (!window.currentUser) {
+        // Для неавторизованных пользователей
+        const usernameElements = document.querySelectorAll('#username, .profile-name');
+        usernameElements.forEach(el => {
+            if (el.id === 'username' || el.classList.contains('profile-name')) {
+                el.textContent = 'Гость';
+            }
+        });
+        
+        const avatarElements = document.querySelectorAll('#user-avatar, #profile-avatar, .avatar');
+        avatarElements.forEach(el => {
+            if (el.id === 'user-avatar' || el.id === 'profile-avatar' || el.classList.contains('avatar')) {
+                el.textContent = 'Г';
+            }
+        });
+        return;
+    }
     
-    const displayName = currentUser.user_metadata?.name || 
-                       currentUser.user_metadata?.full_name || 
-                       currentUser.email?.split('@')[0] || 
+    const displayName = window.currentUser.user_metadata?.name || 
+                       window.currentUser.user_metadata?.full_name || 
+                       window.currentUser.email?.split('@')[0] || 
                        'Пользователь';
     
     // Обновляем имя пользователя везде, где есть элемент
@@ -106,20 +127,20 @@ function updateUserUI() {
     const emailElements = document.querySelectorAll('#profile-email, #info-email');
     emailElements.forEach(el => {
         if (el.id === 'profile-email' || el.id === 'info-email') {
-            el.textContent = currentUser.email;
+            el.textContent = window.currentUser.email;
         }
     });
     
     // Обновляем ID пользователя
     const userIdElement = document.getElementById('info-user-id');
-    if (userIdElement && currentUser.id) {
-        userIdElement.textContent = currentUser.id.substring(0, 8) + '...';
+    if (userIdElement && window.currentUser.id) {
+        userIdElement.textContent = window.currentUser.id.substring(0, 8) + '...';
     }
     
     // Обновляем дату регистрации
     const regDateElement = document.getElementById('info-reg-date');
-    if (regDateElement && currentUser.created_at) {
-        const date = new Date(currentUser.created_at);
+    if (regDateElement && window.currentUser.created_at) {
+        const date = new Date(window.currentUser.created_at);
         regDateElement.textContent = date.toLocaleDateString('ru-RU');
     }
 }
@@ -165,6 +186,9 @@ function setupCommonEventListeners() {
     
     // Формы
     setupFormHandlers();
+    
+    // Обработчики для модальных окон
+    setupModalCloseHandlers();
 }
 
 // Мобильное меню
@@ -178,8 +202,13 @@ function toggleMobileMenu() {
 // Настройка обработчиков модальных окон
 function setupModalHandlers() {
     // Закрытие по кнопке закрытия
-    document.querySelectorAll('.modal-close, .cancel-btn').forEach(btn => {
-        btn.addEventListener('click', closeAllModals);
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('modal-close') || 
+            e.target.classList.contains('cancel-btn') ||
+            e.target.closest('.modal-close') ||
+            e.target.closest('.cancel-btn')) {
+            closeAllModals();
+        }
     });
     
     // Закрытие по клику на оверлей
@@ -187,20 +216,13 @@ function setupModalHandlers() {
     if (overlay) {
         overlay.addEventListener('click', closeAllModals);
     }
-    
-    // Предотвращение закрытия при клике внутри модального окна
-    document.querySelectorAll('.modal').forEach(modal => {
-        modal.addEventListener('click', (e) => {
-            e.stopPropagation();
-        });
-    });
 }
 
 // Настройка кнопок демо на лендинге
 function setupLandingDemoButtons() {
     document.querySelectorAll('.feature-demo-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            const feature = e.target.dataset.feature;
+            const feature = e.target.dataset.feature || e.target.closest('.feature-demo-btn').dataset.feature;
             showFeatureDemo(feature);
         });
     });
@@ -208,7 +230,7 @@ function setupLandingDemoButtons() {
     const watchDemoBtn = document.getElementById('watch-demo-btn');
     if (watchDemoBtn) {
         watchDemoBtn.addEventListener('click', () => {
-            window.showNotification('Запуск демо-режима... Для тестирования перейдите в раздел авторизации.', 'info');
+            window.showNotification('Для тестирования зарегистрируйтесь или войдите в аккаунт', 'info');
         });
     }
 }
@@ -271,6 +293,19 @@ function setupFormHandlers() {
     }
 }
 
+// Настройка обработчиков закрытия модальных окон
+function setupModalCloseHandlers() {
+    // Закрытие по клику на оверлей
+    document.getElementById('modal-overlay')?.addEventListener('click', closeAllModals);
+    
+    // Закрытие по ESC
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeAllModals();
+        }
+    });
+}
+
 // Показать модальное окно
 function showModal(modalId) {
     const modal = document.getElementById(modalId);
@@ -278,11 +313,11 @@ function showModal(modalId) {
     
     if (modal && overlay) {
         // Заполняем данные если нужно
-        if (modalId === 'edit-profile-modal' && currentUser) {
-            const nameParts = (currentUser.user_metadata?.name || '').split(' ');
+        if (modalId === 'edit-profile-modal' && window.currentUser) {
+            const nameParts = (window.currentUser.user_metadata?.name || '').split(' ');
             document.getElementById('edit-profile-name').value = nameParts[0] || '';
             document.getElementById('edit-profile-last-name').value = nameParts.slice(1).join(' ') || '';
-            document.getElementById('edit-profile-email').value = currentUser.email || '';
+            document.getElementById('edit-profile-email').value = window.currentUser.email || '';
         }
         
         modal.classList.remove('hidden');
@@ -362,10 +397,35 @@ async function handleAddPerson(e) {
             relation: relation,
             photo_url: photoUrl || null,
             biography: biography || null,
-            user_id: currentUser.id
+            user_id: window.currentUser.id
         };
         
-        // Сохраняем в Supabase
+        // Для демо-режима - добавляем в локальный массив
+        if (!window.supabaseClient || !window.supabaseClient.from) {
+            // Демо-режим
+            newPerson.id = 'person_' + Date.now();
+            newPerson.created_at = new Date().toISOString();
+            window.people.push(newPerson);
+            
+            window.showNotification('✅ Человек успешно добавлен! (демо-режим)', 'success');
+            closeAllModals();
+            
+            // Обновляем статистику на главной странице
+            if (window.updateStats) {
+                window.updateStats();
+            }
+            
+            // Обновляем дерево если мы на странице дерева
+            if (window.autoBuildTree && window.location.pathname.includes('tree.html')) {
+                setTimeout(() => {
+                    window.autoBuildTree();
+                }, 500);
+            }
+            
+            return;
+        }
+        
+        // Реальный режим - сохраняем в Supabase
         const { data, error } = await window.supabaseClient
             .from('people')
             .insert([newPerson])
@@ -374,7 +434,7 @@ async function handleAddPerson(e) {
         if (error) throw error;
         
         if (data && data[0]) {
-            people.push(data[0]);
+            window.people.push(data[0]);
             
             window.showNotification('✅ Человек успешно добавлен!', 'success');
             closeAllModals();
@@ -386,7 +446,9 @@ async function handleAddPerson(e) {
             
             // Обновляем дерево если мы на странице дерева
             if (window.autoBuildTree && window.location.pathname.includes('tree.html')) {
-                window.autoBuildTree();
+                setTimeout(() => {
+                    window.autoBuildTree();
+                }, 500);
             }
         }
         
@@ -420,9 +482,37 @@ async function handleAddEvent(e) {
             date: date,
             event_type: eventType || 'other',
             description: description || null,
-            user_id: currentUser.id
+            user_id: window.currentUser.id
         };
         
+        // Для демо-режима
+        if (!window.supabaseClient || !window.supabaseClient.from) {
+            newEvent.id = 'event_' + Date.now();
+            newEvent.created_at = new Date().toISOString();
+            window.events.unshift(newEvent);
+            
+            window.showNotification('✅ Событие успешно добавлено! (демо-режим)', 'success');
+            closeAllModals();
+            
+            // Обновляем ленту событий
+            if (window.updateTimeline && window.location.pathname.includes('timeline.html')) {
+                window.updateTimeline();
+            }
+            
+            // Обновляем главную страницу
+            if (window.updateRecentEvents && window.location.pathname.includes('app.html')) {
+                window.updateRecentEvents();
+            }
+            
+            // Обновляем статистику
+            if (window.updateStats) {
+                window.updateStats();
+            }
+            
+            return;
+        }
+        
+        // Реальный режим
         const { data, error } = await window.supabaseClient
             .from('events')
             .insert([newEvent])
@@ -431,7 +521,7 @@ async function handleAddEvent(e) {
         if (error) throw error;
         
         if (data && data[0]) {
-            events.unshift(data[0]);
+            window.events.unshift(data[0]);
             
             window.showNotification('✅ Событие успешно добавлено!', 'success');
             closeAllModals();
@@ -486,12 +576,37 @@ async function handleUploadMedia(e) {
                 file_url: fakeUrl,
                 file_type: file.type.startsWith('image/') ? 'image' : 'file',
                 description: description || file.name,
-                user_id: currentUser.id
+                user_id: window.currentUser.id
             };
             
             newMediaItems.push(mediaItem);
         }
         
+        // Для демо-режима
+        if (!window.supabaseClient || !window.supabaseClient.from) {
+            newMediaItems.forEach(item => {
+                item.id = 'media_' + Date.now() + Math.random();
+                item.created_at = new Date().toISOString();
+                window.media.unshift(item);
+            });
+            
+            window.showNotification(`✅ Загружено ${files.length} файлов! (демо-режим)`, 'success');
+            closeAllModals();
+            
+            // Обновляем медиатеку если мы на странице медиа
+            if (window.updateMediaGrid && window.location.pathname.includes('media.html')) {
+                window.updateMediaGrid();
+            }
+            
+            // Обновляем статистику
+            if (window.updateStats) {
+                window.updateStats();
+            }
+            
+            return;
+        }
+        
+        // Реальный режим
         const { data, error } = await window.supabaseClient
             .from('media')
             .insert(newMediaItems)
@@ -500,7 +615,7 @@ async function handleUploadMedia(e) {
         if (error) throw error;
         
         if (data) {
-            media.unshift(...data);
+            window.media.unshift(...data);
             
             window.showNotification(`✅ Загружено ${files.length} файлов!`, 'success');
             closeAllModals();
@@ -541,24 +656,8 @@ async function handleInvite(e) {
     window.showLoader('Отправка приглашения...');
     
     try {
-        const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
-        
-        const invitation = {
-            from_user_id: currentUser.id,
-            to_email: email,
-            token: token,
-            message: message || null,
-            status: 'pending',
-            expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-        };
-        
-        const { data, error } = await window.supabaseClient
-            .from('invitations')
-            .insert([invitation]);
-        
-        if (error) throw error;
-        
-        window.showNotification('✅ Приглашение отправлено!', 'success');
+        // Для демо-режима
+        window.showNotification('✅ Приглашение отправлено на ' + email + ' (демо-режим)', 'success');
         closeAllModals();
         
     } catch (error) {
@@ -586,32 +685,22 @@ async function handleEditProfile(e) {
     window.showLoader('Сохранение профиля...');
     
     try {
-        const { error } = await window.supabaseClient.auth.updateUser({
-            email: email,
-            data: { 
+        // Для демо-режима
+        window.showNotification('✅ Профиль успешно обновлен! (демо-режим)', 'success');
+        
+        // Обновляем данные пользователя
+        if (window.currentUser) {
+            window.currentUser.user_metadata = {
+                ...window.currentUser.user_metadata,
                 name: name,
                 full_name: lastName ? `${name} ${lastName}` : name
-            }
-        });
-        
-        if (error) throw error;
-        
-        // Обновляем профиль в таблице profiles
-        await window.supabaseClient
-            .from('profiles')
-            .update({
-                full_name: lastName ? `${name} ${lastName}` : name
-            })
-            .eq('id', currentUser.id);
-        
-        // Обновляем текущего пользователя
-        const { data: { user } } = await window.supabaseClient.auth.getUser();
-        currentUser = user;
+            };
+            window.currentUser.email = email;
+        }
         
         // Обновляем UI
         updateUserUI();
         
-        window.showNotification('✅ Профиль успешно обновлен!', 'success');
         closeAllModals();
         
     } catch (error) {
@@ -666,11 +755,48 @@ function showFeatureDemo(feature) {
 // Загрузка данных пользователя
 async function loadUserData() {
     try {
-        if (!currentUser) return;
+        if (!window.currentUser) {
+            generateDemoData();
+            return;
+        }
         
         window.showLoader('Загрузка данных...');
         
-        const userId = currentUser.id;
+        const userId = window.currentUser.id;
+        
+        // Для демо-режима
+        if (!window.supabaseClient || !window.supabaseClient.from) {
+            console.log('📦 Используем демо-данные');
+            generateDemoData();
+            
+            // Вызываем функции обновления UI для конкретных страниц
+            if (typeof window.updateStats === 'function') {
+                window.updateStats();
+            }
+            
+            if (typeof window.updateRecentEvents === 'function') {
+                window.updateRecentEvents();
+            }
+            
+            if (typeof window.updateTimeline === 'function') {
+                window.updateTimeline();
+            }
+            
+            if (typeof window.updateMediaGrid === 'function') {
+                window.updateMediaGrid();
+            }
+            
+            if (typeof window.updateTreeStats === 'function') {
+                window.updateTreeStats();
+            }
+            
+            window.showNotification('✅ Демо-данные загружены', 'success');
+            window.hideLoader();
+            return;
+        }
+        
+        // Реальный режим - загрузка из Supabase
+        console.log('📦 Загрузка данных из Supabase...');
         
         // Загрузка людей
         const { data: peopleData, error: peopleError } = await window.supabaseClient
@@ -679,18 +805,24 @@ async function loadUserData() {
             .eq('user_id', userId)
             .order('created_at', { ascending: true });
         
-        if (peopleError) throw peopleError;
-        people = peopleData || [];
+        if (peopleError) {
+            console.warn('Ошибка загрузки людей:', peopleError);
+            throw peopleError;
+        }
+        
+        window.people = peopleData || [];
         
         // Если нет людей, создаем запись для самого пользователя
-        if (people.length === 0) {
+        if (window.people.length === 0) {
             const selfPerson = {
-                first_name: currentUser.user_metadata?.name?.split(' ')[0] || 'Я',
-                last_name: currentUser.user_metadata?.name?.split(' ')[1] || '',
+                first_name: window.currentUser.user_metadata?.name?.split(' ')[0] || 'Я',
+                last_name: window.currentUser.user_metadata?.name?.split(' ')[1] || '',
                 relation: 'self',
                 user_id: userId,
                 gender: 'male'
             };
+            
+            console.log('👤 Создаем запись пользователя...');
             
             const { data: newPerson, error: insertError } = await window.supabaseClient
                 .from('people')
@@ -698,7 +830,7 @@ async function loadUserData() {
                 .select();
             
             if (!insertError && newPerson) {
-                people.push(newPerson[0]);
+                window.people.push(newPerson[0]);
             }
         }
         
@@ -709,8 +841,12 @@ async function loadUserData() {
             .eq('user_id', userId)
             .order('date', { ascending: false });
         
-        if (eventsError) throw eventsError;
-        events = eventsData || [];
+        if (eventsError) {
+            console.warn('Ошибка загрузки событий:', eventsError);
+            throw eventsError;
+        }
+        
+        window.events = eventsData || [];
         
         // Загрузка медиа
         const { data: mediaData, error: mediaError } = await window.supabaseClient
@@ -719,13 +855,17 @@ async function loadUserData() {
             .eq('user_id', userId)
             .order('created_at', { ascending: false });
         
-        if (mediaError) throw mediaError;
-        media = mediaData || [];
+        if (mediaError) {
+            console.warn('Ошибка загрузки медиа:', mediaError);
+            throw mediaError;
+        }
+        
+        window.media = mediaData || [];
         
         console.log('✅ Данные загружены:', {
-            people: people.length,
-            events: events.length,
-            media: media.length
+            people: window.people.length,
+            events: window.events.length,
+            media: window.media.length
         });
         
         // Вызываем функции обновления UI для конкретных страниц
@@ -749,11 +889,11 @@ async function loadUserData() {
             window.updateTreeStats();
         }
         
-        window.showNotification('Данные загружены', 'success');
+        window.showNotification('✅ Данные загружены', 'success');
         
     } catch (error) {
-        console.error('Ошибка загрузки данных:', error);
-        window.showNotification('Ошибка загрузки данных', 'error');
+        console.error('❌ Ошибка загрузки данных:', error);
+        window.showNotification('Ошибка загрузки данных. Используем демо-режим.', 'error');
         
         // Используем демо-данные при ошибке
         generateDemoData();
@@ -787,7 +927,7 @@ async function loadUserData() {
 function generateDemoData() {
     console.log('🔄 Генерация демо-данных...');
     
-    people = [
+    window.people = [
         {
             id: '1',
             first_name: 'Иван',
@@ -796,7 +936,8 @@ function generateDemoData() {
             gender: 'male',
             relation: 'self',
             photo_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80',
-            biography: 'Основатель семейного древа. Увлечен историей своей семьи.'
+            biography: 'Основатель семейного древа. Увлечен историей своей семьи.',
+            created_at: '2024-01-01T10:00:00Z'
         },
         {
             id: '2',
@@ -806,7 +947,8 @@ function generateDemoData() {
             gender: 'female',
             relation: 'spouse',
             spouse_id: '1',
-            photo_url: 'https://images.unsplash.com/photo-1494790108755-2616b786d4d4?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80'
+            photo_url: 'https://images.unsplash.com/photo-1494790108755-2616b786d4d4?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80',
+            created_at: '2024-01-02T10:00:00Z'
         },
         {
             id: '3',
@@ -816,7 +958,8 @@ function generateDemoData() {
             gender: 'male',
             relation: 'child',
             parent_id: '1',
-            photo_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80'
+            photo_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80',
+            created_at: '2024-01-03T10:00:00Z'
         },
         {
             id: '4',
@@ -826,64 +969,153 @@ function generateDemoData() {
             gender: 'female',
             relation: 'child',
             parent_id: '1',
-            photo_url: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80'
+            photo_url: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80',
+            created_at: '2024-01-04T10:00:00Z'
         }
     ];
     
     const today = new Date();
-    events = [
+    window.events = [
         {
             id: '1',
             title: 'День рождения Алексея',
             date: new Date(today.getFullYear(), 6, 10).toISOString().split('T')[0],
             event_type: 'birthday',
-            description: 'Празднование дня рождения сына'
+            description: 'Празднование дня рождения сына',
+            created_at: '2024-01-01T10:00:00Z'
         },
         {
             id: '2',
             title: 'Семейный пикник',
             date: new Date(today.getFullYear(), 7, 15).toISOString().split('T')[0],
             event_type: 'holiday',
-            description: 'Ежегодный семейный пикник в лесу'
+            description: 'Ежегодный семейный пикник в лесу',
+            created_at: '2024-01-02T10:00:00Z'
         },
         {
             id: '3',
             title: 'Годовщина свадьбы',
             date: new Date(today.getFullYear(), 5, 30).toISOString().split('T')[0],
             event_type: 'anniversary',
-            description: '10 лет совместной жизни'
+            description: '10 лет совместной жизни',
+            created_at: '2024-01-03T10:00:00Z'
         }
     ];
     
-    media = [
+    window.media = [
         {
             id: '1',
             file_url: 'https://images.unsplash.com/photo-1511988617509-a57c8a288659?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80',
             file_type: 'image',
-            description: 'Семейный портрет на природе'
+            description: 'Семейный портрет на природе',
+            created_at: '2024-01-01T10:00:00Z'
         },
         {
             id: '2',
             file_url: 'https://images.unsplash.com/photo-1529255484355-cb73c33c04bb?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80',
             file_type: 'image',
-            description: 'Дети играют в парке'
+            description: 'Дети играют в парке',
+            created_at: '2024-01-02T10:00:00Z'
         },
         {
             id: '3',
             file_url: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80',
             file_type: 'image',
-            description: 'Семейный ужин'
+            description: 'Семейный ужин',
+            created_at: '2024-01-03T10:00:00Z'
         }
     ];
+}
+
+// Функции для обновления статистики (для главной страницы)
+function updateStats() {
+    const peopleCount = window.people?.length || 0;
+    const eventsCount = window.events?.length || 0;
+    const mediaCount = window.media?.length || 0;
+    
+    const statPeople = document.getElementById('stat-people');
+    const statEvents = document.getElementById('stat-events');
+    const statMedia = document.getElementById('stat-media');
+    const statGenerations = document.getElementById('stat-generations');
+    
+    if (statPeople) statPeople.textContent = peopleCount;
+    if (statEvents) statEvents.textContent = eventsCount;
+    if (statMedia) statMedia.textContent = mediaCount;
+    if (statGenerations) statGenerations.textContent = calculateGenerations();
+}
+
+function calculateGenerations() {
+    const people = window.people || [];
+    if (people.length === 0) return 0;
+    
+    // Простой расчет поколений
+    const hasGrandparents = people.some(p => p.relation === 'grandparent');
+    const hasGrandchildren = people.some(p => p.relation === 'grandchild');
+    
+    let generations = 1; // Текущее поколение
+    if (hasGrandparents) generations++;
+    if (hasGrandchildren) generations++;
+    
+    return generations;
+}
+
+function updateRecentEvents() {
+    const container = document.getElementById('recent-events-list');
+    if (!container) return;
+    
+    const events = window.events || [];
+    const recentEvents = events.slice(0, 5);
+    
+    if (recentEvents.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #718096; padding: 20px;">Событий пока нет</p>';
+        return;
+    }
+    
+    let html = '';
+    recentEvents.forEach(event => {
+        const date = new Date(event.date).toLocaleDateString('ru-RU');
+        const icon = getEventIcon(event.event_type);
+        
+        html += `
+            <div class="timeline-event" style="display: flex; gap: 15px; margin-bottom: 15px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                <div class="event-icon" style="background: #667eea; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i class="${icon}"></i>
+                </div>
+                <div class="event-content" style="flex: 1;">
+                    <h3 style="margin-bottom: 5px; color: #2d3748;">${event.title}</h3>
+                    <div class="event-date" style="color: #718096; font-size: 0.9rem; margin-bottom: 10px;">${date}</div>
+                    ${event.description ? `<p style="color: #4a5568;">${event.description}</p>` : ''}
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+function getEventIcon(eventType) {
+    const icons = {
+        'birthday': 'fas fa-birthday-cake',
+        'wedding': 'fas fa-ring',
+        'anniversary': 'fas fa-heart',
+        'holiday': 'fas fa-gift',
+        'other': 'fas fa-calendar'
+    };
+    
+    return icons[eventType] || 'fas fa-calendar';
 }
 
 // Экспортируем функции
 window.showModal = showModal;
 window.closeAllModals = closeAllModals;
 window.loadUserData = loadUserData;
-window.currentUser = currentUser;
-window.people = people;
-window.events = events;
-window.media = media;
+window.updateStats = updateStats;
+window.updateRecentEvents = updateRecentEvents;
+window.getEventIcon = getEventIcon;
+window.calculateGenerations = calculateGenerations;
+window.toggleMobileMenu = toggleMobileMenu;
+window.handleLogout = handleLogout;
+window.getUserInitials = getUserInitials;
+window.updateUserUI = updateUserUI;
 
 console.log('✅ App.js загружен');

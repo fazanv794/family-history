@@ -1,4 +1,4 @@
-// supabase.js - ИСПРАВЛЕННЫЙ
+// supabase.js - Исправленный клиент Supabase
 
 console.log('🔧 Supabase.js загружается...');
 
@@ -9,33 +9,92 @@ if (typeof supabase === 'undefined') {
     window.supabase = {
         createClient: () => ({
             auth: {
-                getUser: async () => ({ data: { user: null }, error: null }),
-                signUp: async () => ({ data: null, error: null }),
-                signInWithPassword: async () => ({ 
-                    data: { 
-                        user: { 
-                            id: 'demo_user', 
-                            email: 'demo@example.com',
-                            user_metadata: { name: 'Демо Пользователь' },
-                            created_at: new Date().toISOString()
-                        } 
-                    }, 
+                getUser: async () => ({ 
+                    data: { user: null }, 
                     error: null 
                 }),
-                signOut: async () => ({ error: null }),
-                updateUser: async () => ({ error: null })
+                signUp: async ({ email, password, options }) => {
+                    console.log('📝 Регистрация:', email);
+                    return { 
+                        data: { 
+                            user: { 
+                                id: 'user_' + Date.now(),
+                                email: email,
+                                user_metadata: options?.data || {},
+                                created_at: new Date().toISOString()
+                            } 
+                        }, 
+                        error: null 
+                    };
+                },
+                signInWithPassword: async ({ email, password }) => {
+                    console.log('🔐 Вход:', email);
+                    return { 
+                        data: { 
+                            user: { 
+                                id: 'user_' + Date.now(),
+                                email: email,
+                                user_metadata: { name: email.split('@')[0] },
+                                created_at: new Date().toISOString()
+                            },
+                            session: {
+                                access_token: 'demo_token_' + Date.now(),
+                                refresh_token: 'demo_refresh_' + Date.now()
+                            }
+                        }, 
+                        error: null 
+                    };
+                },
+                signOut: async () => {
+                    console.log('🚪 Выход');
+                    return { error: null };
+                },
+                updateUser: async (data) => {
+                    console.log('✏️ Обновление пользователя');
+                    return { data: { user: data }, error: null };
+                },
+                setSession: async (session) => {
+                    console.log('🔑 Установка сессии');
+                    return { error: null };
+                }
             },
-            from: () => ({
-                select: () => ({
-                    eq: () => ({
-                        order: () => Promise.resolve({ data: [], error: null })
+            from: (table) => ({
+                select: (columns = '*') => ({
+                    eq: (column, value) => ({
+                        order: (column, { ascending = true } = {}) => {
+                            console.log(`📊 Выбор из ${table}: ${column} = ${value}`);
+                            return Promise.resolve({ 
+                                data: [], 
+                                error: null 
+                            });
+                        }
                     })
                 }),
-                insert: () => Promise.resolve({ data: [], error: null }),
-                update: () => Promise.resolve({ error: null }),
-                delete: () => Promise.resolve({ error: null })
+                insert: (data) => {
+                    console.log(`➕ Вставка в ${table}:`, data);
+                    return Promise.resolve({ 
+                        data: data.map(item => ({
+                            ...item,
+                            id: 'id_' + Date.now() + Math.random(),
+                            created_at: new Date().toISOString()
+                        })), 
+                        error: null 
+                    });
+                },
+                update: (data) => ({
+                    eq: (column, value) => {
+                        console.log(`✏️ Обновление ${table}: ${column} = ${value}`, data);
+                        return Promise.resolve({ error: null });
+                    }
+                }),
+                delete: () => ({
+                    eq: (column, value) => {
+                        console.log(`🗑️ Удаление из ${table}: ${column} = ${value}`);
+                        return Promise.resolve({ error: null });
+                    }
+                })
             })
-        })
+        });
     };
 }
 
@@ -50,36 +109,8 @@ try {
     console.log('✅ Supabase клиент создан');
 } catch (error) {
     console.error('❌ Ошибка создания Supabase клиента:', error);
-    // Создаем заглушку для демо-режима
-    supabaseClient = {
-        auth: {
-            getUser: async () => ({ data: { user: null }, error: null }),
-            signUp: async () => ({ data: null, error: null }),
-            signInWithPassword: async () => ({ 
-                data: { 
-                    user: { 
-                        id: 'demo_user', 
-                        email: 'demo@example.com',
-                        user_metadata: { name: 'Демо Пользователь' },
-                        created_at: new Date().toISOString()
-                    } 
-                }, 
-                error: null 
-            }),
-            signOut: async () => ({ error: null }),
-            updateUser: async () => ({ error: null })
-        },
-        from: () => ({
-            select: () => ({
-                eq: () => ({
-                    order: () => Promise.resolve({ data: [], error: null })
-                })
-            }),
-            insert: () => Promise.resolve({ data: [], error: null }),
-            update: () => Promise.resolve({ error: null }),
-            delete: () => Promise.resolve({ error: null })
-        })
-    };
+    // Используем заглушку
+    supabaseClient = window.supabase.createClient('demo', 'demo');
 }
 
 // Функция уведомлений
@@ -91,7 +122,7 @@ function showNotification(message, type = 'info') {
     if (!notification) {
         notification = document.createElement('div');
         notification.id = 'notification';
-        notification.className = `notification ${type}`;
+        notification.className = 'notification';
         notification.innerHTML = `
             <div class="notification-content">
                 <span id="notification-text"></span>
@@ -103,22 +134,21 @@ function showNotification(message, type = 'info') {
         // Обработчик закрытия
         notification.querySelector('.notification-close').addEventListener('click', () => {
             notification.classList.remove('show');
-            setTimeout(() => notification.classList.add('hidden'), 300);
         });
     }
     
     const text = document.getElementById('notification-text');
-    if (!text) return;
+    if (text) {
+        text.textContent = message;
+    }
     
-    text.textContent = message;
+    // Обновляем класс типа
     notification.className = `notification ${type}`;
-    notification.classList.remove('hidden');
     notification.classList.add('show');
     
     // Автоматическое скрытие
     setTimeout(() => {
         notification.classList.remove('show');
-        setTimeout(() => notification.classList.add('hidden'), 300);
     }, 4000);
 }
 
@@ -131,7 +161,7 @@ function showLoader(text = 'Загрузка...') {
     if (!loader) {
         loader = document.createElement('div');
         loader.id = 'loader';
-        loader.className = 'loader-overlay hidden';
+        loader.className = 'loader-overlay';
         loader.innerHTML = `
             <div class="loader"></div>
             <div class="loader-text" id="loader-text">${text}</div>
@@ -144,13 +174,13 @@ function showLoader(text = 'Загрузка...') {
         loaderText.textContent = text;
     }
     
-    loader.classList.remove('hidden');
+    loader.classList.add('show');
 }
 
 function hideLoader() {
     const loader = document.getElementById('loader');
     if (loader) {
-        loader.classList.add('hidden');
+        loader.classList.remove('show');
     }
 }
 
