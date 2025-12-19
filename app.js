@@ -1,3 +1,5 @@
+// app.js - ИСПРАВЛЕННЫЙ И ПОЛНЫЙ
+
 // Глобальные переменные
 let currentUser = null;
 let currentTree = null;
@@ -7,18 +9,49 @@ let events = [];
 let media = [];
 let messages = [];
 
+// Проверяем, что необходимые функции существуют
+function checkDependencies() {
+    const required = ['supabaseClient', 'showNotification', 'showLoader', 'hideLoader'];
+    const missing = [];
+    
+    required.forEach(func => {
+        if (typeof window[func] === 'undefined') {
+            missing.push(func);
+        }
+    });
+    
+    if (missing.length > 0) {
+        console.error('Отсутствуют зависимости:', missing);
+        return false;
+    }
+    
+    return true;
+}
+
 // ========== ИНИЦИАЛИЗАЦИЯ ==========
 
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 Приложение запускается...');
     
-    // Настраиваем обработчики событий
-    setupEventListeners();
+    // Проверяем зависимости
+    if (!checkDependencies()) {
+        console.error('Критические зависимости не загружены');
+        showNotification('Ошибка загрузки приложения. Обновите страницу.', 'error');
+        return;
+    }
     
-    // Проверяем, авторизован ли пользователь
-    await checkAuthStatus();
-    
-    console.log('✅ Инициализация завершена');
+    try {
+        // Настраиваем обработчики событий
+        setupEventListeners();
+        
+        // Проверяем авторизацию
+        await checkAuthStatus();
+        
+        console.log('✅ Инициализация завершена');
+    } catch (error) {
+        console.error('❌ Ошибка инициализации:', error);
+        showNotification('Ошибка загрузки приложения', 'error');
+    }
 });
 
 function setupEventListeners() {
@@ -30,29 +63,24 @@ function setupEventListeners() {
     
     document.getElementById('landing-register-btn')?.addEventListener('click', () => {
         showAuthPage();
-        toggleAuthMode(); // Переключаем на регистрацию
+        toggleAuthMode();
     });
     
     document.getElementById('start-free-btn')?.addEventListener('click', () => {
         showAuthPage();
-        toggleAuthMode(); // Переключаем на регистрацию
+        toggleAuthMode();
     });
     
     document.getElementById('watch-demo-btn')?.addEventListener('click', () => {
-        showDemo();
+        showDemoMode();
     });
     
-    // Демо кнопки функций
+    // Демо кнопки функций на лендинге
     document.querySelectorAll('.feature-demo-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const feature = e.target.dataset.feature;
             showFeatureDemo(feature);
         });
-    });
-    
-    // Навигация лендинга
-    document.getElementById('landing-mobile-btn')?.addEventListener('click', () => {
-        document.querySelector('.nav-links').classList.toggle('active');
     });
     
     // Авторизация
@@ -110,6 +138,14 @@ function setupEventListeners() {
     });
     
     // Древо
+    document.getElementById('auto-build-btn')?.addEventListener('click', () => {
+        window.autoBuildTree();
+    });
+    
+    document.getElementById('auto-build-btn-2')?.addEventListener('click', () => {
+        window.autoBuildTree();
+    });
+    
     document.getElementById('manual-add-btn')?.addEventListener('click', () => {
         openModal('add-person-modal');
     });
@@ -127,18 +163,36 @@ function setupEventListeners() {
         openModal('add-event-modal');
     });
     
+    document.getElementById('filter-year')?.addEventListener('change', updateTimeline);
+    document.getElementById('filter-type')?.addEventListener('change', updateTimeline);
+    
     // Медиатека
     document.getElementById('upload-media-btn')?.addEventListener('click', () => {
         openModal('upload-modal');
     });
     
+    document.getElementById('media-search')?.addEventListener('input', updateMediaGrid);
+    document.getElementById('media-sort')?.addEventListener('change', updateMediaGrid);
+    
     // Профиль
     document.getElementById('edit-profile-btn')?.addEventListener('click', () => {
-        editProfile();
+        openModal('edit-profile-modal');
+    });
+    
+    document.getElementById('change-avatar-btn')?.addEventListener('click', () => {
+        showNotification('Функция смены аватара в разработке', 'info');
     });
     
     document.getElementById('invite-btn')?.addEventListener('click', () => {
         openModal('invite-modal');
+    });
+    
+    document.getElementById('notifications-settings-btn')?.addEventListener('click', () => {
+        showNotification('Настройки уведомлений в разработке', 'info');
+    });
+    
+    document.getElementById('export-data-btn')?.addEventListener('click', () => {
+        exportUserData();
     });
     
     document.getElementById('logout-profile-btn')?.addEventListener('click', () => {
@@ -201,12 +255,20 @@ function setupEventListeners() {
         e.preventDefault();
         sendInvitation();
     });
+    
+    // Форма редактирования профиля
+    document.getElementById('edit-profile-form-modal')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        updateProfile();
+    });
 }
 
 // ========== АВТОРИЗАЦИЯ ==========
 
 async function checkAuthStatus() {
     try {
+        console.log('🔍 Проверка авторизации...');
+        
         const { data: { user }, error } = await window.supabaseClient.auth.getUser();
         
         if (error) {
@@ -227,7 +289,8 @@ async function checkAuthStatus() {
         }
         
     } catch (error) {
-        console.error('❌ Ошибка:', error);
+        console.error('❌ Ошибка проверки авторизации:', error);
+        showNotification('Ошибка проверки авторизации: ' + error.message, 'error');
         showLandingPage();
     }
 }
@@ -637,7 +700,7 @@ function updateRecentEvents() {
     const recentEvents = events.slice(0, 5);
     
     if (recentEvents.length === 0) {
-        container.innerHTML = '<p style="text-align: center; color: #718096;">Событий пока нет</p>';
+        container.innerHTML = '<p style="text-align: center; color: #718096; padding: 20px;">Событий пока нет</p>';
         return;
     }
     
@@ -647,14 +710,14 @@ function updateRecentEvents() {
         const icon = getEventIcon(event.event_type);
         
         html += `
-            <div class="timeline-event">
-                <div class="event-icon">
+            <div class="timeline-event" style="margin-bottom: 15px;">
+                <div class="event-icon" style="background: #667eea; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                     <i class="${icon}"></i>
                 </div>
-                <div class="event-content">
-                    <h3>${event.title}</h3>
-                    <div class="event-date">${date}</div>
-                    ${event.description ? `<p>${event.description}</p>` : ''}
+                <div class="event-content" style="flex: 1;">
+                    <h3 style="margin-bottom: 5px;">${event.title}</h3>
+                    <div class="event-date" style="color: #718096; font-size: 0.9rem; margin-bottom: 10px;">${date}</div>
+                    ${event.description ? `<p style="color: #4a5568;">${event.description}</p>` : ''}
                 </div>
             </div>
         `;
@@ -671,8 +734,8 @@ function updateTimeline() {
     updateYearFilter();
     
     // Фильтруем события
-    const selectedYear = document.getElementById('filter-year').value;
-    const selectedType = document.getElementById('filter-type').value;
+    const selectedYear = document.getElementById('filter-year')?.value || '';
+    const selectedType = document.getElementById('filter-type')?.value || '';
     
     let filteredEvents = [...events];
     
@@ -910,17 +973,6 @@ async function addPerson() {
             }
         }
         
-        // Если это родитель, устанавливаем связь с "Я"
-        if (relation === 'parent') {
-            const self = people.find(p => p.relation === 'self');
-            if (self) {
-                // В реальном приложении нужно определить, кто отец, кто мать
-                // Здесь для простоты используем parent_id
-                newPerson.id = `temp_${Date.now()}`;
-                // Обработка связи будет в updatePersonRelations
-            }
-        }
-        
         const { data, error } = await window.supabaseClient
             .from('people')
             .insert([newPerson])
@@ -1031,11 +1083,6 @@ async function uploadMedia() {
                 user_id: currentUser.id
             };
             
-            // В реальном приложении:
-            // 1. Загружаем файл в Supabase Storage
-            // 2. Получаем public URL
-            // 3. Сохраняем в таблице media
-            
             newMediaItems.push(mediaItem);
         }
         
@@ -1101,7 +1148,6 @@ async function sendInvitation() {
         if (error) throw error;
         
         // В реальном приложении здесь отправляется email с приглашением
-        // Для демо показываем уведомление
         
         window.showNotification('✅ Приглашение отправлено!', 'success');
         closeAllModals();
@@ -1220,8 +1266,33 @@ function viewMedia(mediaId) {
     const item = media.find(m => m.id === mediaId);
     if (!item) return;
     
-    window.showNotification(`Просмотр: ${item.description || 'Медиафайл'}`, 'info');
-    // В реальном приложении можно открыть модальное окно с увеличенным изображением
+    // Создаем модальное окно для просмотра
+    const modalHtml = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Просмотр медиа</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <img src="${item.file_url}" alt="${item.description || 'Фото'}" 
+                     style="width: 100%; border-radius: 8px; margin-bottom: 20px;">
+                <h4>${item.description || 'Без описания'}</h4>
+                <p>Загружено: ${new Date(item.created_at).toLocaleDateString('ru-RU')}</p>
+            </div>
+        </div>
+    `;
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.innerHTML = modalHtml;
+    
+    const overlay = document.getElementById('modal-overlay');
+    overlay.innerHTML = '';
+    overlay.appendChild(modal);
+    overlay.classList.remove('hidden');
+    
+    // Закрытие модального окна
+    modal.querySelector('.modal-close').addEventListener('click', closeAllModals);
 }
 
 async function deleteMedia(mediaId) {
@@ -1255,7 +1326,98 @@ async function deleteMedia(mediaId) {
     }
 }
 
-async function sendMessage() {
+async function updateProfile() {
+    const name = document.getElementById('edit-profile-name').value;
+    const lastName = document.getElementById('edit-profile-last-name').value;
+    const email = document.getElementById('edit-profile-email').value;
+    const bio = document.getElementById('edit-profile-bio').value;
+    
+    if (!name || !email) {
+        window.showNotification('Заполните обязательные поля', 'error');
+        return;
+    }
+    
+    window.showLoader('Сохранение профиля...');
+    
+    try {
+        // Обновляем данные в Supabase
+        const { error } = await window.supabaseClient.auth.updateUser({
+            email: email,
+            data: { 
+                name: name,
+                full_name: lastName ? `${name} ${lastName}` : name
+            }
+        });
+        
+        if (error) throw error;
+        
+        // Обновляем профиль
+        await window.supabaseClient
+            .from('profiles')
+            .update({
+                full_name: lastName ? `${name} ${lastName}` : name
+            })
+            .eq('id', currentUser.id);
+        
+        // Обновляем текущего пользователя
+        currentUser.email = email;
+        currentUser.user_metadata.name = name;
+        currentUser.user_metadata.full_name = lastName ? `${name} ${lastName}` : name;
+        
+        // Обновляем UI
+        setupUserUI(currentUser);
+        
+        window.showNotification('✅ Профиль успешно обновлен!', 'success');
+        closeAllModals();
+        
+    } catch (error) {
+        console.error('Ошибка обновления профиля:', error);
+        window.showNotification('Ошибка обновления профиля', 'error');
+    } finally {
+        window.hideLoader();
+    }
+}
+
+function exportUserData() {
+    window.showLoader('Подготовка данных...');
+    
+    try {
+        const userData = {
+            user: {
+                email: currentUser.email,
+                name: currentUser.user_metadata?.name,
+                registered: currentUser.created_at
+            },
+            people: people,
+            events: events,
+            media: media,
+            export_date: new Date().toISOString()
+        };
+        
+        // Создаем JSON файл для скачивания
+        const dataStr = JSON.stringify(userData, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `family-history-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        window.showNotification('✅ Данные экспортированы!', 'success');
+        
+    } catch (error) {
+        console.error('Ошибка экспорта данных:', error);
+        window.showNotification('Ошибка экспорта данных', 'error');
+    } finally {
+        window.hideLoader();
+    }
+}
+
+function sendMessage() {
     const input = document.getElementById('chat-input');
     const message = input.value.trim();
     
@@ -1313,6 +1475,8 @@ function showLandingPage() {
     document.getElementById('app-content').classList.add('hidden');
     document.getElementById('app-header').classList.add('hidden');
     document.getElementById('auth-page').classList.add('hidden');
+    document.getElementById('about').classList.add('hidden');
+    window.scrollTo(0, 0);
 }
 
 function showAuthPage() {
@@ -1321,6 +1485,8 @@ function showAuthPage() {
     document.getElementById('app-content').classList.add('hidden');
     document.getElementById('app-header').classList.add('hidden');
     document.getElementById('auth-page').classList.remove('hidden');
+    document.getElementById('about').classList.add('hidden');
+    window.scrollTo(0, 0);
 }
 
 function showApp() {
@@ -1329,6 +1495,7 @@ function showApp() {
     document.getElementById('app-content').classList.remove('hidden');
     document.getElementById('app-header').classList.remove('hidden');
     document.getElementById('auth-page').classList.add('hidden');
+    document.getElementById('about').classList.add('hidden');
     
     showPage('home-page');
 }
@@ -1363,11 +1530,10 @@ function openModal(modalId) {
         overlay.classList.remove('hidden');
         
         // Заполняем селекторы если нужно
-        if (modalId === 'add-event-modal') {
-            fillPeopleSelect('event-people');
-        }
-        if (modalId === 'upload-modal') {
-            fillPeopleSelect('upload-person');
+        if (modalId === 'edit-profile-modal') {
+            document.getElementById('edit-profile-name').value = currentUser.user_metadata?.name?.split(' ')[0] || '';
+            document.getElementById('edit-profile-last-name').value = currentUser.user_metadata?.name?.split(' ')[1] || '';
+            document.getElementById('edit-profile-email').value = currentUser.email || '';
         }
     }
 }
@@ -1377,23 +1543,7 @@ function closeAllModals() {
         modal.classList.add('hidden');
     });
     document.getElementById('modal-overlay').classList.add('hidden');
-}
-
-function fillPeopleSelect(selectId) {
-    const select = document.getElementById(selectId);
-    if (!select) return;
-    
-    let html = '';
-    if (selectId === 'upload-person') {
-        html = '<option value="">Не связывать</option>';
-    }
-    
-    people.forEach(person => {
-        const name = `${person.first_name} ${person.last_name || ''}`;
-        html += `<option value="${person.id}">${name}</option>`;
-    });
-    
-    select.innerHTML = html;
+    document.getElementById('modal-overlay').innerHTML = '';
 }
 
 function showSelectedFiles(files) {
@@ -1401,22 +1551,24 @@ function showSelectedFiles(files) {
     const listContainer = document.getElementById('selected-files-list');
     
     if (!files || files.length === 0) {
-        fileList.style.display = 'none';
+        if (fileList) fileList.style.display = 'none';
         return;
     }
     
-    listContainer.innerHTML = '';
+    if (listContainer) {
+        listContainer.innerHTML = '';
+        
+        Array.from(files).forEach((file, index) => {
+            const li = document.createElement('li');
+            li.textContent = `${index + 1}. ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+            listContainer.appendChild(li);
+        });
+    }
     
-    Array.from(files).forEach((file, index) => {
-        const li = document.createElement('li');
-        li.textContent = `${index + 1}. ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
-        listContainer.appendChild(li);
-    });
-    
-    fileList.style.display = 'block';
+    if (fileList) fileList.style.display = 'block';
 }
 
-function showDemo() {
+function showDemoMode() {
     // Для демо показываем авторизованный интерфейс с демо-данными
     currentUser = {
         id: 'demo_user',
@@ -1447,37 +1599,48 @@ function showDemo() {
 function showFeatureDemo(feature) {
     switch(feature) {
         case 'tree':
-            showPage('tree-page');
+            showDemoMode();
             setTimeout(() => {
-                window.autoBuildTree();
-            }, 500);
+                showPage('tree-page');
+                setTimeout(() => {
+                    window.autoBuildTree();
+                }, 500);
+            }, 100);
             break;
         case 'media':
-            showPage('media-page');
+            showDemoMode();
+            setTimeout(() => {
+                showPage('media-page');
+            }, 100);
             break;
         case 'timeline':
-            showPage('timeline-page');
+            showDemoMode();
+            setTimeout(() => {
+                showPage('timeline-page');
+            }, 100);
             break;
         case 'chat':
-            toggleChat();
+            showDemoMode();
+            setTimeout(() => {
+                toggleChat();
+            }, 100);
             break;
         case 'print':
-            window.showNotification('Демо печати: дерево будет распечатано', 'info');
+            window.showNotification('Демо печати: дерево будет распечатано в отдельном окне', 'info');
             break;
         case 'notifications':
             window.showNotification('🔔 Напоминание: Завтра день рождения у Алексея!', 'success');
             break;
+        default:
+            showDemoMode();
     }
 }
 
 function toggleChat() {
     const chat = document.getElementById('chat-widget');
-    chat.classList.toggle('active');
-}
-
-function editProfile() {
-    window.showNotification('Редактирование профиля', 'info');
-    // В реальном приложении открыть модальное окно редактирования
+    if (chat) {
+        chat.classList.toggle('active');
+    }
 }
 
 async function logout() {
@@ -1502,12 +1665,40 @@ async function logout() {
 
 // Экспортируем функции для HTML
 window.showPersonInfo = showPersonInfo;
-window.editPerson = editProfile;
+window.editPerson = function(personId) {
+    const person = people.find(p => p.id === personId);
+    if (person) {
+        window.showNotification(`Редактирование: ${person.first_name} ${person.last_name}`, 'info');
+    }
+};
 window.openModal = openModal;
 window.closeAllModals = closeAllModals;
 window.editEvent = editEvent;
 window.deleteEvent = deleteEvent;
 window.viewMedia = viewMedia;
 window.deleteMedia = deleteMedia;
+window.showLandingPage = showLandingPage;
+window.showLandingFeatures = function() {
+    showLandingPage();
+    setTimeout(() => {
+        window.scrollTo(0, document.getElementById('features').offsetTop - 80);
+    }, 100);
+};
+window.showAboutSection = function() {
+    showLandingPage();
+    setTimeout(() => {
+        document.getElementById('about').classList.remove('hidden');
+        window.scrollTo(0, document.getElementById('about').offsetTop - 80);
+    }, 100);
+};
+window.showContactModal = function() {
+    window.showNotification('Контакты: support@family-history.ru', 'info');
+};
+window.showTermsModal = function() {
+    window.showNotification('Открыть пользовательское соглашение', 'info');
+};
+window.showPrivacyModal = function() {
+    window.showNotification('Открыть политику конфиденциальности', 'info');
+};
 
 console.log('✅ Приложение загружено');

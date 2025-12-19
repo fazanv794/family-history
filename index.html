@@ -6,21 +6,20 @@
     <title>История моей семьи - Создайте свое генеалогическое древо</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <!-- Шапка для лендинга -->
     <header id="landing-header">
         <div class="header-container container">
-            <a href="#" class="logo">
+            <a href="#" class="logo" onclick="showLandingPage()">
                 <i class="fas fa-tree"></i>
                 История моей семьи
             </a>
             
             <nav>
                 <ul class="nav-links">
-                    <li><a href="#features">Возможности</a></li>
-                    <li><a href="#about">О проекте</a></li>
+                    <li><a href="#features" onclick="showLandingFeatures()">Возможности</a></li>
+                    <li><a href="#about" onclick="showAboutSection()">О проекте</a></li>
                     <li><a href="#" id="landing-login-link">Войти</a></li>
                 </ul>
                 <button class="mobile-menu-btn" id="landing-mobile-btn">
@@ -123,6 +122,29 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Секция "О проекте" -->
+        <div id="about" class="about-section hidden">
+            <div class="container">
+                <div class="about-content">
+                    <h2>О проекте "История моей семьи"</h2>
+                    <p>Наш проект создан для того, чтобы помочь семьям сохранить свою историю, традиции и воспоминания для будущих поколений.</p>
+                    <p>Мы верим, что каждая семья уникальна, и ее история заслуживает того, чтобы быть сохраненной в цифровом формате.</p>
+                    <p>С помощью нашей платформы вы можете:</p>
+                    <ul style="text-align: left; margin: 20px 0; color: #4a5568;">
+                        <li>Создать интерактивное генеалогическое древо</li>
+                        <li>Хранить семейные фотографии и документы</li>
+                        <li>Отмечать важные даты и события</li>
+                        <li>Приглашать родственников для совместной работы</li>
+                        <li>Сохранять истории и воспоминания</li>
+                    </ul>
+                    <p>Присоединяйтесь к тысячам семей, которые уже сохраняют свою историю с нами!</p>
+                    <button class="btn" onclick="showLandingFeatures()">
+                        <i class="fas fa-arrow-left"></i> Вернуться к возможностям
+                    </button>
+                </div>
+            </div>
+        </div>
     </section>
 
     <!-- Шапка для приложения (скрыта до авторизации) -->
@@ -147,10 +169,10 @@
             <div class="user-menu">
                 <span id="username">Гость</span>
                 <div class="avatar" id="user-avatar">Г</div>
-                <button class="btn btn-secondary" id="chat-toggle">
+                <button class="btn btn-small" id="chat-toggle">
                     <i class="fas fa-comments"></i>
                 </button>
-                <button class="btn" style="margin-left: 15px;" id="logout-btn">Выйти</button>
+                <button class="btn btn-small" style="margin-left: 10px;" id="logout-btn">Выйти</button>
             </div>
         </div>
     </header>
@@ -213,7 +235,7 @@
                 <h2>Генеалогическое древо</h2>
                 
                 <div class="tree-controls">
-                    <button class="btn" onclick="window.autoBuildTree()">
+                    <button class="btn" id="auto-build-btn">
                         <i class="fas fa-magic"></i> Автопостроение
                     </button>
                     <button class="btn btn-secondary" id="manual-add-btn">
@@ -273,11 +295,13 @@
                 </div>
                 
                 <div class="tree-visualization-container" id="tree-visualization-container">
-                    <!-- Дерево будет отрисовано здесь -->
                     <div class="tree-empty-state">
                         <i class="fas fa-tree" style="font-size: 4rem; color: #cbd5e0; margin-bottom: 20px;"></i>
                         <h3>Дерево еще не построено</h3>
                         <p>Нажмите "Автопостроение" чтобы создать ваше первое генеалогическое древо</p>
+                        <button class="btn" id="auto-build-btn-2" style="margin-top: 20px;">
+                            <i class="fas fa-magic"></i> Построить дерево
+                        </button>
                     </div>
                 </div>
                 
@@ -498,21 +522,18 @@
                 <div class="footer-section">
                     <h3>Навигация</h3>
                     <ul class="footer-links">
-                        <li><a href="#features">Возможности</a></li>
-                        <li><a href="#about">О проекте</a></li>
-                        <li><a href="#">Цены</a></li>
-                        <li><a href="#">Блог</a></li>
-                        <li><a href="#">Контакты</a></li>
+                        <li><a href="#" onclick="showLandingFeatures()">Возможности</a></li>
+                        <li><a href="#" onclick="showAboutSection()">О проекте</a></li>
+                        <li><a href="#" onclick="showAuthPage()">Вход / Регистрация</a></li>
+                        <li><a href="#" onclick="showContactModal()">Контакты</a></li>
                     </ul>
                 </div>
                 
                 <div class="footer-section">
                     <h3>Правовая информация</h3>
                     <ul class="footer-links">
-                        <li><a href="#">Пользовательское соглашение</a></li>
-                        <li><a href="#">Политика конфиденциальности</a></li>
-                        <li><a href="#">Условия использования</a></li>
-                        <li><a href="#">GDPR</a></li>
+                        <li><a href="#" onclick="showTermsModal()">Пользовательское соглашение</a></li>
+                        <li><a href="#" onclick="showPrivacyModal()">Политика конфиденциальности</a></li>
                     </ul>
                 </div>
                 
@@ -521,7 +542,7 @@
                     <ul class="footer-links">
                         <li><a href="mailto:support@family-history.ru">support@family-history.ru</a></li>
                         <li><a href="tel:+79999999999">+7 (999) 999-99-99</a></li>
-                        <li><a href="#">Техническая поддержка</a></li>
+                        <li><a href="#" onclick="showContactModal()">Техническая поддержка</a></li>
                     </ul>
                     <div class="social-links" style="margin-top: 15px;">
                         <a href="#" style="color: white; margin-right: 15px; font-size: 1.2rem;"><i class="fab fa-vk"></i></a>
@@ -658,14 +679,6 @@
                         <textarea id="event-description" rows="4" placeholder="Расскажите о событии..."></textarea>
                     </div>
                     
-                    <div class="form-group">
-                        <label for="event-people">Связанные люди</label>
-                        <select id="event-people" multiple style="height: 100px;">
-                            <!-- Люди будут добавлены динамически -->
-                        </select>
-                        <small style="color: #718096;">Выберите людей, связанных с событием (удерживайте Ctrl для множественного выбора)</small>
-                    </div>
-                    
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary cancel-btn">
                             Отмена
@@ -707,14 +720,6 @@
                     <div class="form-group">
                         <label for="upload-description">Описание</label>
                         <input type="text" id="upload-description" placeholder="Что изображено на фото?">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="upload-person">Связать с человеком</label>
-                        <select id="upload-person">
-                            <option value="">Не связывать</option>
-                            <!-- Люди будут добавлены динамически -->
-                        </select>
                     </div>
                     
                     <div class="modal-footer">
@@ -772,17 +777,45 @@
         </div>
     </div>
     
-    <!-- Модальное окно просмотра человека -->
-    <div id="view-person-modal" class="modal hidden">
+    <!-- Модальное окно редактирования профиля -->
+    <div id="edit-profile-modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="view-person-name"></h3>
+                <h3>Редактировать профиль</h3>
                 <button class="modal-close">&times;</button>
             </div>
             <div class="modal-body">
-                <div id="person-details">
-                    <!-- Данные будут загружены динамически -->
-                </div>
+                <form id="edit-profile-form-modal">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="edit-profile-name">Имя *</label>
+                            <input type="text" id="edit-profile-name" placeholder="Имя" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-profile-last-name">Фамилия</label>
+                            <input type="text" id="edit-profile-last-name" placeholder="Фамилия">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-profile-email">Email *</label>
+                        <input type="email" id="edit-profile-email" placeholder="email@example.com" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-profile-bio">О себе</label>
+                        <textarea id="edit-profile-bio" rows="4" placeholder="Расскажите о себе..."></textarea>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary cancel-btn">
+                            Отмена
+                        </button>
+                        <button type="submit" class="btn">
+                            Сохранить изменения
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -804,7 +837,7 @@
         <div class="chat-input">
             <div style="display: flex; gap: 10px;">
                 <input type="text" id="chat-input" placeholder="Введите сообщение..." style="flex: 1;">
-                <button class="btn" id="chat-send">
+                <button class="btn btn-small" id="chat-send">
                     <i class="fas fa-paper-plane"></i>
                 </button>
             </div>
@@ -831,7 +864,39 @@
     
     <!-- Подключаем наши файлы -->
     <script src="supabase.js"></script>
-    <script src="tree-engine.js"></script>
     <script src="app.js"></script>
+    <script src="tree-engine.js"></script>
+    
+    <script>
+        // Простые функции для навигации лендинга
+        function showLandingPage() {
+            document.getElementById('landing-page').classList.remove('hidden');
+            document.getElementById('landing-header').classList.remove('hidden');
+            document.getElementById('auth-page').classList.add('hidden');
+            document.getElementById('about').classList.add('hidden');
+            window.scrollTo(0, 0);
+        }
+        
+        function showLandingFeatures() {
+            document.getElementById('about').classList.add('hidden');
+            window.scrollTo(0, document.getElementById('features').offsetTop - 80);
+        }
+        
+        function showAboutSection() {
+            document.getElementById('about').classList.remove('hidden');
+            window.scrollTo(0, document.getElementById('about').offsetTop - 80);
+        }
+        
+        function showAuthPage() {
+            document.getElementById('landing-page').classList.add('hidden');
+            document.getElementById('landing-header').classList.add('hidden');
+            document.getElementById('auth-page').classList.remove('hidden');
+        }
+        
+        // Мобильное меню для лендинга
+        document.getElementById('landing-mobile-btn')?.addEventListener('click', function() {
+            document.querySelector('#landing-header .nav-links').classList.toggle('active');
+        });
+    </script>
 </body>
 </html>
