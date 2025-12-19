@@ -43,8 +43,8 @@
                     <a href="auth.html?mode=register" class="btn" id="start-free-btn">
                         <i class="fas fa-play-circle"></i> Начать бесплатно
                     </a>
-                    <button class="btn btn-outline" id="watch-demo-btn">
-                        <i class="fas fa-video"></i> Посмотреть демо
+                    <button class="btn btn-outline" id="try-tree-btn">
+                        <i class="fas fa-sitemap"></i> Попробовать построить дерево
                     </button>
                 </div>
             </div>
@@ -60,9 +60,6 @@
                         </div>
                         <h3>Интерактивное древо</h3>
                         <p>Создавайте, редактируйте и визуализируйте ваше генеалогическое древо с фотографиями и биографиями.</p>
-                        <button class="btn btn-small feature-demo-btn" data-feature="tree">
-                            Демо
-                        </button>
                     </div>
                     
                     <div class="feature-card">
@@ -71,9 +68,6 @@
                         </div>
                         <h3>Семейный архив</h3>
                         <p>Храните фотографии, документы и видео в одном защищенном месте с возможностью подписей и датирования.</p>
-                        <button class="btn btn-small feature-demo-btn" data-feature="media">
-                            Демо
-                        </button>
                     </div>
                     
                     <div class="feature-card">
@@ -82,9 +76,6 @@
                         </div>
                         <h3>Лента событий</h3>
                         <p>Отмечайте важные даты, дни рождения и семейные праздники с напоминаниями и историями.</p>
-                        <button class="btn btn-small feature-demo-btn" data-feature="timeline">
-                            Демо
-                        </button>
                     </div>
                     
                     <div class="feature-card">
@@ -93,9 +84,6 @@
                         </div>
                         <h3>Совместный доступ</h3>
                         <p>Приглашайте родственников для совместного наполнения древа и общения в семейном чате.</p>
-                        <button class="btn btn-small feature-demo-btn" data-feature="chat">
-                            Демо
-                        </button>
                     </div>
                     
                     <div class="feature-card">
@@ -104,9 +92,6 @@
                         </div>
                         <h3>Печать и экспорт</h3>
                         <p>Распечатывайте красивые версии вашего древа или сохраняйте в различных форматах для архива.</p>
-                        <button class="btn btn-small feature-demo-btn" data-feature="print">
-                            Демо
-                        </button>
                     </div>
                     
                     <div class="feature-card">
@@ -115,9 +100,6 @@
                         </div>
                         <h3>Умные уведомления</h3>
                         <p>Получайте напоминания о предстоящих событиях и днях рождения родственников.</p>
-                        <button class="btn btn-small feature-demo-btn" data-feature="notifications">
-                            Демо
-                        </button>
                     </div>
                 </div>
             </div>
@@ -196,118 +178,9 @@
         </div>
     </footer>
 
-    <!-- Модальные окна -->
+    <!-- Модальное окно для построения дерева -->
     <div class="modal-overlay hidden" id="modal-overlay"></div>
     
-    <!-- Модальное окно приглашения -->
-    <div id="invite-modal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Пригласить родственника</h3>
-                <button class="modal-close">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="invite-form-modal">
-                    <div class="form-group">
-                        <label for="invite-email">Email родственника *</label>
-                        <input type="email" id="invite-email" placeholder="email@example.com" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="invite-name">Имя родственника</label>
-                        <input type="text" id="invite-name" placeholder="Имя">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="invite-message">Сообщение</label>
-                        <textarea id="invite-message" rows="4" placeholder="Привет! Присоединяйся к нашему семейному древу..."></textarea>
-                    </div>
-                    
-                    <div class="form-group checkbox-group">
-                        <input type="checkbox" id="invite-editor" checked>
-                        <label for="invite-editor">Разрешить редактирование древа</label>
-                    </div>
-                    
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary cancel-btn">
-                            Отмена
-                        </button>
-                        <button type="submit" class="btn">
-                            Отправить приглашение
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Модальное окно редактирования профиля -->
-    <div id="edit-profile-modal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Редактировать профиль</h3>
-                <button class="modal-close">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="edit-profile-form-modal">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="edit-profile-name">Имя *</label>
-                            <input type="text" id="edit-profile-name" placeholder="Имя" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="edit-profile-last-name">Фамилия</label>
-                            <input type="text" id="edit-profile-last-name" placeholder="Фамилия">
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="edit-profile-email">Email *</label>
-                        <input type="email" id="edit-profile-email" placeholder="email@example.com" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="edit-profile-bio">О себе</label>
-                        <textarea id="edit-profile-bio" rows="4" placeholder="Расскажите о себе..."></textarea>
-                    </div>
-                    
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary cancel-btn">
-                            Отмена
-                        </button>
-                        <button type="submit" class="btn">
-                            Сохранить изменения
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Чат-виджет -->
-    <div class="chat-widget" id="chat-widget">
-        <div class="chat-header">
-            <div>
-                <h3 style="margin: 0; font-size: 1rem;">Семейный чат</h3>
-                <small id="online-count">0 онлайн</small>
-            </div>
-            <button class="btn btn-small" id="chat-minimize" style="background: transparent; padding: 0; min-width: auto;">
-                <i class="fas fa-minus"></i>
-            </button>
-        </div>
-        <div class="chat-messages" id="chat-messages">
-            <!-- Сообщения будут загружены здесь -->
-        </div>
-        <div class="chat-input">
-            <div style="display: flex; gap: 10px;">
-                <input type="text" id="chat-input" placeholder="Введите сообщение..." style="flex: 1;">
-                <button class="btn btn-small" id="chat-send">
-                    <i class="fas fa-paper-plane"></i>
-                </button>
-            </div>
-        </div>
-    </div>
-
     <!-- Уведомления -->
     <div id="notification" class="notification">
         <div class="notification-content">
@@ -323,179 +196,153 @@
     </div>
 
     <!-- Подключаем библиотеки -->
-    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     
     <!-- Подключаем наши файлы -->
     <script src="supabase.js"></script>
     <script src="app.js"></script>
     
-<!-- ... предыдущий HTML код ... -->
-
-<script>
-    // Простые функции для навигации лендинга
-    function showContactModal() {
-        const modalHtml = `
-            <div class="modal show">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h3>Контакты</h3>
-                        <button class="modal-close">&times;</button>
-                    </div>
-                    <div class="modal-body">
-                        <p><strong>Email:</strong> support@family-history.ru</p>
-                        <p><strong>Телефон:</strong> +7 (999) 999-99-99</p>
-                        <p><strong>Техническая поддержка:</strong> круглосуточно</p>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary cancel-btn">
-                            Закрыть
-                        </button>
+    <script>
+        // Простые функции для навигации лендинга
+        function showContactModal() {
+            alert('Контакты: support@family-history.ru\nТелефон: +7 (999) 999-99-99');
+        }
+        
+        function showTermsModal() {
+            alert('Пользовательское соглашение будет отображено здесь');
+        }
+        
+        function showPrivacyModal() {
+            alert('Политика конфиденциальности будет отображена здесь');
+        }
+        
+        // Мобильное меню для лендинга
+        document.getElementById('landing-mobile-btn')?.addEventListener('click', function() {
+            document.querySelector('#landing-header .nav-links').classList.toggle('active');
+        });
+        
+        // Кнопка "Попробовать построить дерево"
+        document.getElementById('try-tree-btn')?.addEventListener('click', () => {
+            // Создаем модальное окно для построения дерева без регистрации
+            const modalHtml = `
+                <div class="modal show" id="try-tree-modal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3>Построить демо-древо</h3>
+                            <button class="modal-close">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Хотите попробовать построить генеалогическое древо без регистрации?</p>
+                            <p>Мы создадим демо-древо с примерными данными.</p>
+                            <div style="display: flex; flex-direction: column; gap: 15px; margin-top: 20px;">
+                                <button class="btn" id="create-demo-tree-btn">
+                                    <i class="fas fa-tree"></i> Создать демо-древо
+                                </button>
+                                <button class="btn btn-outline" id="go-to-register-btn">
+                                    <i class="fas fa-user-plus"></i> Зарегистрироваться
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-        `;
-        
-        const overlay = document.getElementById('modal-overlay');
-        if (overlay) {
-            overlay.innerHTML = modalHtml;
-            overlay.classList.add('show');
+            `;
             
-            // Закрытие
-            document.querySelector('.modal-close')?.addEventListener('click', () => {
-                overlay.classList.remove('show');
-            });
-            
-            document.querySelector('.cancel-btn')?.addEventListener('click', () => {
-                overlay.classList.remove('show');
-            });
-        }
-    }
-    
-    function showTermsModal() {
-        const modalHtml = `
-            <div class="modal show">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h3>Пользовательское соглашение</h3>
-                        <button class="modal-close">&times;</button>
-                    </div>
-                    <div class="modal-body">
-                        <p>Здесь будет текст пользовательского соглашения...</p>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary cancel-btn">
-                            Закрыть
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        const overlay = document.getElementById('modal-overlay');
-        if (overlay) {
-            overlay.innerHTML = modalHtml;
-            overlay.classList.add('show');
-            
-            // Закрытие
-            document.querySelector('.modal-close')?.addEventListener('click', () => {
-                overlay.classList.remove('show');
-            });
-            
-            document.querySelector('.cancel-btn')?.addEventListener('click', () => {
-                overlay.classList.remove('show');
-            });
-        }
-    }
-    
-    function showPrivacyModal() {
-        const modalHtml = `
-            <div class="modal show">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h3>Политика конфиденциальности</h3>
-                        <button class="modal-close">&times;</button>
-                    </div>
-                    <div class="modal-body">
-                        <p>Здесь будет текст политики конфиденциальности...</p>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary cancel-btn">
-                            Закрыть
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        const overlay = document.getElementById('modal-overlay');
-        if (overlay) {
-            overlay.innerHTML = modalHtml;
-            overlay.classList.add('show');
-            
-            // Закрытие
-            document.querySelector('.modal-close')?.addEventListener('click', () => {
-                overlay.classList.remove('show');
-            });
-            
-            document.querySelector('.cancel-btn')?.addEventListener('click', () => {
-                overlay.classList.remove('show');
-            });
-        }
-    }
-    
-    // Мобильное меню для лендинга
-    document.getElementById('landing-mobile-btn')?.addEventListener('click', function() {
-        document.querySelector('#landing-header .nav-links').classList.toggle('active');
-    });
-    
-    // Демо кнопки функций
-    document.querySelectorAll('.feature-demo-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const feature = e.target.dataset.feature || e.target.closest('.feature-demo-btn').dataset.feature;
-            
-            const messages = {
-                'tree': 'Демо построения генеалогического древа',
-                'media': 'Демо загрузки семейных фотографий',
-                'timeline': 'Демо ленты семейных событий',
-                'chat': 'Демо семейного чата',
-                'print': 'Демо печати генеалогического древа',
-                'notifications': 'Демо умных уведомлений'
-            };
-            
-            const message = messages[feature] || 'Демо функции';
-            
-            // Используем функцию showNotification из app.js
-            if (window.showNotification) {
-                window.showNotification(message + '. Для тестирования зарегистрируйтесь.', 'info');
-            } else {
-                alert(message + '. Для тестирования зарегистрируйтесь.');
+            const overlay = document.getElementById('modal-overlay');
+            if (overlay) {
+                overlay.innerHTML = modalHtml;
+                overlay.classList.remove('hidden');
+                
+                // Обработчики кнопок
+                document.getElementById('create-demo-tree-btn')?.addEventListener('click', () => {
+                    // Создаем демо-древо
+                    createDemoTree();
+                    overlay.classList.add('hidden');
+                });
+                
+                document.getElementById('go-to-register-btn')?.addEventListener('click', () => {
+                    window.location.href = 'auth.html?mode=register';
+                });
+                
+                // Закрытие
+                document.querySelector('.modal-close')?.addEventListener('click', () => {
+                    overlay.classList.add('hidden');
+                });
             }
         });
-    });
-    
-    // Кнопка демо
-    document.getElementById('watch-demo-btn')?.addEventListener('click', () => {
-        if (window.showNotification) {
-            window.showNotification('Запуск демо-режима... Для тестирования зарегистрируйтесь или войдите в аккаунт.', 'info');
-        } else {
-            alert('Запуск демо-режима... Для тестирования зарегистрируйтесь или войдите в аккаунт.');
+        
+        function createDemoTree() {
+            // Создаем демо-данные для дерева
+            const demoData = {
+                people: [
+                    {
+                        id: 'demo_1',
+                        first_name: 'Иван',
+                        last_name: 'Иванов',
+                        birth_date: '1990-01-15',
+                        gender: 'male',
+                        relation: 'self',
+                        photo_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80'
+                    },
+                    {
+                        id: 'demo_2',
+                        first_name: 'Мария',
+                        last_name: 'Иванова',
+                        birth_date: '1992-03-22',
+                        gender: 'female',
+                        relation: 'spouse',
+                        photo_url: 'https://images.unsplash.com/photo-1494790108755-2616b786d4d4?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80'
+                    },
+                    {
+                        id: 'demo_3',
+                        first_name: 'Алексей',
+                        last_name: 'Иванов',
+                        birth_date: '2015-07-10',
+                        gender: 'male',
+                        relation: 'child',
+                        photo_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80'
+                    }
+                ],
+                events: [
+                    {
+                        id: 'demo_1',
+                        title: 'День рождения Ивана',
+                        date: '1990-01-15',
+                        event_type: 'birthday',
+                        description: 'День рождения основателя семьи'
+                    }
+                ]
+            };
+            
+            // Показываем уведомление
+            if (window.showNotification) {
+                window.showNotification('✅ Демо-древо создано! Теперь вы можете посмотреть как работает платформа.', 'success');
+            } else {
+                alert('✅ Демо-древо создано! Теперь вы можете посмотреть как работает платформа.');
+            }
+            
+            // Через 2 секунды предлагаем зарегистрироваться
+            setTimeout(() => {
+                if (window.showNotification) {
+                    window.showNotification('Для сохранения данных и доступа ко всем функциям зарегистрируйтесь!', 'info');
+                } else {
+                    alert('Для сохранения данных и доступа ко всем функциям зарегистрируйтесь!');
+                }
+            }, 3000);
         }
-    });
-    
-    // Закрытие модальных окон по клику на оверлей
-    document.getElementById('modal-overlay')?.addEventListener('click', (e) => {
-        if (e.target.id === 'modal-overlay') {
-            e.target.classList.remove('show');
-        }
-    });
-    
-    // Закрытие по ESC
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            document.getElementById('modal-overlay')?.classList.remove('show');
-        }
-    });
-</script>
+        
+        // Закрытие модальных окон по клику на оверлей
+        document.getElementById('modal-overlay')?.addEventListener('click', (e) => {
+            if (e.target.id === 'modal-overlay') {
+                e.target.classList.add('hidden');
+            }
+        });
+        
+        // Закрытие по ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.getElementById('modal-overlay')?.classList.add('hidden');
+            }
+        });
+    </script>
 </body>
 </html>

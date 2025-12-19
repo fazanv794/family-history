@@ -1386,3 +1386,257 @@ footer {
 .hidden {
     display: none !important;
 }
+
+/* Стили для улучшенного дерева */
+.tree-container {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+}
+
+.tree-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.tree-header h3 {
+    margin: 0;
+    color: #2d3748;
+    font-size: 1.5rem;
+}
+
+.tree-controls-small {
+    display: flex;
+    gap: 10px;
+}
+
+.tree-content {
+    margin: 30px 0;
+}
+
+.tree-generation {
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #f7fafc;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+}
+
+.tree-generation.current {
+    background: #ebf8ff;
+    border-color: #4299e1;
+}
+
+.generation-label {
+    font-weight: bold;
+    color: #4a5568;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #cbd5e0;
+    font-size: 1.1rem;
+}
+
+.generation-content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+}
+
+.family-unit {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+}
+
+.spouse-connector {
+    font-size: 2rem;
+    color: #ed64a6;
+    margin: 0 10px;
+}
+
+.tree-person-card {
+    background: white;
+    border-radius: 10px;
+    padding: 15px;
+    width: 180px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+    border: 2px solid transparent;
+    transition: all 0.3s;
+    cursor: pointer;
+    position: relative;
+}
+
+.tree-person-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+}
+
+.tree-person-card.self {
+    border-color: #48bb78;
+    background: #f0fff4;
+}
+
+.tree-person-card.spouse {
+    border-color: #ed64a6;
+    background: #fff5f7;
+}
+
+.tree-person-card.male {
+    border-left: 4px solid #4299e1;
+}
+
+.tree-person-card.female {
+    border-left: 4px solid #ed64a6;
+}
+
+.person-avatar {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin: 0 auto 15px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.person-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-initials {
+    color: white;
+    font-size: 1.8rem;
+    font-weight: bold;
+}
+
+.person-info {
+    text-align: center;
+}
+
+.person-name {
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #2d3748;
+}
+
+.person-dates {
+    font-size: 0.85rem;
+    color: #718096;
+    margin-bottom: 5px;
+}
+
+.person-relation {
+    font-size: 0.9rem;
+    color: #667eea;
+    font-weight: 500;
+}
+
+.person-bio-preview {
+    font-size: 0.8rem;
+    color: #a0aec0;
+    margin-top: 8px;
+    font-style: italic;
+}
+
+.person-actions {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+.btn-icon {
+    background: none;
+    border: none;
+    color: #a0aec0;
+    cursor: pointer;
+    padding: 5px;
+    font-size: 0.9rem;
+}
+
+.btn-icon:hover {
+    color: #667eea;
+}
+
+.tree-connector {
+    height: 30px;
+    width: 2px;
+    background: #cbd5e0;
+    margin: 0 auto;
+}
+
+.tree-info {
+    background: #f7fafc;
+    padding: 20px;
+    border-radius: 10px;
+    margin-top: 30px;
+    border: 1px solid #e2e8f0;
+}
+
+.tree-info h4 {
+    margin-bottom: 15px;
+    color: #4a5568;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+}
+
+.info-item .label {
+    color: #718096;
+    font-weight: 500;
+}
+
+.info-item .value {
+    color: #2d3748;
+    font-weight: bold;
+}
+
+/* Адаптивность для дерева */
+@media (max-width: 768px) {
+    .tree-generation {
+        padding: 15px;
+    }
+    
+    .family-unit {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .tree-person-card {
+        width: 100%;
+        max-width: 250px;
+    }
+    
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+}

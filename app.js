@@ -13,11 +13,43 @@ window.people = [];
 window.events = [];
 window.media = [];
 
+// Функция для обновления выпадающего списка родства
+function updateRelationOptions() {
+    console.log('🔄 Обновление списка родства...');
+    
+    // Обновляем все select с классом relation-select
+    document.querySelectorAll('#person-relation, .relation-select').forEach(select => {
+        if (select && select.tagName === 'SELECT') {
+            select.innerHTML = `
+                <option value="">Выберите родство</option>
+                <option value="self">Я (центральная персона)</option>
+                <option value="spouse">Супруг/супруга</option>
+                <option value="parent">Родитель</option>
+                <option value="child">Ребенок</option>
+                <option value="sibling">Брат/сестра</option>
+                <option value="grandparent">Дедушка/бабушка</option>
+                <option value="grandchild">Внук/внучка</option>
+                <option value="great_grandparent">Прадедушка/прабабушка</option>
+                <option value="great_grandchild">Правнук/правнучка</option>
+                <option value="aunt_uncle">Тетя/дядя</option>
+                <option value="cousin">Двоюродный брат/сестра</option>
+                <option value="nephew_niece">Племянник/племянница</option>
+                <option value="uncle_aunt">Дядя/тетя</option>
+                <option value="other">Другой родственник</option>
+            `;
+            console.log('✅ Список родства обновлен');
+        }
+    });
+}
+
 // Инициализация для всех страниц
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 Инициализация страницы...');
     
     try {
+        // Обновляем список родства
+        updateRelationOptions();
+        
         // Проверяем авторизацию для защищенных страниц
         await checkAuthForProtectedPages();
         
@@ -220,13 +252,6 @@ function setupModalHandlers() {
 
 // Настройка кнопок демо на лендинге
 function setupLandingDemoButtons() {
-    document.querySelectorAll('.feature-demo-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const feature = e.target.dataset.feature || e.target.closest('.feature-demo-btn').dataset.feature;
-            showFeatureDemo(feature);
-        });
-    });
-    
     const watchDemoBtn = document.getElementById('watch-demo-btn');
     if (watchDemoBtn) {
         watchDemoBtn.addEventListener('click', () => {
@@ -397,7 +422,7 @@ async function handleAddPerson(e) {
             relation: relation,
             photo_url: photoUrl || null,
             biography: biography || null,
-            user_id: window.currentUser.id
+            user_id: window.currentUser ? window.currentUser.id : 'demo_user'
         };
         
         // Для демо-режима - добавляем в локальный массив
@@ -407,7 +432,7 @@ async function handleAddPerson(e) {
             newPerson.created_at = new Date().toISOString();
             window.people.push(newPerson);
             
-            window.showNotification('✅ Человек успешно добавлен! (демо-режим)', 'success');
+            window.showNotification('✅ Человек успешно добавлен!', 'success');
             closeAllModals();
             
             // Обновляем статистику на главной странице
@@ -482,7 +507,7 @@ async function handleAddEvent(e) {
             date: date,
             event_type: eventType || 'other',
             description: description || null,
-            user_id: window.currentUser.id
+            user_id: window.currentUser ? window.currentUser.id : 'demo_user'
         };
         
         // Для демо-режима
@@ -491,7 +516,7 @@ async function handleAddEvent(e) {
             newEvent.created_at = new Date().toISOString();
             window.events.unshift(newEvent);
             
-            window.showNotification('✅ Событие успешно добавлено! (демо-режим)', 'success');
+            window.showNotification('✅ Событие успешно добавлено!', 'success');
             closeAllModals();
             
             // Обновляем ленту событий
@@ -576,7 +601,7 @@ async function handleUploadMedia(e) {
                 file_url: fakeUrl,
                 file_type: file.type.startsWith('image/') ? 'image' : 'file',
                 description: description || file.name,
-                user_id: window.currentUser.id
+                user_id: window.currentUser ? window.currentUser.id : 'demo_user'
             };
             
             newMediaItems.push(mediaItem);
@@ -590,7 +615,7 @@ async function handleUploadMedia(e) {
                 window.media.unshift(item);
             });
             
-            window.showNotification(`✅ Загружено ${files.length} файлов! (демо-режим)`, 'success');
+            window.showNotification(`✅ Загружено ${files.length} файлов!`, 'success');
             closeAllModals();
             
             // Обновляем медиатеку если мы на странице медиа
@@ -657,7 +682,7 @@ async function handleInvite(e) {
     
     try {
         // Для демо-режима
-        window.showNotification('✅ Приглашение отправлено на ' + email + ' (демо-режим)', 'success');
+        window.showNotification('✅ Приглашение отправлено на ' + email, 'success');
         closeAllModals();
         
     } catch (error) {
@@ -686,7 +711,7 @@ async function handleEditProfile(e) {
     
     try {
         // Для демо-режима
-        window.showNotification('✅ Профиль успешно обновлен! (демо-режим)', 'success');
+        window.showNotification('✅ Профиль успешно обновлен!', 'success');
         
         // Обновляем данные пользователя
         if (window.currentUser) {
@@ -790,7 +815,7 @@ async function loadUserData() {
                 window.updateTreeStats();
             }
             
-            window.showNotification('✅ Демо-данные загружены', 'success');
+            window.showNotification('✅ Данные загружены', 'success');
             window.hideLoader();
             return;
         }
@@ -1117,5 +1142,6 @@ window.toggleMobileMenu = toggleMobileMenu;
 window.handleLogout = handleLogout;
 window.getUserInitials = getUserInitials;
 window.updateUserUI = updateUserUI;
+window.updateRelationOptions = updateRelationOptions;
 
 console.log('✅ App.js загружен');

@@ -70,11 +70,23 @@
                     </div>
                     
                     <div class="form-group">
-                        <label for="auto-style">Стиль</label>
-                        <select id="auto-style">
-                            <option value="horizontal" selected>Горизонтальный</option>
-                            <option value="vertical">Вертикальный</option>
-                            <option value="radial">Радиальный</option>
+                        <label for="person-relation">Родство *</label>
+                        <select id="person-relation" class="relation-select" onfocus="updateRelationOptions()" required>
+                            <option value="">Выберите родство</option>
+                            <option value="self">Я (центральная персона)</option>
+                            <option value="spouse">Супруг/супруга</option>
+                            <option value="parent">Родитель</option>
+                            <option value="child">Ребенок</option>
+                            <option value="sibling">Брат/сестра</option>
+                            <option value="grandparent">Дедушка/бабушка</option>
+                            <option value="grandchild">Внук/внучка</option>
+                            <option value="great_grandparent">Прадедушка/прабабушка</option>
+                            <option value="great_grandchild">Правнук/правнучка</option>
+                            <option value="aunt_uncle">Тетя/дядя</option>
+                            <option value="cousin">Двоюродный брат/сестра</option>
+                            <option value="nephew_niece">Племянник/племянница</option>
+                            <option value="uncle_aunt">Дядя/тетя</option>
+                            <option value="other">Другой родственник</option>
                         </select>
                     </div>
                     
