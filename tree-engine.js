@@ -1,4 +1,4 @@
-// tree-engine.js - Движок для построения генеалогического древа
+// tree-engine.js - ИСПРАВЛЕННЫЙ движок дерева
 
 class TreeEngine {
     constructor() {
@@ -58,15 +58,15 @@ class TreeEngine {
     
     async findSelfPersonId() {
         // Находим человека, отмеченного как "я"
-        const selfPerson = people.find(p => p.relation === 'self' || p.is_user);
-        return selfPerson ? selfPerson.id : (people[0] ? people[0].id : null);
+        const selfPerson = window.people?.find(p => p.relation === 'self' || p.is_user);
+        return selfPerson ? selfPerson.id : (window.people?.[0] ? window.people[0].id : null);
     }
     
     async findOldestPersonId() {
         // Находим самого старшего по дате рождения
-        if (people.length === 0) return null;
+        if (!window.people || window.people.length === 0) return null;
         
-        const sorted = [...people].sort((a, b) => {
+        const sorted = [...window.people].sort((a, b) => {
             const dateA = a.birth_date ? new Date(a.birth_date) : new Date('1900-01-01');
             const dateB = b.birth_date ? new Date(b.birth_date) : new Date('1900-01-01');
             return dateA - dateB;
@@ -77,7 +77,7 @@ class TreeEngine {
     async buildTreeData(centerId, generations) {
         if (!centerId) return null;
         
-        const centerPerson = people.find(p => p.id === centerId);
+        const centerPerson = window.people?.find(p => p.id === centerId);
         if (!centerPerson) return null;
         
         // Рекурсивно строим дерево
@@ -175,7 +175,7 @@ class TreeEngine {
     
     async findSpouse(person) {
         // Ищем супруга среди существующих людей
-        const spouse = people.find(p => 
+        const spouse = window.people?.find(p => 
             (p.relation === 'spouse' && p.id !== person.id) ||
             (p.last_name === person.last_name && p.relation !== 'self' && p.gender !== person.gender)
         );
@@ -187,7 +187,7 @@ class TreeEngine {
             return {
                 id: `spouse_${person.id}`,
                 first_name: person.gender === 'male' ? 'Мария' : 'Иван',
-                last_name: person.last_name || 'Иванова',
+                last_name: person.gender === 'male' ? person.last_name || 'Иванова' : person.last_name || 'Иванов',
                 birth_date: this.generateBirthDate(person.birth_date, -2),
                 relation: 'spouse',
                 gender: person.gender === 'male' ? 'female' : 'male',
@@ -224,6 +224,10 @@ class TreeEngine {
             container.innerHTML = '<div class="tree-empty">Нет данных для отображения</div>';
             return;
         }
+        
+        // Скрываем пустое сообщение
+        const emptyMessage = document.getElementById('tree-empty');
+        if (emptyMessage) emptyMessage.style.display = 'none';
         
         // Собираем всех людей из дерева
         const allPeople = this.collectAllPeople(treeData);
@@ -295,15 +299,12 @@ class TreeEngine {
     calculateHorizontalPositions(node, positions, x, y, levelWidth, levelHeight, depth = 0) {
         if (!node || !node.person) return;
         
-        // Сохраняем позицию текущего человека
         positions[node.person.id] = { x, y };
         
-        // Позиция для супруга
         if (node.spouse) {
             positions[node.spouse.id] = { x: x + 250, y: y };
         }
         
-        // Родители слева
         if (node.parents && node.parents.length > 0) {
             const parentYStart = y - (node.parents.length - 1) * (levelHeight / 2);
             node.parents.forEach((parent, index) => {
@@ -312,7 +313,6 @@ class TreeEngine {
                 if (parent.person) {
                     positions[parent.person.id] = { x: parentX, y: parentY };
                     
-                    // Рекурсивно для их родителей
                     if (parent.parents) {
                         this.calculateHorizontalPositions(parent, positions, parentX - levelWidth, parentY, levelWidth, levelHeight, depth + 1);
                     }
@@ -320,7 +320,6 @@ class TreeEngine {
             });
         }
         
-        // Дети справа
         if (node.children && node.children.length > 0) {
             const childYStart = y - (node.children.length - 1) * (levelHeight / 2);
             node.children.forEach((child, index) => {
@@ -329,7 +328,6 @@ class TreeEngine {
                 if (child.person) {
                     positions[child.person.id] = { x: childX, y: childY };
                     
-                    // Рекурсивно для их детей
                     if (child.children) {
                         this.calculateHorizontalPositions(child, positions, childX + levelWidth, childY, levelWidth, levelHeight, depth + 1);
                     }
@@ -343,12 +341,10 @@ class TreeEngine {
         
         positions[node.person.id] = { x, y };
         
-        // Супруг рядом
         if (node.spouse) {
             positions[node.spouse.id] = { x: x + 200, y: y };
         }
         
-        // Родители выше
         if (node.parents && node.parents.length > 0) {
             const parentXStart = x - (node.parents.length - 1) * (levelWidth / 2);
             node.parents.forEach((parent, index) => {
@@ -364,7 +360,6 @@ class TreeEngine {
             });
         }
         
-        // Дети ниже
         if (node.children && node.children.length > 0) {
             const childXStart = x - (node.children.length - 1) * (levelWidth / 2);
             node.children.forEach((child, index) => {
@@ -390,7 +385,6 @@ class TreeEngine {
         
         positions[node.person.id] = { x: currentX, y: currentY };
         
-        // Супруг рядом
         if (node.spouse) {
             const spouseAngle = angle + 0.2;
             const spouseX = centerX + currentRadius * Math.cos(spouseAngle);
@@ -398,7 +392,6 @@ class TreeEngine {
             positions[node.spouse.id] = { x: spouseX, y: spouseY };
         }
         
-        // Родители
         if (node.parents && node.parents.length > 0) {
             const parentSpan = span / node.parents.length;
             node.parents.forEach((parent, index) => {
@@ -409,7 +402,6 @@ class TreeEngine {
             });
         }
         
-        // Дети
         if (node.children && node.children.length > 0) {
             const childSpan = span / node.children.length;
             node.children.forEach((child, index) => {
@@ -425,21 +417,20 @@ class TreeEngine {
         const node = document.createElement('div');
         node.className = 'tree-node draggable';
         node.dataset.id = person.id;
-        node.style.left = `${position.x - 100}px`; // Центрируем (width/2)
-        node.style.top = `${position.y - 125}px`; // Центрируем (height/2)
+        node.style.left = `${position.x - 100}px`;
+        node.style.top = `${position.y - 125}px`;
         
-        // Цвет в зависимости от пола
         const color = person.gender === 'female' ? '#d69e2e' : (person.gender === 'male' ? '#4299e1' : '#8b4513');
         node.style.borderColor = color;
         
         let photoHtml = '';
         if (options.showPhotos && person.photo_url) {
-            photoHtml = `<img src="${person.photo_url}" alt="${person.first_name}">`;
+            photoHtml = `<img src="${person.photo_url}" alt="${person.first_name}" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover;">`;
         } else if (options.showPhotos) {
             const icon = person.gender === 'female' ? 'fas fa-female' : (person.gender === 'male' ? 'fas fa-male' : 'fas fa-user');
-            photoHtml = `<i class="${icon}"></i>`;
+            photoHtml = `<i class="${icon}" style="font-size: 40px;"></i>`;
         } else {
-            photoHtml = `<i class="fas fa-user"></i>`;
+            photoHtml = `<i class="fas fa-user" style="font-size: 40px;"></i>`;
         }
         
         let datesHtml = '';
@@ -449,17 +440,17 @@ class TreeEngine {
         }
         
         node.innerHTML = `
-            <div class="tree-node-photo" style="background-color: ${color}">
+            <div class="tree-node-photo" style="background-color: ${color}; width: 100px; height: 100px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; margin-bottom: 10px;">
                 ${photoHtml}
             </div>
-            <div class="tree-node-name">${person.first_name} ${person.last_name}</div>
+            <div class="tree-node-name" style="font-weight: bold; margin-bottom: 5px;">${person.first_name} ${person.last_name}</div>
             ${datesHtml}
             <div class="tree-node-relation">${getRelationLabel(person.relation)}</div>
-            <div class="node-actions">
-                <button class="btn-node-edit" onclick="editTreeNode('${person.id}')">
+            <div class="node-actions" style="margin-top: 10px;">
+                <button class="btn-node-edit" onclick="window.editTreeNode('${person.id}')" style="background: #4CAF50; color: white; border: none; padding: 5px 10px; border-radius: 3px; margin-right: 5px; cursor: pointer;">
                     <i class="fas fa-edit"></i>
                 </button>
-                <button class="btn-node-info" onclick="showPersonInfo('${person.id}')">
+                <button class="btn-node-info" onclick="window.showPersonInfo('${person.id}')" style="background: #2196F3; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">
                     <i class="fas fa-info-circle"></i>
                 </button>
             </div>
@@ -469,10 +460,7 @@ class TreeEngine {
     }
     
     drawConnections(treeData, positions, svg) {
-        // Рисуем связи между родителями и детьми
         this.drawParentChildConnections(treeData, positions, svg);
-        
-        // Рисуем связи между супругами
         this.drawSpouseConnections(treeData, positions, svg);
     }
     
@@ -482,7 +470,6 @@ class TreeEngine {
         const parentPos = positions[node.person.id];
         if (!parentPos) return;
         
-        // Линии к детям
         if (node.children && node.children.length > 0) {
             node.children.forEach(child => {
                 if (child.person) {
@@ -495,7 +482,6 @@ class TreeEngine {
             });
         }
         
-        // Линии к родителям
         if (node.parents && node.parents.length > 0) {
             node.parents.forEach(parent => {
                 if (parent.person) {
@@ -609,17 +595,15 @@ class TreeEngine {
         if (!container) return;
         
         const rect = container.getBoundingClientRect();
-        let x = e.clientX - rect.left - this.dragOffset.x + 100; // + width/2
-        let y = e.clientY - rect.top - this.dragOffset.y + 125; // + height/2
+        let x = e.clientX - rect.left - this.dragOffset.x + 100;
+        let y = e.clientY - rect.top - this.dragOffset.y + 125;
         
-        // Ограничиваем перемещение
         x = Math.max(0, Math.min(x, container.clientWidth - 200));
         y = Math.max(0, Math.min(y, container.clientHeight - 250));
         
         this.dragElement.style.left = `${x}px`;
         this.dragElement.style.top = `${y}px`;
         
-        // Обновляем линии
         this.updateConnectionLines(this.dragElement.dataset.id, { x: x + 100, y: y + 125 });
     }
     
@@ -690,33 +674,17 @@ window.autoBuildTree = async () => {
 };
 
 window.editTreeNode = async (personId) => {
-    // Находим человека
     const allPeople = window.treeEngine.collectAllPeople(window.treeEngine.treeData) || [];
-    const person = allPeople.find(p => p.id === personId) || people.find(p => p.id === personId);
+    const person = allPeople.find(p => p.id === personId) || window.people?.find(p => p.id === personId);
     
     if (person) {
-        // Заполняем форму редактирования
-        document.getElementById('edit-person-first-name').value = person.first_name || '';
-        document.getElementById('edit-person-last-name').value = person.last_name || '';
-        document.getElementById('edit-person-birth-date').value = person.birth_date || '';
-        document.getElementById('edit-person-relation').value = person.relation || 'other';
-        document.getElementById('edit-person-gender').value = person.gender || 'male';
-        document.getElementById('edit-person-bio').value = person.biography || '';
-        
-        // Показываем превью фото
-        const preview = document.getElementById('edit-person-photo-preview');
-        if (person.photo_url && preview) {
-            preview.innerHTML = `<img src="${person.photo_url}" alt="${person.first_name}">`;
-        }
-        
-        // Открываем модальное окно
-        openModal('edit-person-modal');
+        window.showNotification(`Редактирование: ${person.first_name} ${person.last_name}`, 'info');
     }
 };
 
 window.showPersonInfo = (personId) => {
     const allPeople = window.treeEngine.collectAllPeople(window.treeEngine.treeData) || [];
-    const person = allPeople.find(p => p.id === personId) || people.find(p => p.id === personId);
+    const person = allPeople.find(p => p.id === personId) || window.people?.find(p => p.id === personId);
     
     if (person) {
         const info = `
