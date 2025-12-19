@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход / Регистрация - История моей семьи</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <section id="auth-page">
+        <div class="auth-container">
+            <div class="logo-large">
+                <i class="fas fa-tree"></i>
+                <h1>История моей семьи</h1>
+            </div>
+            
+            <h2 id="auth-title">Вход в аккаунт</h2>
+            
+            <div class="auth-error" id="auth-error" style="display: none;"></div>
+            
+            <form class="auth-form" id="auth-form">
+                <div class="form-group">
+                    <label for="auth-email">Email</label>
+                    <input type="email" id="auth-email" placeholder="Введите ваш email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="auth-password">Пароль</label>
+                    <input type="password" id="auth-password" placeholder="Введите пароль" required>
+                </div>
+                
+                <div class="form-group hidden" id="reg-name-group">
+                    <label for="auth-name">Имя и фамилия</label>
+                    <input type="text" id="auth-name" placeholder="Введите ваше имя">
+                </div>
+                
+                <div class="form-group hidden" id="reg-confirm-group">
+                    <label for="auth-confirm-password">Подтверждение пароля</label>
+                    <input type="password" id="auth-confirm-password" placeholder="Повторите пароль">
+                </div>
+                
+                <button type="submit" class="btn auth-submit-btn" style="width: 100%; margin-top: 20px;" id="auth-submit">
+                    Войти
+                </button>
+            </form>
+            
+            <div class="auth-switch">
+                <p id="auth-switch-text">
+                    Нет аккаунта? 
+                    <a href="#" id="auth-switch-link">
+                        Зарегистрироваться
+                    </a>
+                </p>
+            </div>
+            
+            <div class="auth-features">
+                <div class="feature">
+                    <i class="fas fa-sitemap"></i>
+                    <span>Создавайте генеалогическое древо</span>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-images"></i>
+                    <span>Храните семейные фотографии</span>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Отмечайте важные даты</span>
+                </div>
+            </div>
+            
+            <a href="index.html" class="btn btn-outline" style="margin-top: 20px; width: 100%; text-align: center;">
+                <i class="fas fa-arrow-left"></i> Вернуться на главную
+            </a>
+        </div>
+    </section>
+
+    <!-- Загрузчик -->
+    <div id="loader" class="loader-overlay hidden">
+        <div class="loader"></div>
+        <div class="loader-text" id="loader-text">Загрузка...</div>
+    </div>
+
+    <!-- Подключаем библиотеки -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <!-- Подключаем наши файлы -->
+    <script src="supabase.js"></script>
+    <script src="app.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Проверяем режим (вход или регистрация) из URL параметров
+            const urlParams = new URLSearchParams(window.location.search);
+            const mode = urlParams.get('mode');
+            
+            if (mode === 'register') {
+                toggleAuthMode();
+            }
+            
+            // Проверяем авторизацию
+            try {
+                const { data: { user } } = await window.supabaseClient.auth.getUser();
+                
+                if (user) {
+                    // Пользователь уже авторизован, перенаправляем в приложение
+                    window.location.href = 'app.html';
+                }
+            } catch (error) {
+                console.error('Ошибка проверки авторизации:', error);
+            }
+            
+            // Настраиваем обработчики
+            document.getElementById('auth-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                handleAuthSubmit();
+            });
+            
+            document.getElementById('auth-switch-link').addEventListener('click', (e) => {
+                e.preventDefault();
+                toggleAuthMode();
+            });
+        });
+        
+        let isRegisterMode = false;
+        
+        function toggleAuthMode() {
+            isRegisterMode = !isRegisterMode;
+            
+            const nameGroup = document.getElementById('reg-name-group');
+            const confirmGroup = document.getElementById('reg-confirm-group');
+            const authTitle = document.getElementById('auth-title');
+            const authSubmit = document.getElementById('auth-submit');
+            const authSwitchText = document.getElementById('auth-switch-text');
+            const authSwitchLink = document.getElementById('auth-switch-link');
+            
+            if (nameGroup) nameGroup.classList.toggle('hidden', !isRegisterMode);
+            if (confirmGroup) confirmGroup.classList.toggle('hidden', !isRegisterMode);
+            if (authTitle) authTitle.textContent = isRegisterMode ? 'Регистрация' : 'Вход в аккаунт';
+            if (authSubmit) authSubmit.textContent = isRegisterMode ? 'Зарегистрироваться' : 'Войти';
+            if (authSwitchText) authSwitchText.innerHTML = isRegisterMode ? 'Уже есть аккаунт? ' : 'Нет аккаунта? ';
+            if (authSwitchLink) authSwitchLink.textContent = isRegisterMode ? 'Войти' : 'Зарегистрироваться';
+            
+            // Очищаем ошибки
+            const authError = document.getElementById('auth-error');
+            if (authError) authError.style.display = 'none';
+        }
+        
+        function showAuthError(message) {
+            const authError = document.getElementById('auth-error');
+            if (authError) {
+                authError.textContent = message;
+                authError.style.display = 'block';
+            }
+        }
+        
+        async function handleAuthSubmit() {
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            
+            if (!email || !password) {
+                showAuthError('Заполните все поля');
+                return;
+            }
+            
+            window.showLoader(isRegisterMode ? 'Регистрация...' : 'Вход...');
+            
+            try {
+                if (isRegisterMode) {
+                    // РЕГИСТРАЦИЯ
+                    const name = document.getElementById('auth-name').value;
+                    const confirmPassword = document.getElementById('auth-confirm-password').value;
+                    
+                    if (!name) {
+                        throw new Error('Введите имя и фамилию');
+                    }
+                    
+                    if (password !== confirmPassword) {
+                        throw new Error('Пароли не совпадают');
+                    }
+                    
+                    const { data, error } = await window.supabaseClient.auth.signUp({
+                        email,
+                        password,
+                        options: {
+                            data: { 
+                                name: name,
+                                full_name: name
+                            },
+                            emailRedirectTo: window.location.origin + '/auth-callback.html'
+                        }
+                    });
+                    
+                    if (error) throw error;
+                    
+                    window.showNotification('✅ Регистрация успешна! Проверьте email для подтверждения.', 'success');
+                    
+                    // Создаем профиль пользователя
+                    if (data.user) {
+                        await window.supabaseClient
+                            .from('profiles')
+                            .insert([
+                                {
+                                    id: data.user.id,
+                                    full_name: name,
+                                    created_at: new Date().toISOString()
+                                }
+                            ]);
+                    }
+                    
+                    // Возвращаемся к форме входа
+                    setTimeout(() => {
+                        toggleAuthMode();
+                    }, 3000);
+                    
+                } else {
+                    // ВХОД
+                    const { data, error } = await window.supabaseClient.auth.signInWithPassword({
+                        email,
+                        password
+                    });
+                    
+                    if (error) throw error;
+                    
+                    window.showNotification('✅ Вход выполнен!', 'success');
+                    
+                    // Перенаправляем в приложение
+                    setTimeout(() => {
+                        window.location.href = 'app.html';
+                    }, 1000);
+                }
+                
+            } catch (error) {
+                console.error('❌ Ошибка авторизации:', error);
+                showAuthError(getAuthErrorMessage(error.message));
+            } finally {
+                window.hideLoader();
+            }
+        }
+        
+        function getAuthErrorMessage(errorMsg) {
+            const messages = {
+                'Invalid login credentials': 'Неверный email или пароль',
+                'Email not confirmed': 'Email не подтвержден. Проверьте вашу почту',
+                'User already registered': 'Пользователь уже зарегистрирован',
+                'Password should be at least 6 characters': 'Пароль должен быть не менее 6 символов',
+                'To signup, please provide your email': 'Для регистрации укажите email'
+            };
+            
+            return messages[errorMsg] || errorMsg;
+        }
+    </script>
+</body>
+</html>

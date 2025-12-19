@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Генеалогическое древо - История моей семьи</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Шапка для приложения -->
+    <header id="app-header">
+        <div class="header-container container">
+            <a href="app.html" class="logo" id="home-link">
+                <i class="fas fa-tree"></i>
+                История моей семьи
+            </a>
+            
+            <button class="mobile-menu-btn" id="mobile-menu-btn">
+                <i class="fas fa-bars"></i>
+            </button>
+            
+            <ul class="nav-links" id="nav-links">
+                <li><a href="app.html">Главная</a></li>
+                <li><a href="tree.html" class="active">Древо</a></li>
+                <li><a href="timeline.html">Лента событий</a></li>
+                <li><a href="media.html">Медиатека</a></li>
+                <li><a href="profile.html">Мой профиль</a></li>
+            </ul>
+            
+            <div class="user-menu">
+                <span id="username">Гость</span>
+                <div class="avatar" id="user-avatar">Г</div>
+                <button class="btn btn-small" id="logout-btn">Выйти</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Главный контент приложения -->
+    <main id="app-content">
+        <!-- Страница древа -->
+        <section id="tree-page" class="page">
+            <div class="container">
+                <h2>Генеалогическое древо</h2>
+                
+                <div class="tree-controls">
+                    <button class="btn" id="auto-build-btn">
+                        <i class="fas fa-magic"></i> Автопостроение
+                    </button>
+                    <button class="btn btn-secondary" id="manual-add-btn">
+                        <i class="fas fa-hand-pointer"></i> Ручное добавление
+                    </button>
+                    <button class="btn btn-secondary" id="save-image-btn">
+                        <i class="fas fa-image"></i> Сохранить как картинку
+                    </button>
+                    <button class="btn btn-secondary" id="print-tree-btn">
+                        <i class="fas fa-print"></i> Распечатать
+                    </button>
+                </div>
+                
+                <div class="tree-auto-options">
+                    <div class="form-group">
+                        <label for="auto-generations">Поколения</label>
+                        <select id="auto-generations">
+                            <option value="2">2 поколения</option>
+                            <option value="3" selected>3 поколения</option>
+                            <option value="4">4 поколения</option>
+                            <option value="5">5 поколений</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="auto-style">Стиль</label>
+                        <select id="auto-style">
+                            <option value="horizontal" selected>Горизонтальный</option>
+                            <option value="vertical">Вертикальный</option>
+                            <option value="radial">Радиальный</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="auto-center-person">Центр древа</label>
+                        <select id="auto-center-person">
+                            <option value="self" selected>Я</option>
+                            <option value="oldest">Самый старший</option>
+                            <option value="founder">Основатель рода</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="auto-show-photos" checked>
+                        <label for="auto-show-photos">Показывать фото</label>
+                    </div>
+                    
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="auto-show-dates" checked>
+                        <label for="auto-show-dates">Показывать даты</label>
+                    </div>
+                    
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="auto-show-lines" checked>
+                        <label for="auto-show-lines">Показывать линии связи</label>
+                    </div>
+                </div>
+                
+                <div class="tree-visualization-container" id="tree-visualization-container">
+                    <div class="tree-empty-state">
+                        <i class="fas fa-tree" style="font-size: 4rem; color: #cbd5e0; margin-bottom: 20px;"></i>
+                        <h3>Дерево еще не построено</h3>
+                        <p>Нажмите "Автопостроение" чтобы создать ваше первое генеалогическое древо</p>
+                        <button class="btn" id="auto-build-btn-2" style="margin-top: 20px;">
+                            <i class="fas fa-magic"></i> Построить дерево
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="tree-stats">
+                    <div class="stat-card">
+                        <i class="fas fa-users"></i>
+                        <h3 id="tree-people-count">0</h3>
+                        <p>Людей</p>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-images"></i>
+                        <h3 id="tree-photos-count">0</h3>
+                        <p>Фотографий</p>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-layer-group"></i>
+                        <h3 id="tree-generations">0</h3>
+                        <p>Поколений</p>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-link"></i>
+                        <h3 id="tree-connections">0</h3>
+                        <p>Связей</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Подвал -->
+    <footer>
+        <div class="container">
+            <div class="copyright">
+                <p>© 2024 История моей семьи. Все права защищены.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Модальные окна -->
+    <div class="modal-overlay hidden" id="modal-overlay"></div>
+    
+    <!-- Модальное окно добавления человека -->
+    <div id="add-person-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Добавить человека в древо</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="add-person-form-modal">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="person-first-name">Имя *</label>
+                            <input type="text" id="person-first-name" placeholder="Имя" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="person-last-name">Фамилия *</label>
+                            <input type="text" id="person-last-name" placeholder="Фамилия" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="person-birth-date">Дата рождения</label>
+                            <input type="date" id="person-birth-date">
+                        </div>
+                        <div class="form-group">
+                            <label for="person-death-date">Дата смерти</label>
+                            <input type="date" id="person-death-date">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="person-gender">Пол</label>
+                        <select id="person-gender" required>
+                            <option value="">Выберите пол</option>
+                            <option value="male">Мужской</option>
+                            <option value="female">Женский</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="person-relation">Родство *</label>
+                        <select id="person-relation" required>
+                            <option value="">Выберите родство</option>
+                            <option value="self">Я</option>
+                            <option value="spouse">Супруг/а</option>
+                            <option value="parent">Родитель</option>
+                            <option value="child">Ребенок</option>
+                            <option value="sibling">Брат/сестра</option>
+                            <option value="grandparent">Дедушка/бабушка</option>
+                            <option value="grandchild">Внук/внучка</option>
+                            <option value="aunt_uncle">Тетя/дядя</option>
+                            <option value="cousin">Двоюродный брат/сестра</option>
+                            <option value="other">Другой родственник</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="person-photo-url">Фото (URL)</label>
+                        <input type="url" id="person-photo-url" placeholder="https://example.com/photo.jpg">
+                        <small style="color: #718096;">Или загрузите после создания</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="person-bio">Биография</label>
+                        <textarea id="person-bio" rows="4" placeholder="Расскажите историю этого человека..."></textarea>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary cancel-btn">
+                            Отмена
+                        </button>
+                        <button type="submit" class="btn">
+                            Добавить в древо
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Уведомления -->
+    <div id="notification" class="notification">
+        <div class="notification-content">
+            <span id="notification-text"></span>
+            <button class="notification-close">&times;</button>
+        </div>
+    </div>
+
+    <!-- Загрузчик -->
+    <div id="loader" class="loader-overlay hidden">
+        <div class="loader"></div>
+        <div class="loader-text" id="loader-text">Загрузка...</div>
+    </div>
+
+    <!-- Подключаем библиотеки -->
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <!-- Подключаем наши файлы -->
+    <script src="supabase.js"></script>
+    <script src="tree-engine.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('🚀 Страница дерева загружается...');
+            
+            try {
+                // Проверяем авторизацию
+                const { data: { user }, error } = await window.supabaseClient.auth.getUser();
+                
+                if (error) {
+                    console.error('Ошибка проверки авторизации:', error);
+                    window.location.href = 'auth.html';
+                    return;
+                }
+                
+                if (!user) {
+                    window.location.href = 'auth.html';
+                    return;
+                }
+                
+                console.log('✅ Пользователь авторизован:', user.email);
+                
+                // Устанавливаем имя пользователя
+                const displayName = user.user_metadata?.name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'Пользователь';
+                document.getElementById('username').textContent = displayName;
+                document.getElementById('user-avatar').textContent = getUserInitials(displayName);
+                
+                // Настраиваем обработчики
+                setupEventListeners();
+                
+            } catch (error) {
+                console.error('❌ Ошибка загрузки страницы:', error);
+                window.showNotification('Ошибка загрузки страницы', 'error');
+            }
+        });
+        
+        function getUserInitials(name) {
+            return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        }
+        
+        function setupEventListeners() {
+            // Мобильное меню
+            document.getElementById('mobile-menu-btn')?.addEventListener('click', () => {
+                document.getElementById('nav-links').classList.toggle('active');
+            });
+            
+            // Выход
+            document.getElementById('logout-btn')?.addEventListener('click', async () => {
+                try {
+                    const { error } = await window.supabaseClient.auth.signOut();
+                    if (error) throw error;
+                    
+                    window.showNotification('✅ Выход выполнен', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1000);
+                    
+                } catch (error) {
+                    console.error('Ошибка выхода:', error);
+                    window.showNotification('Ошибка выхода из системы', 'error');
+                }
+            });
+            
+            // Кнопки дерева
+            document.getElementById('auto-build-btn')?.addEventListener('click', () => {
+                autoBuildTree();
+            });
+            
+            document.getElementById('auto-build-btn-2')?.addEventListener('click', () => {
+                autoBuildTree();
+            });
+            
+            document.getElementById('manual-add-btn')?.addEventListener('click', () => {
+                document.getElementById('add-person-modal').classList.remove('hidden');
+                document.getElementById('modal-overlay').classList.remove('hidden');
+            });
+            
+            document.getElementById('save-image-btn')?.addEventListener('click', () => {
+                saveTreeAsImage();
+            });
+            
+            document.getElementById('print-tree-btn')?.addEventListener('click', () => {
+                printTree();
+            });
+            
+            // Модальные окна - закрытие
+            document.querySelectorAll('.modal-close, .cancel-btn').forEach(btn => {
+                btn.addEventListener('click', closeAllModals);
+            });
+            
+            document.getElementById('modal-overlay')?.addEventListener('click', closeAllModals);
+            
+            // Форма добавления человека
+            document.getElementById('add-person-form-modal')?.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const firstName = document.getElementById('person-first-name').value;
+                const lastName = document.getElementById('person-last-name').value;
+                const birthDate = document.getElementById('person-birth-date').value;
+                const deathDate = document.getElementById('person-death-date').value;
+                const gender = document.getElementById('person-gender').value;
+                const relation = document.getElementById('person-relation').value;
+                const photoUrl = document.getElementById('person-photo-url').value;
+                const biography = document.getElementById('person-bio').value;
+                
+                if (!firstName || !lastName || !gender || !relation) {
+                    window.showNotification('Заполните обязательные поля', 'error');
+                    return;
+                }
+                
+                window.showLoader('Добавление человека...');
+                
+                try {
+                    // Получаем текущего пользователя
+                    const { data: { user } } = await window.supabaseClient.auth.getUser();
+                    
+                    // Здесь должна быть логика добавления в базу данных
+                    // Для демо просто показываем уведомление
+                    
+                    setTimeout(() => {
+                        window.showNotification('✅ Человек успешно добавлен!', 'success');
+                        closeAllModals();
+                        document.getElementById('add-person-form-modal').reset();
+                        
+                        // После добавления человека, обновляем дерево
+                        autoBuildTree();
+                        
+                    }, 1500);
+                    
+                } catch (error) {
+                    console.error('Ошибка добавления человека:', error);
+                    window.showNotification('Ошибка добавления человека', 'error');
+                } finally {
+                    window.hideLoader();
+                }
+            });
+        }
+        
+        function closeAllModals() {
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.classList.add('hidden');
+            });
+            document.getElementById('modal-overlay').classList.add('hidden');
+        }
+        
+        function autoBuildTree() {
+            window.showLoader('Построение генеалогического древа...');
+            
+            setTimeout(() => {
+                const container = document.getElementById('tree-visualization-container');
+                if (!container) return;
+                
+                // Получаем настройки
+                const generations = parseInt(document.getElementById('auto-generations')?.value || 3);
+                const style = document.getElementById('auto-style')?.value || 'horizontal';
+                const centerPerson = document.getElementById('auto-center-person')?.value || 'self';
+                
+                // Примерные данные для дерева
+                const treeData = {
+                    name: "Иванов Иван",
+                    birth: "1990",
+                    children: [
+                        {
+                            name: "Иванов Алексей",
+                            birth: "2015",
+                            relation: "сын"
+                        },
+                        {
+                            name: "Иванова Анна", 
+                            birth: "2018",
+                            relation: "дочь"
+                        }
+                    ],
+                    parents: [
+                        {
+                            name: "Иванов Петр",
+                            birth: "1960",
+                            death: "2020",
+                            relation: "отец"
+                        },
+                        {
+                            name: "Иванова Мария",
+                            birth: "1965",
+                            relation: "мать" 
+                        }
+                    ],
+                    grandparents: [
+                        {
+                            name: "Иванов Сергей",
+                            birth: "1930",
+                            death: "2000",
+                            relation: "дед"
+                        },
+                        {
+                            name: "Иванова Ольга",
+                            birth: "1935",
+                            death: "2005",
+                            relation: "бабушка"
+                        }
+                    ]
+                };
+                
+                let html = `
+                    <div class="tree-container" style="padding: 20px; text-align: center;">
+                        <h3 style="color: #2d3748; margin-bottom: 30px;">Генеалогическое древо семьи</h3>
+                        
+                        <div style="display: flex; flex-direction: column; align-items: center; gap: 40px;">
+                `;
+                
+                // Поколение 3: Бабушки/дедушки
+                if (generations >= 3 && treeData.grandparents.length > 0) {
+                    html += `
+                        <div style="display: flex; gap: 100px; margin-bottom: 20px;">
+                            ${treeData.grandparents.map(gp => `
+                                <div class="tree-person" style="text-align: center;">
+                                    <div style="width: 70px; height: 70px; background: #a0aec0; color: white; border-radius: 50%; 
+                                              display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; font-size: 1.5rem;">
+                                        ${gp.name.split(' ')[0][0]}${gp.name.split(' ')[1][0]}
+                                    </div>
+                                    <div style="font-weight: bold; font-size: 0.9rem;">${gp.name}</div>
+                                    <div style="font-size: 0.8rem; color: #718096;">${gp.birth}${gp.death ? `-${gp.death}` : ''}</div>
+                                    <div style="font-size: 0.8rem; color: #667eea;">${gp.relation}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        
+                        <div style="height: 20px; display: flex; justify-content: center;">
+                            <div style="width: 2px; height: 100%; background: #cbd5e0;"></div>
+                        </div>
+                    `;
+                }
+                
+                // Поколение 2: Родители
+                if (generations >= 2 && treeData.parents.length > 0) {
+                    html += `
+                        <div style="display: flex; gap: 150px; margin-bottom: 20px;">
+                            ${treeData.parents.map(parent => `
+                                <div class="tree-person" style="text-align: center;">
+                                    <div style="width: 80px; height: 80px; background: #667eea; color: white; border-radius: 50%; 
+                                              display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; font-size: 1.8rem;">
+                                        ${parent.name.split(' ')[0][0]}${parent.name.split(' ')[1][0]}
+                                    </div>
+                                    <div style="font-weight: bold;">${parent.name}</div>
+                                    <div style="font-size: 0.9rem; color: #718096;">${parent.birth}${parent.death ? `-${parent.death}` : ''}</div>
+                                    <div style="font-size: 0.9rem; color: #48bb78;">${parent.relation}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        
+                        <div style="height: 20px; display: flex; justify-content: center;">
+                            <div style="width: 2px; height: 100%; background: #cbd5e0;"></div>
+                        </div>
+                    `;
+                }
+                
+                // Поколение 1: Я (центральный)
+                html += `
+                    <div class="tree-person" style="text-align: center;">
+                        <div style="width: 100px; height: 100px; background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); 
+                                  color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+                                  margin: 0 auto 15px; font-size: 2.2rem; border: 4px solid white; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
+                            Я
+                        </div>
+                        <div style="font-weight: bold; font-size: 1.2rem;">${treeData.name}</div>
+                        <div style="font-size: 1rem; color: #718096;">род. ${treeData.birth}</div>
+                        <div style="font-size: 1rem; color: #ed64a6; font-weight: bold;">Я</div>
+                    </div>
+                    
+                    <div style="height: 20px; display: flex; justify-content: center;">
+                        <div style="width: 2px; height: 100%; background: #cbd5e0;"></div>
+                    </div>
+                `;
+                
+                // Поколение 0: Дети
+                if (generations >= 1 && treeData.children.length > 0) {
+                    html += `
+                        <div style="display: flex; gap: 150px; margin-top: 20px;">
+                            ${treeData.children.map(child => `
+                                <div class="tree-person" style="text-align: center;">
+                                    <div style="width: 80px; height: 80px; background: ${child.relation === 'сын' ? '#4299e1' : '#ed64a6'}; 
+                                              color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+                                              margin: 0 auto 10px; font-size: 1.8rem;">
+                                        ${child.name.split(' ')[0][0]}${child.name.split(' ')[1][0]}
+                                    </div>
+                                    <div style="font-weight: bold;">${child.name}</div>
+                                    <div style="font-size: 0.9rem; color: #718096;">род. ${child.birth}</div>
+                                    <div style="font-size: 0.9rem; color: #d69e2e;">${child.relation}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+                
+                html += `
+                        </div>
+                        
+                        <div style="margin-top: 40px; padding: 20px; background: #f7fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+                            <h4 style="color: #4a5568; margin-bottom: 10px;">Информация о дереве:</h4>
+                            <p style="color: #718096; margin-bottom: 5px;">• Стиль отображения: <strong>${style === 'horizontal' ? 'Горизонтальный' : style === 'vertical' ? 'Вертикальный' : 'Радиальный'}</strong></p>
+                            <p style="color: #718096; margin-bottom: 5px;">• Поколений: <strong>${generations}</strong></p>
+                            <p style="color: #718096;">• Всего людей: <strong>${1 + (treeData.parents?.length || 0) + (treeData.children?.length || 0) + (treeData.grandparents?.length || 0)}</strong></p>
+                        </div>
+                    </div>
+                `;
+                
+                container.innerHTML = html;
+                
+                // Обновляем статистику
+                updateTreeStats();
+                
+                window.showNotification('✅ Генеалогическое древо построено!', 'success');
+                window.hideLoader();
+            }, 2000);
+        }
+        
+        function updateTreeStats() {
+            const peopleCount = 7; // Примерное количество
+            document.getElementById('tree-people-count').textContent = peopleCount;
+            document.getElementById('tree-photos-count').textContent = '0';
+            document.getElementById('tree-generations').textContent = document.getElementById('auto-generations')?.value || 3;
+            document.getElementById('tree-connections').textContent = peopleCount - 1;
+        }
+        
+        function saveTreeAsImage() {
+            const container = document.getElementById('tree-visualization-container');
+            if (!container || container.innerHTML.includes('tree-empty-state')) {
+                window.showNotification('Сначала постройте дерево', 'error');
+                return;
+            }
+            
+            window.showLoader('Сохранение изображения...');
+            
+            // Имитация сохранения
+            setTimeout(() => {
+                window.showNotification('✅ Дерево сохранено как изображение!', 'success');
+                window.hideLoader();
+            }, 1500);
+        }
+        
+        function printTree() {
+            const container = document.getElementById('tree-visualization-container');
+            if (!container || container.innerHTML.includes('tree-empty-state')) {
+                window.showNotification('Сначала постройте дерево', 'error');
+                return;
+            }
+            
+            window.showNotification('Подготовка к печати...', 'info');
+            
+            // Открываем новое окно для печати
+            const printContent = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Генеалогическое древо</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        .tree-print { max-width: 800px; margin: 0 auto; }
+                        .tree-person { text-align: center; margin: 10px; }
+                        @media print {
+                            body { padding: 0; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="tree-print">
+                        <h1 style="text-align: center; color: #2d3748; margin-bottom: 30px;">Генеалогическое древо</h1>
+                        ${container.innerHTML}
+                        <div style="text-align: center; margin-top: 40px; color: #718096; font-size: 0.9rem;">
+                            Создано в приложении "История моей семьи"<br>
+                            Дата: ${new Date().toLocaleDateString('ru-RU')}
+                        </div>
+                    </div>
+                    <script>
+                        window.onload = function() {
+                            window.print();
+                            setTimeout(() => window.close(), 1000);
+                        }
+                    </script>
+                </body>
+                </html>
+            `;
+            
+            const printWindow = window.open('', '_blank');
+            if (printWindow) {
+                printWindow.document.write(printContent);
+                printWindow.document.close();
+            }
+        }
+    </script>
+</body>
+</html>

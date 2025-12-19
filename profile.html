@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мой профиль - История моей семьи</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Шапка для приложения -->
+    <header id="app-header">
+        <div class="header-container container">
+            <a href="app.html" class="logo" id="home-link">
+                <i class="fas fa-tree"></i>
+                История моей семьи
+            </a>
+            
+            <button class="mobile-menu-btn" id="mobile-menu-btn">
+                <i class="fas fa-bars"></i>
+            </button>
+            
+            <ul class="nav-links" id="nav-links">
+                <li><a href="app.html">Главная</a></li>
+                <li><a href="tree.html">Древо</a></li>
+                <li><a href="timeline.html">Лента событий</a></li>
+                <li><a href="media.html">Медиатека</a></li>
+                <li><a href="profile.html" class="active">Мой профиль</a></li>
+            </ul>
+            
+            <div class="user-menu">
+                <span id="username">Гость</span>
+                <div class="avatar" id="user-avatar">Г</div>
+                <button class="btn btn-small" id="logout-btn">Выйти</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Главный контент приложения -->
+    <main id="app-content">
+        <!-- Страница профиля -->
+        <section id="profile-page" class="page">
+            <div class="container">
+                <div class="profile-container">
+                    <div class="profile-avatar">
+                        <div class="avatar large" id="profile-avatar">П</div>
+                        <h2 id="profile-name">Имя Фамилия</h2>
+                        <p id="profile-email">email@example.com</p>
+                        <button class="btn btn-small" id="change-avatar-btn" style="margin-top: 15px;">
+                            <i class="fas fa-camera"></i> Сменить фото
+                        </button>
+                    </div>
+                    
+                    <div class="profile-info">
+                        <h3>Информация об аккаунте</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <i class="fas fa-envelope"></i>
+                                <span>Email: <span id="info-email"></span></span>
+                            </div>
+                            <div class="info-item">
+                                <i class="fas fa-user"></i>
+                                <span>ID пользователя: <span id="info-user-id"></span></span>
+                            </div>
+                            <div class="info-item">
+                                <i class="fas fa-calendar"></i>
+                                <span>Регистрация: <span id="info-reg-date"></span></span>
+                            </div>
+                            <div class="info-item">
+                                <i class="fas fa-tree"></i>
+                                <span>Людей в древе: <span id="info-people-count">0</span></span>
+                            </div>
+                        </div>
+                        
+                        <h3>Настройки</h3>
+                        <button class="btn full-width" id="edit-profile-btn">
+                            <i class="fas fa-edit"></i> Редактировать профиль
+                        </button>
+                        <button class="btn btn-secondary full-width" id="invite-btn">
+                            <i class="fas fa-user-plus"></i> Пригласить родственника
+                        </button>
+                        <button class="btn btn-secondary full-width" id="notifications-settings-btn">
+                            <i class="fas fa-bell"></i> Настройки уведомлений
+                        </button>
+                        <button class="btn btn-outline full-width" id="export-data-btn">
+                            <i class="fas fa-download"></i> Экспорт данных
+                        </button>
+                        <button class="btn btn-danger full-width" id="logout-profile-btn">
+                            <i class="fas fa-sign-out-alt"></i> Выйти из аккаунта
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Подвал -->
+    <footer>
+        <div class="container">
+            <div class="copyright">
+                <p>© 2024 История моей семьи. Все права защищены.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Модальные окна -->
+    <div class="modal-overlay hidden" id="modal-overlay"></div>
+    
+    <!-- Модальное окно приглашения -->
+    <div id="invite-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Пригласить родственника</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="invite-form-modal">
+                    <div class="form-group">
+                        <label for="invite-email">Email родственника *</label>
+                        <input type="email" id="invite-email" placeholder="email@example.com" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="invite-name">Имя родственника</label>
+                        <input type="text" id="invite-name" placeholder="Имя">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="invite-message">Сообщение</label>
+                        <textarea id="invite-message" rows="4" placeholder="Привет! Присоединяйся к нашему семейному древу..."></textarea>
+                    </div>
+                    
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="invite-editor" checked>
+                        <label for="invite-editor">Разрешить редактирование древа</label>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary cancel-btn">
+                            Отмена
+                        </button>
+                        <button type="submit" class="btn">
+                            Отправить приглашение
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Модальное окно редактирования профиля -->
+    <div id="edit-profile-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Редактировать профиль</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-profile-form-modal">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="edit-profile-name">Имя *</label>
+                            <input type="text" id="edit-profile-name" placeholder="Имя" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-profile-last-name">Фамилия</label>
+                            <input type="text" id="edit-profile-last-name" placeholder="Фамилия">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-profile-email">Email *</label>
+                        <input type="email" id="edit-profile-email" placeholder="email@example.com" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-profile-bio">О себе</label>
+                        <textarea id="edit-profile-bio" rows="4" placeholder="Расскажите о себе..."></textarea>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary cancel-btn">
+                            Отмена
+                        </button>
+                        <button type="submit" class="btn">
+                            Сохранить изменения
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Уведомления -->
+    <div id="notification" class="notification">
+        <div class="notification-content">
+            <span id="notification-text"></span>
+            <button class="notification-close">&times;</button>
+        </div>
+    </div>
+
+    <!-- Загрузчик -->
+    <div id="loader" class="loader-overlay hidden">
+        <div class="loader"></div>
+        <div class="loader-text" id="loader-text">Загрузка...</div>
+    </div>
+
+    <!-- Подключаем библиотеки -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <!-- Подключаем наши файлы -->
+    <script src="supabase.js"></script>
+    <script src="app.js"></script>
+    
+    <script>
+        // Функции для страницы профиля
+        function updateProfileStats() {
+            // Обновляем количество людей в древе
+            const peopleCount = window.people ? window.people.length : 0;
+            document.getElementById('info-people-count').textContent = peopleCount;
+        }
+        
+        function exportUserData() {
+            window.showLoader('Подготовка данных...');
+            
+            try {
+                const userData = {
+                    user: {
+                        email: window.currentUser?.email,
+                        name: window.currentUser?.user_metadata?.name,
+                        registered: window.currentUser?.created_at
+                    },
+                    people: window.people || [],
+                    events: window.events || [],
+                    media: window.media || [],
+                    export_date: new Date().toISOString()
+                };
+                
+                // Создаем JSON файл для скачивания
+                const dataStr = JSON.stringify(userData, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(dataBlob);
+                
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `family-history-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                
+                window.showNotification('✅ Данные экспортированы!', 'success');
+                
+            } catch (error) {
+                console.error('Ошибка экспорта данных:', error);
+                window.showNotification('Ошибка экспорта данных', 'error');
+            } finally {
+                window.hideLoader();
+            }
+        }
+        
+        // Инициализация страницы
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Загружаем данные
+            await window.loadUserData();
+            
+            // Обновляем статистику профиля
+            updateProfileStats();
+            
+            // Обработчики кнопок профиля
+            document.getElementById('change-avatar-btn')?.addEventListener('click', () => {
+                window.showNotification('Функция смены аватара в разработке', 'info');
+            });
+            
+            document.getElementById('edit-profile-btn')?.addEventListener('click', () => {
+                window.showModal('edit-profile-modal');
+            });
+            
+            document.getElementById('invite-btn')?.addEventListener('click', () => {
+                window.showModal('invite-modal');
+            });
+            
+            document.getElementById('notifications-settings-btn')?.addEventListener('click', () => {
+                window.showNotification('Настройки уведомлений в разработке', 'info');
+            });
+            
+            document.getElementById('export-data-btn')?.addEventListener('click', exportUserData);
+            
+            // Кнопка выхода в профиле
+            const logoutProfileBtn = document.getElementById('logout-profile-btn');
+            if (logoutProfileBtn) {
+                logoutProfileBtn.addEventListener('click', window.handleLogout);
+            }
+        });
+        
+        // Экспортируем функции
+        window.updateProfileStats = updateProfileStats;
+        window.exportUserData = exportUserData;
+    </script>
+</body>
+</html>
