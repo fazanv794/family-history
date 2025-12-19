@@ -10,6 +10,12 @@
         .hidden-field {
             display: none !important;
         }
+        .hidden-field input {
+            display: none !important;
+        }
+        .hidden-field label {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
@@ -107,6 +113,7 @@
     <script src="app.js"></script>
     
     <script>
+        // Инициализация страницы авторизации
         document.addEventListener('DOMContentLoaded', async () => {
             console.log('🔐 Страница авторизации загружается...');
             
@@ -133,25 +140,42 @@
             }
             
             // Настраиваем обработчики
-            document.getElementById('auth-form').addEventListener('submit', (e) => {
-                e.preventDefault();
-                handleAuthSubmit();
-            });
+            const authForm = document.getElementById('auth-form');
+            if (authForm) {
+                authForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    handleAuthSubmit();
+                });
+            }
             
-            document.getElementById('auth-switch-btn').addEventListener('click', (e) => {
-                e.preventDefault();
-                toggleAuthMode();
-            });
+            const switchBtn = document.getElementById('auth-switch-btn');
+            if (switchBtn) {
+                switchBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    toggleAuthMode();
+                });
+            }
             
             // Кнопка "Попробовать построить дерево"
-            document.getElementById('try-tree-quick-btn')?.addEventListener('click', () => {
-                createDemoTree();
-            });
+            const tryTreeBtn = document.getElementById('try-tree-quick-btn');
+            if (tryTreeBtn) {
+                tryTreeBtn.addEventListener('click', () => {
+                    console.log('🌳 Нажата кнопка "Попробовать построить дерево"');
+                    if (window.createDemoTree) {
+                        window.createDemoTree();
+                    } else {
+                        console.error('Функция createDemoTree не найдена');
+                        alert('Ошибка: функция создания демо-дерева не найдена');
+                    }
+                });
+            }
         });
         
         let isRegisterMode = false;
         
         function toggleAuthMode() {
+            console.log('🔄 Переключение режима авторизации');
+            
             isRegisterMode = !isRegisterMode;
             
             const nameGroup = document.getElementById('reg-name-group');
@@ -164,11 +188,9 @@
             if (nameGroup) {
                 if (isRegisterMode) {
                     nameGroup.classList.remove('hidden-field');
-                    // Устанавливаем required только при показе
                     nameGroup.querySelector('input').required = true;
                 } else {
                     nameGroup.classList.add('hidden-field');
-                    // Убираем required при скрытии
                     nameGroup.querySelector('input').required = false;
                 }
             }
@@ -176,11 +198,9 @@
             if (confirmGroup) {
                 if (isRegisterMode) {
                     confirmGroup.classList.remove('hidden-field');
-                    // Устанавливаем required только при показе
                     confirmGroup.querySelector('input').required = true;
                 } else {
                     confirmGroup.classList.add('hidden-field');
-                    // Убираем required при скрытии
                     confirmGroup.querySelector('input').required = false;
                 }
             }
@@ -198,13 +218,7 @@
             }
             
             // Очищаем форму
-            const form = document.getElementById('auth-form');
-            form.reset();
-            
-            // Сбрасываем состояние валидации
-            form.querySelectorAll('input').forEach(input => {
-                input.setCustomValidity('');
-            });
+            document.getElementById('auth-form').reset();
         }
         
         function showAuthError(message) {
@@ -219,6 +233,8 @@
         }
         
         async function handleAuthSubmit() {
+            console.log('🔐 Обработка авторизации');
+            
             const email = document.getElementById('auth-email').value.trim();
             const password = document.getElementById('auth-password').value;
             
@@ -227,11 +243,10 @@
                 return;
             }
             
-            if (window.showLoader) {
-                window.showLoader(isRegisterMode ? 'Регистрация...' : 'Вход...');
-            } else {
-                showLoader(isRegisterMode ? 'Регистрация...' : 'Вход...');
-            }
+            // Сбрасываем валидацию браузера
+            document.getElementById('auth-form').checkValidity();
+            
+            window.showLoader(isRegisterMode ? 'Регистрация...' : 'Вход...');
             
             try {
                 if (isRegisterMode) {
@@ -265,13 +280,8 @@
                     
                     if (error) throw error;
                     
-                    // Для упрощения сразу входим
                     if (data.user) {
-                        if (window.showNotification) {
-                            window.showNotification('✅ Регистрация успешна! Входим...', 'success');
-                        } else {
-                            showNotification('✅ Регистрация успешна! Входим...', 'success');
-                        }
+                        window.showNotification('✅ Регистрация успешна! Входим...', 'success');
                         
                         // Автоматически входим
                         const { error: signInError } = await window.supabaseClient.auth.signInWithPassword({
@@ -284,11 +294,7 @@
                                 window.location.href = 'app.html';
                             }, 1000);
                         } else {
-                            if (window.showNotification) {
-                                window.showNotification('Пожалуйста, войдите вручную', 'info');
-                            } else {
-                                showNotification('Пожалуйста, войдите вручную', 'info');
-                            }
+                            window.showNotification('Пожалуйста, войдите вручную', 'info');
                             toggleAuthMode(); // Переключаем на форму входа
                         }
                     }
@@ -302,11 +308,7 @@
                     
                     if (error) throw error;
                     
-                    if (window.showNotification) {
-                        window.showNotification('✅ Вход выполнен!', 'success');
-                    } else {
-                        showNotification('✅ Вход выполнен!', 'success');
-                    }
+                    window.showNotification('✅ Вход выполнен!', 'success');
                     
                     // Перенаправляем в приложение
                     setTimeout(() => {
@@ -318,105 +320,7 @@
                 console.error('❌ Ошибка авторизации:', error);
                 showAuthError(getAuthErrorMessage(error.message));
             } finally {
-                if (window.hideLoader) {
-                    window.hideLoader();
-                } else {
-                    hideLoader();
-                }
-            }
-        }
-        
-        // Создание демо-дерева
-        function createDemoTree() {
-            if (window.showLoader) {
-                window.showLoader('Создание демо-дерева...');
-            } else {
-                showLoader('Создание демо-дерева...');
-            }
-            
-            try {
-                // Создаем демо-пользователя в localStorage
-                const demoUser = {
-                    id: 'demo_user_' + Date.now(),
-                    email: 'demo@family-history.ru',
-                    user_metadata: {
-                        name: 'Демо Пользователь',
-                        full_name: 'Демо Пользователь'
-                    },
-                    created_at: new Date().toISOString()
-                };
-                
-                localStorage.setItem('family_tree_user', JSON.stringify(demoUser));
-                localStorage.setItem('family_tree_email', 'demo@family-history.ru');
-                localStorage.setItem('family_tree_password', 'demopassword123');
-                
-                // Создаем демо-данные
-                const demoData = {
-                    people: [
-                        {
-                            id: 'demo_1',
-                            first_name: 'Иван',
-                            last_name: 'Иванов',
-                            birth_date: '1990-01-15',
-                            gender: 'male',
-                            relation: 'self',
-                            photo_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80',
-                            biography: 'Основатель семейного древа',
-                            created_at: new Date().toISOString()
-                        },
-                        {
-                            id: 'demo_2',
-                            first_name: 'Мария',
-                            last_name: 'Иванова',
-                            birth_date: '1992-03-22',
-                            gender: 'female',
-                            relation: 'spouse',
-                            photo_url: 'https://images.unsplash.com/photo-1494790108755-2616b786d4d4?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80',
-                            created_at: new Date().toISOString()
-                        },
-                        {
-                            id: 'demo_3',
-                            first_name: 'Алексей',
-                            last_name: 'Иванов',
-                            birth_date: '2015-07-10',
-                            gender: 'male',
-                            relation: 'child',
-                            photo_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80',
-                            created_at: new Date().toISOString()
-                        }
-                    ]
-                };
-                
-                // Сохраняем демо-данные
-                const allData = JSON.parse(localStorage.getItem('family_tree_data') || '{}');
-                if (!allData.people) allData.people = [];
-                allData.people.push(...demoData.people);
-                localStorage.setItem('family_tree_data', JSON.stringify(allData));
-                
-                // Устанавливаем текущего пользователя
-                window.currentUser = demoUser;
-                window.people = demoData.people;
-                
-                if (window.showNotification) {
-                    window.showNotification('✅ Демо-дерево создано! Переходим в приложение...', 'success');
-                } else {
-                    showNotification('✅ Демо-дерево создано! Переходим в приложение...', 'success');
-                }
-                
-                // Перенаправляем в приложение
-                setTimeout(() => {
-                    window.location.href = 'app.html';
-                }, 1500);
-                
-            } catch (error) {
-                console.error('Ошибка создания демо-дерева:', error);
-                showAuthError('Ошибка создания демо-дерева');
-            } finally {
-                if (window.hideLoader) {
-                    window.hideLoader();
-                } else {
-                    hideLoader();
-                }
+                window.hideLoader();
             }
         }
         
@@ -430,71 +334,6 @@
             };
             
             return messages[errorMsg] || errorMsg;
-        }
-        
-        // Вспомогательные функции
-        function showNotification(message, type = 'info') {
-            // Создаем уведомление если его нет
-            let notification = document.getElementById('notification');
-            if (!notification) {
-                notification = document.createElement('div');
-                notification.id = 'notification';
-                notification.className = 'notification';
-                notification.innerHTML = `
-                    <div class="notification-content">
-                        <span id="notification-text"></span>
-                        <button class="notification-close">&times;</button>
-                    </div>
-                `;
-                document.body.appendChild(notification);
-                
-                // Обработчик закрытия
-                notification.querySelector('.notification-close').addEventListener('click', () => {
-                    notification.classList.remove('show');
-                });
-            }
-            
-            const text = document.getElementById('notification-text');
-            if (text) {
-                text.textContent = message;
-            }
-            
-            notification.className = `notification ${type}`;
-            notification.classList.add('show');
-            
-            // Автоматическое скрытие
-            setTimeout(() => {
-                notification.classList.remove('show');
-            }, 4000);
-        }
-        
-        function showLoader(text = 'Загрузка...') {
-            // Создаем загрузчик если его нет
-            let loader = document.getElementById('loader');
-            if (!loader) {
-                loader = document.createElement('div');
-                loader.id = 'loader';
-                loader.className = 'loader-overlay hidden';
-                loader.innerHTML = `
-                    <div class="loader"></div>
-                    <div class="loader-text" id="loader-text">${text}</div>
-                `;
-                document.body.appendChild(loader);
-            }
-            
-            const loaderText = document.getElementById('loader-text');
-            if (loaderText) {
-                loaderText.textContent = text;
-            }
-            
-            loader.classList.remove('hidden');
-        }
-        
-        function hideLoader() {
-            const loader = document.getElementById('loader');
-            if (loader) {
-                loader.classList.add('hidden');
-            }
         }
     </script>
 </body>
