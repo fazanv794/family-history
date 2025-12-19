@@ -1,15 +1,49 @@
-// КОНФИГУРАЦИЯ SUPABASE - ЗАМЕНИТЕ НА ВАШИ КЛЮЧИ
-const SUPABASE_URL = 'https://szwsvtxkhlacrarplgtn.supabase.co'; // ЗАМЕНИТЕ
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6d3N2dHhraGxhY3JhcnBsZ3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxMzA1NjAsImV4cCI6MjA4MTcwNjU2MH0.dcRnrqlA4Iz1RthtFT7wL_KGorGz4lHnMMsWCP8i-ns'; // ЗАМЕНИТЕ
+// supabase.js - ИСПРАВЛЕННЫЙ
 
-// Инициализация Supabase
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// Проверяем, что Supabase SDK загружен
+if (typeof supabase === 'undefined') {
+    console.error('Supabase SDK не загружен!');
+}
 
-// Простая функция уведомления
+// КОНФИГУРАЦИЯ SUPABASE - ОБЯЗАТЕЛЬНО ЗАМЕНИТЕ ЭТИ КЛЮЧИ!
+const SUPABASE_URL = 'https://szwsvtxkhlacrarplgtn.supabase.co'; // ЗАМЕНИТЕ НА ВАШ URL
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6d3N2dHhraGxhY3JhcnBsZ3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxMzA1NjAsImV4cCI6MjA4MTcwNjU2MH0.dcRnrqlA4Iz1RthtFT7wL_KGorGz4lHnMMsWCP8i-ns'; // ЗАМЕНИТЕ НА ВАШ КЛЮЧ
+
+// Создаем клиент Supabase с обработкой ошибок
+let supabaseClient;
+try {
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    console.log('✅ Supabase клиент создан');
+} catch (error) {
+    console.error('❌ Ошибка создания Supabase клиента:', error);
+    // Создаем заглушку для демо-режима
+    supabaseClient = {
+        auth: {
+            getUser: async () => ({ data: { user: null }, error: null }),
+            signUp: async () => ({ data: null, error: new Error('Supabase не настроен') }),
+            signInWithPassword: async () => ({ data: null, error: new Error('Supabase не настроен') }),
+            signOut: async () => ({ error: null })
+        },
+        from: () => ({
+            select: () => ({
+                eq: () => ({
+                    order: () => Promise.resolve({ data: [], error: null })
+                })
+            }),
+            insert: () => Promise.resolve({ data: [], error: null }),
+            update: () => Promise.resolve({ error: null }),
+            delete: () => Promise.resolve({ error: null })
+        })
+    };
+}
+
+// Функция уведомлений
 function showNotification(message, type = 'info') {
+    console.log(`🔔 ${type.toUpperCase()}: ${message}`);
+    
     const notification = document.getElementById('notification');
     if (!notification) {
-        console.log(type + ':', message);
+        console.warn('Элемент уведомления не найден');
         return;
     }
     
@@ -26,36 +60,32 @@ function showNotification(message, type = 'info') {
     }, 4000);
 }
 
-// Закрытие уведомления по клику
-document.addEventListener('DOMContentLoaded', () => {
-    const closeBtn = document.querySelector('.notification-close');
-    if (closeBtn) {
-        closeBtn.addEventListener('click', () => {
-            const notification = document.getElementById('notification');
-            if (notification) notification.classList.add('hidden');
-        });
-    }
-});
-
-// Простая функция загрузчика
+// Функции загрузчика
 function showLoader(text = 'Загрузка...') {
+    console.log(`⏳ ${text}`);
+    
     const loader = document.getElementById('loader');
     const loaderText = document.getElementById('loader-text');
-    if (loader) {
-        if (loaderText) loaderText.textContent = text;
+    
+    if (loader && loaderText) {
+        loaderText.textContent = text;
         loader.classList.remove('hidden');
+    } else {
+        console.warn('Элемент загрузчика не найден');
     }
 }
 
 function hideLoader() {
     const loader = document.getElementById('loader');
-    if (loader) loader.classList.add('hidden');
+    if (loader) {
+        loader.classList.add('hidden');
+    }
 }
 
-// Экспортируем
-window.supabaseClient = supabase;
+// Экспортируем функции в глобальную область видимости
+window.supabaseClient = supabaseClient;
 window.showNotification = showNotification;
 window.showLoader = showLoader;
 window.hideLoader = hideLoader;
 
-console.log('✅ Supabase подключен');
+console.log('✅ Supabase модуль загружен');
