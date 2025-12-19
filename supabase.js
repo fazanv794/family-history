@@ -5,9 +5,9 @@ if (typeof supabase === 'undefined') {
     console.error('Supabase SDK не загружен!');
 }
 
-// КОНФИГУРАЦИЯ SUPABASE - ОБЯЗАТЕЛЬНО ЗАМЕНИТЕ ЭТИ КЛЮЧИ!
-const SUPABASE_URL = 'https://szwsvtxkhlacrarplgtn.supabase.co'; // ЗАМЕНИТЕ НА ВАШ URL
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6d3N2dHhraGxhY3JhcnBsZ3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxMzA1NjAsImV4cCI6MjA4MTcwNjU2MH0.dcRnrqlA4Iz1RthtFT7wL_KGorGz4lHnMMsWCP8i-ns'; // ЗАМЕНИТЕ НА ВАШ КЛЮЧ
+// КОНФИГУРАЦИЯ SUPABASE
+const SUPABASE_URL = 'https://szwsvtxkhlacrarplgtn.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6d3N2dHhraGxhY3JhcnBsZ3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxMzA1NjAsImV4cCI6MjA4MTcwNjU2MH0.dcRnrqlA4Iz1RthtFT7wL_KGorGz4lHnMMsWCP8i-ns';
 
 // Создаем клиент Supabase с обработкой ошибок
 let supabaseClient;
@@ -22,7 +22,8 @@ try {
             getUser: async () => ({ data: { user: null }, error: null }),
             signUp: async () => ({ data: null, error: new Error('Supabase не настроен') }),
             signInWithPassword: async () => ({ data: null, error: new Error('Supabase не настроен') }),
-            signOut: async () => ({ error: null })
+            signOut: async () => ({ error: null }),
+            updateUser: async () => ({ error: null })
         },
         from: () => ({
             select: () => ({
@@ -53,10 +54,21 @@ function showNotification(message, type = 'info') {
     text.textContent = message;
     notification.className = `notification ${type}`;
     notification.classList.remove('hidden');
+    notification.classList.add('show');
+    
+    // Закрытие по клику
+    const closeBtn = notification.querySelector('.notification-close');
+    if (closeBtn) {
+        closeBtn.onclick = () => {
+            notification.classList.remove('show');
+            setTimeout(() => notification.classList.add('hidden'), 300);
+        };
+    }
     
     // Автоматическое скрытие
     setTimeout(() => {
-        notification.classList.add('hidden');
+        notification.classList.remove('show');
+        setTimeout(() => notification.classList.add('hidden'), 300);
     }, 4000);
 }
 

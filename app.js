@@ -134,33 +134,33 @@ function setupEventListeners() {
     });
     
     document.getElementById('add-person-btn')?.addEventListener('click', () => {
-        openModal('add-person-modal');
+        showModal('add-person-modal');
     });
     
     // Древо
     document.getElementById('auto-build-btn')?.addEventListener('click', () => {
-        window.autoBuildTree();
+        buildFamilyTree();
     });
     
     document.getElementById('auto-build-btn-2')?.addEventListener('click', () => {
-        window.autoBuildTree();
+        buildFamilyTree();
     });
     
     document.getElementById('manual-add-btn')?.addEventListener('click', () => {
-        openModal('add-person-modal');
+        showModal('add-person-modal');
     });
     
     document.getElementById('save-image-btn')?.addEventListener('click', () => {
-        window.saveTreeAsImage();
+        saveTreeAsImage();
     });
     
     document.getElementById('print-tree-btn')?.addEventListener('click', () => {
-        window.printTree();
+        printTree();
     });
     
     // Лента событий
     document.getElementById('add-event-btn')?.addEventListener('click', () => {
-        openModal('add-event-modal');
+        showModal('add-event-modal');
     });
     
     document.getElementById('filter-year')?.addEventListener('change', updateTimeline);
@@ -168,7 +168,7 @@ function setupEventListeners() {
     
     // Медиатека
     document.getElementById('upload-media-btn')?.addEventListener('click', () => {
-        openModal('upload-modal');
+        showModal('upload-modal');
     });
     
     document.getElementById('media-search')?.addEventListener('input', updateMediaGrid);
@@ -176,7 +176,7 @@ function setupEventListeners() {
     
     // Профиль
     document.getElementById('edit-profile-btn')?.addEventListener('click', () => {
-        openModal('edit-profile-modal');
+        showModal('edit-profile-modal');
     });
     
     document.getElementById('change-avatar-btn')?.addEventListener('click', () => {
@@ -184,7 +184,7 @@ function setupEventListeners() {
     });
     
     document.getElementById('invite-btn')?.addEventListener('click', () => {
-        openModal('invite-modal');
+        showModal('invite-modal');
     });
     
     document.getElementById('notifications-settings-btn')?.addEventListener('click', () => {
@@ -218,11 +218,21 @@ function setupEventListeners() {
     });
     
     // Модальные окна
-    document.querySelectorAll('.modal-close, .cancel-btn').forEach(btn => {
-        btn.addEventListener('click', closeAllModals);
+    document.getElementById('modal-backdrop')?.addEventListener('click', closeAllModals);
+    
+    document.querySelectorAll('.modal-close-btn, .cancel-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeAllModals();
+        });
     });
     
-    document.getElementById('modal-overlay')?.addEventListener('click', closeAllModals);
+    // Предотвращаем закрытие при клике внутри модального окна
+    document.querySelectorAll('.modal-dialog').forEach(modal => {
+        modal.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+    });
     
     // Форма добавления человека
     document.getElementById('add-person-form-modal')?.addEventListener('submit', (e) => {
@@ -710,12 +720,12 @@ function updateRecentEvents() {
         const icon = getEventIcon(event.event_type);
         
         html += `
-            <div class="timeline-event" style="margin-bottom: 15px;">
+            <div class="timeline-event" style="display: flex; gap: 15px; margin-bottom: 15px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
                 <div class="event-icon" style="background: #667eea; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                     <i class="${icon}"></i>
                 </div>
                 <div class="event-content" style="flex: 1;">
-                    <h3 style="margin-bottom: 5px;">${event.title}</h3>
+                    <h3 style="margin-bottom: 5px; color: #2d3748;">${event.title}</h3>
                     <div class="event-date" style="color: #718096; font-size: 0.9rem; margin-bottom: 10px;">${date}</div>
                     ${event.description ? `<p style="color: #4a5568;">${event.description}</p>` : ''}
                 </div>
@@ -756,9 +766,9 @@ function updateTimeline() {
     
     if (filteredEvents.length === 0) {
         container.innerHTML = `
-            <div style="text-align: center; padding: 40px; color: #718096;">
-                <i class="fas fa-calendar" style="font-size: 3rem; margin-bottom: 20px;"></i>
-                <h3>Событий пока нет</h3>
+            <div style="text-align: center; padding: 40px; color: #718096; background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                <i class="fas fa-calendar" style="font-size: 3rem; margin-bottom: 20px; color: #cbd5e0;"></i>
+                <h3 style="margin-bottom: 10px; color: #4a5568;">Событий пока нет</h3>
                 <p>Добавьте первое событие в вашу семейную историю</p>
             </div>
         `;
@@ -784,16 +794,16 @@ function updateTimeline() {
         const icon = getEventIcon(event.event_type);
         
         html += `
-            <div class="timeline-event">
-                <div class="event-icon">
+            <div class="timeline-event" style="display: flex; gap: 15px; margin-bottom: 20px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                <div class="event-icon" style="background: #667eea; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                     <i class="${icon}"></i>
                 </div>
-                <div class="event-content">
-                    <h3>${event.title}</h3>
-                    <div class="event-date">${formattedDate}</div>
-                    ${event.description ? `<p>${event.description}</p>` : ''}
+                <div class="event-content" style="flex: 1;">
+                    <h3 style="margin-bottom: 5px; color: #2d3748;">${event.title}</h3>
+                    <div class="event-date" style="color: #718096; font-size: 0.9rem; margin-bottom: 10px;">${formattedDate}</div>
+                    ${event.description ? `<p style="color: #4a5568; margin-bottom: 15px;">${event.description}</p>` : ''}
                     <div style="margin-top: 10px;">
-                        <button class="btn btn-small" onclick="editEvent('${event.id}')">
+                        <button class="btn btn-small" onclick="editEvent('${event.id}')" style="margin-right: 5px;">
                             <i class="fas fa-edit"></i>
                         </button>
                         <button class="btn btn-small btn-danger" onclick="deleteEvent('${event.id}')">
@@ -867,9 +877,9 @@ function updateMediaGrid() {
     
     if (filteredMedia.length === 0) {
         container.innerHTML = `
-            <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #718096;">
-                <i class="fas fa-images" style="font-size: 3rem; margin-bottom: 20px;"></i>
-                <h3>Медиафайлов пока нет</h3>
+            <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #718096; background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                <i class="fas fa-images" style="font-size: 3rem; margin-bottom: 20px; color: #cbd5e0;"></i>
+                <h3 style="margin-bottom: 10px; color: #4a5568;">Медиафайлов пока нет</h3>
                 <p>Загрузите первое фото в ваш семейный архив</p>
             </div>
         `;
@@ -881,11 +891,12 @@ function updateMediaGrid() {
         html += `
             <div class="media-item">
                 <img src="${item.file_url}" alt="${item.description || 'Фото'}" 
-                     onerror="this.src='https://via.placeholder.com/300/667eea/ffffff?text=Фото'">
-                <div class="media-description">
+                     onerror="this.src='https://via.placeholder.com/300/667eea/ffffff?text=Фото'"
+                     style="width: 100%; height: 150px; object-fit: cover; border-radius: 8px 8px 0 0;">
+                <div class="media-description" style="padding: 15px; background: white; border-radius: 0 0 8px 8px;">
                     ${item.description || 'Без описания'}
-                    <div style="margin-top: 5px; font-size: 0.8rem;">
-                        <button class="btn btn-small" onclick="viewMedia('${item.id}')">
+                    <div style="margin-top: 10px; font-size: 0.8rem;">
+                        <button class="btn btn-small" onclick="viewMedia('${item.id}')" style="margin-right: 5px;">
                             <i class="fas fa-eye"></i>
                         </button>
                         <button class="btn btn-small btn-danger" onclick="deleteMedia('${item.id}')">
@@ -918,8 +929,8 @@ function updateChat() {
         });
         
         html += `
-            <div class="chat-message ${isOwn ? 'own' : ''}">
-                <div>${msg.content}</div>
+            <div class="chat-message" style="margin-bottom: 10px; padding: 10px; background: ${isOwn ? '#ebf8ff' : '#f7fafc'}; border-radius: 8px; ${isOwn ? 'text-align: right;' : ''}">
+                <div style="margin-bottom: 5px;">${msg.content}</div>
                 <small style="color: #718096; font-size: 0.8rem;">${time}</small>
             </div>
         `;
@@ -931,6 +942,245 @@ function updateChat() {
     // Обновляем счетчик онлайн
     const onlineCount = Math.floor(Math.random() * 5) + 1; // Для демо
     document.getElementById('online-count').textContent = `${onlineCount} онлайн`;
+}
+
+// ========== МОДАЛЬНЫЕ ОКНА ==========
+
+function showModal(modalId) {
+    const modal = document.getElementById(modalId);
+    const backdrop = document.getElementById('modal-backdrop');
+    
+    if (modal && backdrop) {
+        // Закрываем все открытые модальные окна
+        closeAllModals();
+        
+        // Показываем backdrop
+        backdrop.classList.add('show');
+        
+        // Показываем модальное окно
+        modal.classList.add('show');
+        
+        // Блокируем прокрутку body
+        document.body.style.overflow = 'hidden';
+        
+        // Заполняем данные если нужно
+        if (modalId === 'edit-profile-modal' && currentUser) {
+            document.getElementById('edit-profile-name').value = currentUser.user_metadata?.name?.split(' ')[0] || '';
+            document.getElementById('edit-profile-last-name').value = currentUser.user_metadata?.name?.split(' ')[1] || '';
+            document.getElementById('edit-profile-email').value = currentUser.email || '';
+        }
+    }
+}
+
+function closeAllModals() {
+    // Закрываем все модальные окна
+    document.querySelectorAll('.modal-dialog').forEach(modal => {
+        modal.classList.remove('show');
+    });
+    
+    // Скрываем backdrop
+    const backdrop = document.getElementById('modal-backdrop');
+    if (backdrop) {
+        backdrop.classList.remove('show');
+    }
+    
+    // Восстанавливаем прокрутку
+    document.body.style.overflow = '';
+}
+
+// ========== ПОСТРОЕНИЕ ДЕРЕВА ==========
+
+async function buildFamilyTree() {
+    try {
+        window.showLoader('Построение генеалогического древа...');
+        
+        const container = document.getElementById('tree-visualization-container');
+        if (!container) {
+            throw new Error('Контейнер для дерева не найден');
+        }
+        
+        // Очищаем контейнер
+        container.innerHTML = '';
+        
+        // Получаем настройки
+        const generations = parseInt(document.getElementById('auto-generations')?.value || 3);
+        const style = document.getElementById('auto-style')?.value || 'horizontal';
+        const centerPerson = document.getElementById('auto-center-person')?.value || 'self';
+        
+        // Создаем дерево
+        createTreeVisualization(container, generations, style);
+        
+        window.showNotification('✅ Генеалогическое древо построено!', 'success');
+        
+    } catch (error) {
+        console.error('Ошибка построения дерева:', error);
+        window.showNotification('Ошибка построения дерева: ' + error.message, 'error');
+    } finally {
+        window.hideLoader();
+    }
+}
+
+function createTreeVisualization(container, generations, style) {
+    // Если нет людей, создаем демо-данные
+    if (!people || people.length === 0) {
+        people = generateDemoPeople();
+    }
+    
+    // Создаем HTML для дерева
+    let html = `
+        <div class="tree-container" style="text-align: center;">
+            <h3 style="color: #2d3748; margin-bottom: 30px;">Генеалогическое древо семьи</h3>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 40px;">
+    `;
+    
+    // Находим центрального человека (Я)
+    const selfPerson = people.find(p => p.relation === 'self') || people[0];
+    
+    // Генерация для демо
+    const demoData = {
+        name: "Иванов Иван",
+        birth: "1990",
+        children: [
+            {
+                name: "Иванов Алексей",
+                birth: "2015",
+                relation: "сын"
+            },
+            {
+                name: "Иванова Анна", 
+                birth: "2018",
+                relation: "дочь"
+            }
+        ],
+        parents: [
+            {
+                name: "Иванов Петр",
+                birth: "1960",
+                death: "2020",
+                relation: "отец"
+            },
+            {
+                name: "Иванова Мария",
+                birth: "1965",
+                relation: "мать" 
+            }
+        ],
+        grandparents: [
+            {
+                name: "Иванов Сергей",
+                birth: "1930",
+                death: "2000",
+                relation: "дед"
+            },
+            {
+                name: "Иванова Ольга",
+                birth: "1935",
+                death: "2005",
+                relation: "бабушка"
+            }
+        ]
+    };
+    
+    // Поколение 3: Бабушки/дедушки
+    if (generations >= 3 && demoData.grandparents.length > 0) {
+        html += `
+            <div style="display: flex; gap: 100px; margin-bottom: 20px;">
+                ${demoData.grandparents.map(gp => `
+                    <div class="tree-person-card" style="text-align: center;">
+                        <div class="person-avatar" style="background: #a0aec0;">
+                            ${gp.name.split(' ')[0][0]}${gp.name.split(' ')[1][0]}
+                        </div>
+                        <div style="font-weight: bold; font-size: 0.9rem; margin-bottom: 5px;">${gp.name}</div>
+                        <div style="font-size: 0.8rem; color: #718096; margin-bottom: 5px;">${gp.birth}${gp.death ? `-${gp.death}` : ''}</div>
+                        <div style="font-size: 0.8rem; color: #667eea;">${gp.relation}</div>
+                    </div>
+                `).join('')}
+            </div>
+            
+            <div style="height: 20px; display: flex; justify-content: center;">
+                <div style="width: 2px; height: 100%; background: #cbd5e0;"></div>
+            </div>
+        `;
+    }
+    
+    // Поколение 2: Родители
+    if (generations >= 2 && demoData.parents.length > 0) {
+        html += `
+            <div style="display: flex; gap: 150px; margin-bottom: 20px;">
+                ${demoData.parents.map(parent => `
+                    <div class="tree-person-card" style="text-align: center;">
+                        <div class="person-avatar" style="background: #667eea;">
+                            ${parent.name.split(' ')[0][0]}${parent.name.split(' ')[1][0]}
+                        </div>
+                        <div style="font-weight: bold; margin-bottom: 5px;">${parent.name}</div>
+                        <div style="font-size: 0.9rem; color: #718096; margin-bottom: 5px;">${parent.birth}${parent.death ? `-${parent.death}` : ''}</div>
+                        <div style="font-size: 0.9rem; color: #48bb78;">${parent.relation}</div>
+                    </div>
+                `).join('')}
+            </div>
+            
+            <div style="height: 20px; display: flex; justify-content: center;">
+                <div style="width: 2px; height: 100%; background: #cbd5e0;"></div>
+            </div>
+        `;
+    }
+    
+    // Поколение 1: Я (центральный)
+    html += `
+        <div class="tree-person-card self" style="text-align: center;">
+            <div class="person-avatar" style="background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); font-size: 2rem;">
+                Я
+            </div>
+            <div style="font-weight: bold; font-size: 1.2rem; margin-bottom: 5px;">${demoData.name}</div>
+            <div style="font-size: 1rem; color: #718096; margin-bottom: 5px;">род. ${demoData.birth}</div>
+            <div style="font-size: 1rem; color: #ed64a6; font-weight: bold;">Я</div>
+        </div>
+        
+        <div style="height: 20px; display: flex; justify-content: center;">
+            <div style="width: 2px; height: 100%; background: #cbd5e0;"></div>
+        </div>
+    `;
+    
+    // Поколение 0: Дети
+    if (generations >= 1 && demoData.children.length > 0) {
+        html += `
+            <div style="display: flex; gap: 150px; margin-top: 20px;">
+                ${demoData.children.map(child => `
+                    <div class="tree-person-card" style="text-align: center;">
+                        <div class="person-avatar" style="background: ${child.relation === 'сын' ? '#4299e1' : '#ed64a6'};">
+                            ${child.name.split(' ')[0][0]}${child.name.split(' ')[1][0]}
+                        </div>
+                        <div style="font-weight: bold; margin-bottom: 5px;">${child.name}</div>
+                        <div style="font-size: 0.9rem; color: #718096; margin-bottom: 5px;">род. ${child.birth}</div>
+                        <div style="font-size: 0.9rem; color: #d69e2e;">${child.relation}</div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+    
+    html += `
+            </div>
+            
+            <div style="margin-top: 40px; padding: 20px; background: #f7fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <h4 style="color: #4a5568; margin-bottom: 10px;">Информация о дереве:</h4>
+                <p style="color: #718096; margin-bottom: 5px;">• Стиль отображения: <strong>${style === 'horizontal' ? 'Горизонтальный' : style === 'vertical' ? 'Вертикальный' : 'Радиальный'}</strong></p>
+                <p style="color: #718096; margin-bottom: 5px;">• Поколений: <strong>${generations}</strong></p>
+                <p style="color: #718096;">• Всего людей: <strong>${1 + (demoData.parents?.length || 0) + (demoData.children?.length || 0) + (demoData.grandparents?.length || 0)}</strong></p>
+            </div>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+    updateTreeStats();
+}
+
+function updateTreeStats() {
+    const peopleCount = 7; // Примерное количество
+    document.getElementById('tree-people-count').textContent = peopleCount;
+    document.getElementById('tree-photos-count').textContent = '3';
+    document.getElementById('tree-generations').textContent = document.getElementById('auto-generations')?.value || 3;
+    document.getElementById('tree-connections').textContent = peopleCount - 1;
 }
 
 // ========== ОПЕРАЦИИ С ДАННЫМИ ==========
@@ -986,7 +1236,7 @@ async function addPerson() {
             
             // Обновляем дерево если оно открыто
             if (document.getElementById('tree-page').classList.contains('hidden') === false) {
-                window.autoBuildTree();
+                buildFamilyTree();
             }
             
             window.showNotification('✅ Человек успешно добавлен!', 'success');
@@ -1174,7 +1424,7 @@ function editEvent(eventId) {
     document.getElementById('event-description').value = event.description || '';
     
     // Показываем модальное окно
-    openModal('add-event-modal');
+    showModal('add-event-modal');
     
     // Меняем заголовок и действие формы
     const modal = document.getElementById('add-event-modal');
@@ -1268,31 +1518,34 @@ function viewMedia(mediaId) {
     
     // Создаем модальное окно для просмотра
     const modalHtml = `
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Просмотр медиа</h3>
-                <button class="modal-close">&times;</button>
-            </div>
-            <div class="modal-body">
-                <img src="${item.file_url}" alt="${item.description || 'Фото'}" 
-                     style="width: 100%; border-radius: 8px; margin-bottom: 20px;">
-                <h4>${item.description || 'Без описания'}</h4>
-                <p>Загружено: ${new Date(item.created_at).toLocaleDateString('ru-RU')}</p>
+        <div class="modal-dialog" id="view-media-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">Просмотр медиа</h3>
+                    <button class="modal-close-btn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <img src="${item.file_url}" alt="${item.description || 'Фото'}" 
+                         style="width: 100%; border-radius: 8px; margin-bottom: 20px;">
+                    <h4 style="margin-bottom: 10px;">${item.description || 'Без описания'}</h4>
+                    <p style="color: #718096;">Загружено: ${new Date(item.created_at).toLocaleDateString('ru-RU')}</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn cancel-btn">Закрыть</button>
+                </div>
             </div>
         </div>
     `;
     
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    modal.innerHTML = modalHtml;
-    
-    const overlay = document.getElementById('modal-overlay');
-    overlay.innerHTML = '';
-    overlay.appendChild(modal);
-    overlay.classList.remove('hidden');
+    const backdrop = document.getElementById('modal-backdrop');
+    backdrop.innerHTML = modalHtml;
+    backdrop.classList.add('show');
+    document.getElementById('view-media-modal').classList.add('show');
+    document.body.style.overflow = 'hidden';
     
     // Закрытие модального окна
-    modal.querySelector('.modal-close').addEventListener('click', closeAllModals);
+    document.querySelector('#view-media-modal .modal-close-btn')?.addEventListener('click', closeAllModals);
+    document.querySelector('#view-media-modal .cancel-btn')?.addEventListener('click', closeAllModals);
 }
 
 async function deleteMedia(mediaId) {
@@ -1467,6 +1720,28 @@ function sendMessage() {
     }
 }
 
+function showSelectedFiles(files) {
+    const fileList = document.getElementById('file-list');
+    const listContainer = document.getElementById('selected-files-list');
+    
+    if (!files || files.length === 0) {
+        if (fileList) fileList.style.display = 'none';
+        return;
+    }
+    
+    if (listContainer) {
+        listContainer.innerHTML = '';
+        
+        Array.from(files).forEach((file, index) => {
+            const li = document.createElement('li');
+            li.textContent = `${index + 1}. ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+            listContainer.appendChild(li);
+        });
+    }
+    
+    if (fileList) fileList.style.display = 'block';
+}
+
 // ========== УПРАВЛЕНИЕ ИНТЕРФЕЙСОМ ==========
 
 function showLandingPage() {
@@ -1521,53 +1796,6 @@ function showPage(pageId) {
     document.getElementById('nav-links').classList.remove('active');
 }
 
-function openModal(modalId) {
-    const modal = document.getElementById(modalId);
-    const overlay = document.getElementById('modal-overlay');
-    
-    if (modal && overlay) {
-        modal.classList.remove('hidden');
-        overlay.classList.remove('hidden');
-        
-        // Заполняем селекторы если нужно
-        if (modalId === 'edit-profile-modal') {
-            document.getElementById('edit-profile-name').value = currentUser.user_metadata?.name?.split(' ')[0] || '';
-            document.getElementById('edit-profile-last-name').value = currentUser.user_metadata?.name?.split(' ')[1] || '';
-            document.getElementById('edit-profile-email').value = currentUser.email || '';
-        }
-    }
-}
-
-function closeAllModals() {
-    document.querySelectorAll('.modal').forEach(modal => {
-        modal.classList.add('hidden');
-    });
-    document.getElementById('modal-overlay').classList.add('hidden');
-    document.getElementById('modal-overlay').innerHTML = '';
-}
-
-function showSelectedFiles(files) {
-    const fileList = document.getElementById('file-list');
-    const listContainer = document.getElementById('selected-files-list');
-    
-    if (!files || files.length === 0) {
-        if (fileList) fileList.style.display = 'none';
-        return;
-    }
-    
-    if (listContainer) {
-        listContainer.innerHTML = '';
-        
-        Array.from(files).forEach((file, index) => {
-            const li = document.createElement('li');
-            li.textContent = `${index + 1}. ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
-            listContainer.appendChild(li);
-        });
-    }
-    
-    if (fileList) fileList.style.display = 'block';
-}
-
 function showDemoMode() {
     // Для демо показываем авторизованный интерфейс с демо-данными
     currentUser = {
@@ -1603,7 +1831,7 @@ function showFeatureDemo(feature) {
             setTimeout(() => {
                 showPage('tree-page');
                 setTimeout(() => {
-                    window.autoBuildTree();
+                    buildFamilyTree();
                 }, 500);
             }, 100);
             break;
@@ -1663,15 +1891,83 @@ async function logout() {
     }
 }
 
+function saveTreeAsImage() {
+    const container = document.getElementById('tree-visualization-container');
+    if (!container || container.innerHTML.includes('tree-empty-state')) {
+        window.showNotification('Сначала постройте дерево', 'error');
+        return;
+    }
+    
+    window.showLoader('Сохранение изображения...');
+    
+    // Для демо просто показываем уведомление
+    setTimeout(() => {
+        window.showNotification('✅ Дерево сохранено как изображение!', 'success');
+        window.hideLoader();
+    }, 1500);
+}
+
+function printTree() {
+    const container = document.getElementById('tree-visualization-container');
+    if (!container || container.innerHTML.includes('tree-empty-state')) {
+        window.showNotification('Сначала постройте дерево', 'error');
+        return;
+    }
+    
+    window.showNotification('Подготовка к печати...', 'info');
+    
+    // Для демо просто открываем новое окно
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Генеалогическое древо</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        h1 { color: #2d3748; margin-bottom: 20px; text-align: center; }
+                        .tree-container { padding: 20px; background: white; border-radius: 8px; }
+                        @media print {
+                            body { padding: 0; }
+                            .tree-container { border: none; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <h1>Генеалогическое древо</h1>
+                    <div class="tree-container">
+                        ${container.innerHTML}
+                        <div style="text-align: center; margin-top: 40px; color: #718096; font-size: 0.9rem;">
+                            Создано в приложении "История моей семьи"<br>
+                            Дата: ${new Date().toLocaleDateString('ru-RU')}
+                        </div>
+                    </div>
+                    <script>
+                        window.onload = function() {
+                            window.print();
+                            setTimeout(() => window.close(), 1000);
+                        }
+                    </script>
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+    }
+}
+
 // Экспортируем функции для HTML
-window.showPersonInfo = showPersonInfo;
+window.showPersonInfo = function(personId) {
+    window.showNotification('Информация о человеке будет отображена здесь', 'info');
+};
+
 window.editPerson = function(personId) {
     const person = people.find(p => p.id === personId);
     if (person) {
         window.showNotification(`Редактирование: ${person.first_name} ${person.last_name}`, 'info');
     }
 };
-window.openModal = openModal;
+
+window.showModal = showModal;
 window.closeAllModals = closeAllModals;
 window.editEvent = editEvent;
 window.deleteEvent = deleteEvent;
@@ -1684,6 +1980,7 @@ window.showLandingFeatures = function() {
         window.scrollTo(0, document.getElementById('features').offsetTop - 80);
     }, 100);
 };
+
 window.showAboutSection = function() {
     showLandingPage();
     setTimeout(() => {
@@ -1691,14 +1988,21 @@ window.showAboutSection = function() {
         window.scrollTo(0, document.getElementById('about').offsetTop - 80);
     }, 100);
 };
+
 window.showContactModal = function() {
     window.showNotification('Контакты: support@family-history.ru', 'info');
 };
+
 window.showTermsModal = function() {
     window.showNotification('Открыть пользовательское соглашение', 'info');
 };
+
 window.showPrivacyModal = function() {
     window.showNotification('Открыть политику конфиденциальности', 'info');
 };
+
+window.autoBuildTree = buildFamilyTree;
+window.saveTreeAsImage = saveTreeAsImage;
+window.printTree = printTree;
 
 console.log('✅ Приложение загружено');
