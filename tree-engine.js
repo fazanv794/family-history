@@ -25,8 +25,7 @@ function showTreeBuilderModal() {
         return;
     }
     
-    const modalHtml = `
-        <div class="modal show" id="tree-builder-modal">
+    const modalHtml = `<div class="modal show" id="tree-builder-modal">
             <div class="modal-content" style="max-width: 800px;">
                 <div class="modal-header">
                     <h3>Построение генеалогического древа</h3>
@@ -118,8 +117,7 @@ function showTreeBuilderModal() {
                     </div>
                 </div>
             </div>
-        </div>
-    `;
+        </div>`;
     
     const overlay = document.getElementById('modal-overlay');
     if (overlay) {
@@ -130,8 +128,7 @@ function showTreeBuilderModal() {
         if (!window.people || window.people.length === 0) {
             const modalBody = document.querySelector('#tree-builder-modal .modal-body');
             if (modalBody) {
-                modalBody.innerHTML = `
-                    <div style="text-align: center; padding: 30px;">
+                modalBody.innerHTML = `<div style="text-align: center; padding: 30px;">
                         <i class="fas fa-users" style="font-size: 4rem; color: #cbd5e0; margin-bottom: 20px;"></i>
                         <h3 style="margin-bottom: 15px; color: #4a5568;">Нет данных для построения дерева</h3>
                         <p style="margin-bottom: 25px; color: #718096;">Добавьте членов семьи, чтобы построить генеалогическое древо</p>
@@ -141,8 +138,7 @@ function showTreeBuilderModal() {
                         <button class="btn btn-outline cancel-btn" style="margin-left: 10px;">
                             Отмена
                         </button>
-                    </div>
-                `;
+                    </div>`;
             }
         }
         
@@ -196,13 +192,11 @@ function buildFamilyTree(centerPersonId) {
         // Получаем центральную персону
         const centerPerson = window.people.find(p => p.id === centerPersonId);
         if (!centerPerson) {
-            container.innerHTML = `
-                <div class="tree-empty-state">
+            container.innerHTML = `<div class="tree-empty-state">
                     <i class="fas fa-exclamation-triangle" style="font-size: 4rem; color: #ed8936; margin-bottom: 20px;"></i>
                     <h3>Персона не найдена</h3>
                     <p>Центральная персона не найдена в базе данных</p>
-                </div>
-            `;
+                </div>`;
             window.hideLoader();
             return;
         }
@@ -319,8 +313,7 @@ function buildTreeStructure(centerPerson) {
 function renderFamilyTree(tree, style, options) {
     const { showPhotos, showDates, showLines, showBio } = options;
     
-    let html = `
-        <div class="tree-container">
+    let html = `<div class="tree-container">
             <div class="tree-header">
                 <h3>Генеалогическое древо семьи ${tree.person.last_name}</h3>
                 <div class="tree-controls-small">
@@ -333,51 +326,43 @@ function renderFamilyTree(tree, style, options) {
                 </div>
             </div>
             
-            <div class="tree-content ${style}">
-    `;
+            <div class="tree-content ${style}">`;
     
     // Поколение 4: Прабабушки/прадедушки
     if (tree.greatGrandparents.length > 0) {
-        html += `
-            <div class="tree-generation generation-4">
+        html += `<div class="tree-generation generation-4">
                 <div class="generation-label">Прабабушки/прадедушки</div>
                 <div class="generation-content">
                     ${renderGeneration(tree.greatGrandparents, showPhotos, showDates, showBio)}
                 </div>
             </div>
-            ${showLines ? '<div class="tree-connector"></div>' : ''}
-        `;
+            ${showLines ? '<div class="tree-connector"></div>' : ''}`;
     }
     
     // Поколение 3: Бабушки/дедушки
     if (tree.grandparents.length > 0) {
-        html += `
-            <div class="tree-generation generation-3">
+        html += `<div class="tree-generation generation-3">
                 <div class="generation-label">Бабушки/дедушки</div>
                 <div class="generation-content">
                     ${renderGeneration(tree.grandparents, showPhotos, showDates, showBio)}
                 </div>
             </div>
-            ${showLines ? '<div class="tree-connector"></div>' : ''}
-        `;
+            ${showLines ? '<div class="tree-connector"></div>' : ''}`;
     }
     
     // Поколение 2: Родители
     if (tree.parents.length > 0) {
-        html += `
-            <div class="tree-generation generation-2">
+        html += `<div class="tree-generation generation-2">
                 <div class="generation-label">Родители</div>
                 <div class="generation-content">
                     ${renderGeneration(tree.parents, showPhotos, showDates, showBio)}
                 </div>
             </div>
-            ${showLines ? '<div class="tree-connector"></div>' : ''}
-        `;
+            ${showLines ? '<div class="tree-connector"></div>' : ''}`;
     }
     
     // Поколение 1: Текущее поколение
-    html += `
-        <div class="tree-generation generation-1 current">
+    html += `<div class="tree-generation generation-1 current">
             <div class="generation-label">Текущее поколение</div>
             <div class="generation-content">
                 <div class="family-unit">
@@ -389,49 +374,41 @@ function renderFamilyTree(tree, style, options) {
                 </div>
             </div>
         </div>
-        ${showLines ? '<div class="tree-connector"></div>' : ''}
-    `;
+        ${showLines ? '<div class="tree-connector"></div>' : ''}`;
     
     // Поколение 0: Дети
     if (tree.children.length > 0) {
-        html += `
-            <div class="tree-generation generation-0">
+        html += `<div class="tree-generation generation-0">
                 <div class="generation-label">Дети</div>
                 <div class="generation-content">
                     ${renderGeneration(tree.children, showPhotos, showDates, showBio)}
                 </div>
             </div>
-            ${showLines ? '<div class="tree-connector"></div>' : ''}
-        `;
+            ${showLines ? '<div class="tree-connector"></div>' : ''}`;
     }
     
     // Поколение -1: Внуки
     if (tree.grandchildren.length > 0) {
-        html += `
-            <div class="tree-generation generation--1">
+        html += `<div class="tree-generation generation--1">
                 <div class="generation-label">Внуки</div>
                 <div class="generation-content">
                     ${renderGeneration(tree.grandchildren, showPhotos, showDates, showBio)}
                 </div>
             </div>
-            ${showLines ? '<div class="tree-connector"></div>' : ''}
-        `;
+            ${showLines ? '<div class="tree-connector"></div>' : ''}`;
     }
     
     // Поколение -2: Правнуки
     if (tree.greatGrandchildren.length > 0) {
-        html += `
-            <div class="tree-generation generation--2">
+        html += `<div class="tree-generation generation--2">
                 <div class="generation-label">Правнуки</div>
                 <div class="generation-content">
                     ${renderGeneration(tree.greatGrandchildren, showPhotos, showDates, showBio)}
                 </div>
-            </div>
-        `;
+            </div>`;
     }
     
-    html += `
-            </div>
+    html += `</div>
             
             <div class="tree-info">
                 <h4><i class="fas fa-info-circle"></i> Информация о дереве</h4>
@@ -454,8 +431,7 @@ function renderFamilyTree(tree, style, options) {
                     </div>
                 </div>
             </div>
-        </div>
-    `;
+        </div>`;
     
     return html;
 }
@@ -472,8 +448,7 @@ function renderPersonCard(person, type, showPhotos, showDates, showBio) {
     const genderClass = person.gender === 'female' ? 'female' : 'male';
     const typeClass = type === 'self' ? 'self' : type === 'spouse' ? 'spouse' : '';
     
-    return `
-        <div class="tree-person-card ${genderClass} ${typeClass}" 
+    return `<div class="tree-person-card ${genderClass} ${typeClass}" 
              onclick="showPersonInfo('${person.id}')"
              title="${person.first_name} ${person.last_name}">
             <div class="person-avatar">
@@ -498,8 +473,7 @@ function renderPersonCard(person, type, showPhotos, showDates, showBio) {
                     <i class="fas fa-edit"></i>
                 </button>
             </div>
-        </div>
-    `;
+        </div>`;
 }
 
 // Подсчет людей в дереве
@@ -646,8 +620,7 @@ function printTree() {
     window.showNotification('Подготовка к печати...', 'info');
     
     // Открываем новое окно для печати
-    const printContent = `
-        <!DOCTYPE html>
+    const printContent = `<!DOCTYPE html>
         <html>
         <head>
             <title>Генеалогическое древо</title>
@@ -676,8 +649,7 @@ function printTree() {
                 }
             </script>
         </body>
-        </html>
-    `;
+        </html>`;
     
     const printWindow = window.open('', '_blank');
     if (printWindow) {
@@ -691,8 +663,7 @@ function showPersonInfo(personId) {
     const person = window.people.find(p => p.id === personId);
     if (!person) return;
     
-    const modalHtml = `
-        <div class="modal show" id="person-info-modal">
+    const modalHtml = `<div class="modal show" id="person-info-modal">
             <div class="modal-content">
                 <div class="modal-header">
                     <h3>${person.first_name} ${person.last_name}</h3>
@@ -743,8 +714,7 @@ function showPersonInfo(personId) {
                     </button>
                 </div>
             </div>
-        </div>
-    `;
+        </div>`;
     
     const overlay = document.getElementById('modal-overlay');
     if (overlay) {
