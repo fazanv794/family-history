@@ -267,13 +267,14 @@
     <script src="supabase.js"></script>
     <script src="tree-engine.js"></script>
     <script src="app.js"></script>
+    <script src="tree-builder.js"></script>
     
     <script>
         // Инициализация страницы
         document.addEventListener('DOMContentLoaded', async () => {
             console.log('🌳 Страница дерева загружается...');
             
-            // Проверка авторизации - ОЖИДАЕМ загрузки пользователя
+            // Проверка авторизации
             const checkAuth = () => {
                 if (!window.currentUser) {
                     console.log('❌ Пользователь не авторизован');
@@ -291,6 +292,15 @@
             setTimeout(() => {
                 if (!checkAuth()) return;
                 
+                // Инициализируем данные дерева если их нет
+                if (!window.treeData) {
+                    window.treeData = {
+                        people: [],
+                        currentPerson: null,
+                        treeStructure: null
+                    };
+                }
+                
                 // Обработчики кнопок
                 document.getElementById('auto-build-btn')?.addEventListener('click', () => {
                     if (!window.currentUser) {
@@ -300,7 +310,10 @@
                         }, 1500);
                         return;
                     }
-                    if (window.autoBuildTree) autoBuildTree();
+                    // Запускаем пошаговое построение
+                    if (window.startTreeBuilder) {
+                        startTreeBuilder();
+                    }
                 });
                 
                 document.getElementById('auto-build-btn-2')?.addEventListener('click', () => {
@@ -311,7 +324,10 @@
                         }, 1500);
                         return;
                     }
-                    if (window.autoBuildTree) autoBuildTree();
+                    // Запускаем пошаговое построение
+                    if (window.startTreeBuilder) {
+                        startTreeBuilder();
+                    }
                 });
                 
                 document.getElementById('manual-add-btn')?.addEventListener('click', () => {
@@ -322,7 +338,10 @@
                         }, 1500);
                         return;
                     }
-                    window.showModal('add-person-modal');
+                    // Запускаем добавление человека
+                    if (window.addNewPerson) {
+                        addNewPerson();
+                    }
                 });
                 
                 document.getElementById('save-image-btn')?.addEventListener('click', () => {
@@ -347,13 +366,13 @@
                     if (window.printTree) printTree();
                 });
                 
-                // Обновляем статистику
-                if (window.updateTreeStats) {
-                    updateTreeStats();
+                // Обновляем предпросмотр если есть данные
+                if (window.updateTreePreview && window.treeData.people.length > 0) {
+                    updateTreePreview();
                 }
                 
                 console.log('✅ Страница дерева инициализирована');
-            }, 300); // Небольшая задержка для загрузки данных пользователя
+            }, 300);
         });
     </script>
 </body>

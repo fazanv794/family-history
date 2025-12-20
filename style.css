@@ -1642,3 +1642,433 @@ footer {
 .hidden {
     display: none !important;
 }
+
+/* Стили для пошагового построения дерева */
+
+/* Предпросмотр дерева */
+.tree-preview-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    margin-top: 20px;
+}
+
+.preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 25px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.preview-header h3 {
+    margin: 0;
+    font-size: 1.4rem;
+}
+
+.preview-controls {
+    display: flex;
+    gap: 10px;
+}
+
+.preview-content {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 25px;
+    padding: 25px;
+}
+
+.people-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 15px;
+    max-height: 500px;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+/* Карточка человека в предпросмотре */
+.person-preview-card {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background: #f8fafc;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.person-preview-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    border-color: #cbd5e0;
+}
+
+.person-preview-card.male {
+    border-left: 4px solid #4299e1;
+}
+
+.person-preview-card.female {
+    border-left: 4px solid #ed64a6;
+}
+
+.person-preview-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin-right: 15px;
+    flex-shrink: 0;
+}
+
+.person-preview-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-initials {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+    color: white;
+}
+
+.person-preview-card.male .avatar-initials {
+    background: #4299e1;
+}
+
+.person-preview-card.female .avatar-initials {
+    background: #ed64a6;
+}
+
+.person-preview-info {
+    flex: 1;
+}
+
+.person-preview-name {
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 5px;
+}
+
+.person-preview-details {
+    font-size: 0.85rem;
+    color: #718096;
+}
+
+.relation-badge {
+    display: inline-block;
+    background: #e6fffa;
+    color: #234e52;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    margin-right: 5px;
+}
+
+.line-badge {
+    display: inline-block;
+    background: #fefcbf;
+    color: #744210;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+}
+
+.person-preview-actions {
+    display: flex;
+    gap: 5px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.person-preview-card:hover .person-preview-actions {
+    opacity: 1;
+}
+
+.btn-icon {
+    background: none;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #a0aec0;
+    transition: all 0.2s;
+}
+
+.btn-icon:hover {
+    background: #edf2f7;
+    color: #4a5568;
+}
+
+.btn-icon.btn-danger:hover {
+    background: #fed7d7;
+    color: #c53030;
+}
+
+/* Статистика в предпросмотре */
+.preview-stats {
+    background: #f7fafc;
+    border-radius: 10px;
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+}
+
+.preview-stats h4 {
+    color: #4a5568;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 12px;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.stat-label {
+    display: block;
+    font-size: 0.85rem;
+    color: #718096;
+    margin-bottom: 5px;
+}
+
+.stat-value {
+    display: block;
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #2d3748;
+}
+
+/* Финальное дерево */
+.final-tree-container {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.tree-header {
+    padding: 20px 25px;
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.tree-header h2 {
+    margin: 0;
+    font-size: 1.6rem;
+}
+
+.tree-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.tree-visualization {
+    padding: 30px;
+    background: #f8fafc;
+    min-height: 500px;
+}
+
+.tree-generation {
+    margin-bottom: 30px;
+}
+
+.gen-label {
+    text-align: center;
+    color: #4a5568;
+    font-weight: 600;
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+}
+
+.gen-content {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.tree-person-box {
+    background: white;
+    border-radius: 10px;
+    padding: 15px;
+    text-align: center;
+    width: 140px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.tree-person-box:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.tree-person-box.male {
+    border-color: #4299e1;
+}
+
+.tree-person-box.female {
+    border-color: #ed64a6;
+}
+
+.tree-person-box.center-person {
+    border-color: #48bb78;
+    border-width: 3px;
+}
+
+.person-avatar {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin: 0 auto 10px;
+}
+
+.person-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.tree-person-box.male .avatar-initials {
+    background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+}
+
+.tree-person-box.female .avatar-initials {
+    background: linear-gradient(135deg, #ed64a6 0%, #d53f8c 100%);
+}
+
+.person-name {
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 5px;
+    font-size: 0.95rem;
+}
+
+.person-title {
+    font-size: 0.85rem;
+    color: #667eea;
+    margin-bottom: 5px;
+}
+
+.person-date {
+    font-size: 0.8rem;
+    color: #718096;
+}
+
+.couple-container {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+}
+
+.spouse-connector {
+    font-size: 2rem;
+    color: #cbd5e0;
+}
+
+.tree-info-panel {
+    padding: 20px 25px;
+    background: #f7fafc;
+    border-top: 1px solid #e2e8f0;
+}
+
+.tree-info-panel h3 {
+    color: #4a5568;
+    margin-bottom: 15px;
+}
+
+.info-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.info-content p {
+    margin: 0;
+    padding: 10px;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+/* Секции в форме */
+.form-section {
+    margin-bottom: 25px;
+}
+
+.start-options {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+}
+
+.btn-large {
+    padding: 15px 30px;
+    font-size: 1.1rem;
+    min-width: 200px;
+}
+
+/* Стили для дерева в предпросмотре */
+.siblings-container {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 15px;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .preview-content {
+        grid-template-columns: 1fr;
+    }
+    
+    .people-list {
+        grid-template-columns: 1fr;
+    }
+    
+    .start-options {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .couple-container {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .tree-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+}
