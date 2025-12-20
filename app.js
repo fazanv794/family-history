@@ -1022,6 +1022,55 @@ function updateRelationOptions() {
         }
     });
 }
+// Добавьте в конец app.js
+console.log('📱 App.js дополняется функциями для tree.html...');
+
+// Глобальная функция для проверки авторизации на tree.html
+async function checkTreeAuth() {
+    try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        
+        if (error) {
+            console.error('Ошибка проверки авторизации:', error);
+            window.location.href = 'index.html';
+            return null;
+        }
+        
+        if (!user) {
+            console.warn('Пользователь не авторизован, перенаправление...');
+            window.location.href = 'index.html';
+            return null;
+        }
+        
+        console.log('✅ Пользователь авторизован:', user.email);
+        return user;
+    } catch (err) {
+        console.error('Критическая ошибка проверки авторизации:', err);
+        window.location.href = 'index.html';
+        return null;
+    }
+}
+
+// Функция загрузки данных пользователя для tree.html
+async function loadTreeUserData(userId) {
+    try {
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .single();
+            
+        if (error) throw error;
+        
+        console.log('✅ Данные пользователя загружены:', data);
+        return data;
+    } catch (error) {
+        console.error('Ошибка загрузки данных пользователя:', error);
+        return null;
+    }
+}
+
+console.log('✅ Дополнения для tree.html добавлены в App.js');
 
 // Экспортируем функции
 window.showModal = showModal;

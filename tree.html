@@ -3,260 +3,954 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Генеалогическое древо - История моей семьи</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Генеалогическое дерево</title>
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3a0ca3;
+            --success-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+            --info-color: #3498db;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .main-container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin-top: 20px;
+        }
+        
+        .header-section {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .header-section h1 {
+            color: var(--primary-color);
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .header-section .subtitle {
+            color: #666;
+            font-size: 1.1rem;
+        }
+        
+        .user-info-card {
+            background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(67, 97, 238, 0.3);
+        }
+        
+        .user-info-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.5rem;
+        }
+        
+        .user-info-card p {
+            margin: 0;
+            opacity: 0.9;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: var(--light-color);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid #e9ecef;
+            transition: transform 0.3s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        
+        .stat-card .stat-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+        
+        .stat-card .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--dark-color);
+            margin: 10px 0;
+        }
+        
+        .stat-card .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .builder-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 2px dashed #dee2e6;
+        }
+        
+        .mode-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .mode-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        
+        .mode-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+            border-color: var(--primary-color);
+        }
+        
+        .mode-card.active {
+            border-color: var(--primary-color);
+            background: linear-gradient(135deg, rgba(67, 97, 238, 0.1) 0%, rgba(58, 12, 163, 0.1) 100%);
+        }
+        
+        .mode-card .mode-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+        
+        .mode-card.auto .mode-icon {
+            color: var(--primary-color);
+        }
+        
+        .mode-card.manual .mode-icon {
+            color: var(--warning-color);
+        }
+        
+        .mode-card h3 {
+            color: var(--dark-color);
+            margin-bottom: 10px;
+        }
+        
+        .mode-card p {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+        
+        .feature-list {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+        
+        .feature-list h4 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .feature-list ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .feature-list li {
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .feature-list li i {
+            color: var(--success-color);
+            margin-right: 10px;
+        }
+        
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .action-btn {
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 1rem;
+        }
+        
+        .action-btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+        }
+        
+        .action-btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(67, 97, 238, 0.3);
+        }
+        
+        .action-btn-secondary {
+            background: var(--light-color);
+            color: var(--dark-color);
+            border: 2px solid #dee2e6;
+        }
+        
+        .action-btn-secondary:hover {
+            background: #e9ecef;
+        }
+        
+        .recent-trees {
+            margin-top: 40px;
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+        
+        .recent-trees h3 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+        
+        .tree-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .tree-item {
+            background: var(--light-color);
+            border-radius: 10px;
+            padding: 20px;
+            transition: all 0.3s;
+            border: 1px solid #e9ecef;
+            cursor: pointer;
+        }
+        
+        .tree-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        
+        .tree-item .tree-name {
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-bottom: 10px;
+        }
+        
+        .tree-item .tree-info {
+            font-size: 0.85rem;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .help-section {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 30px;
+            border-left: 5px solid var(--info-color);
+        }
+        
+        .help-section h4 {
+            color: var(--info-color);
+            margin-bottom: 15px;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .mode-selector {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .action-buttons {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .main-container {
+                padding: 20px;
+            }
+            
+            .header-section h1 {
+                font-size: 1.8rem;
+            }
+        }
+        
+        /* Анимации */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease forwards;
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
 </head>
 <body>
-    <!-- Шапка для приложения -->
-    <header id="app-header">
-        <div class="header-container container">
-            <a href="app.html" class="logo" id="home-link">
-                <i class="fas fa-tree"></i>
-                История моей семьи
-            </a>
-            
-            <button class="mobile-menu-btn" id="mobile-menu-btn">
-                <i class="fas fa-bars"></i>
-            </button>
-            
-            <ul class="nav-links" id="nav-links">
-                <li><a href="app.html">Главная</a></li>
-                <li><a href="tree.html" class="active">Древо</a></li>
-                <li><a href="timeline.html">Лента событий</a></li>
-                <li><a href="media.html">Медиатека</a></li>
-                <li><a href="profile.html">Мой профиль</a></li>
-            </ul>
-            
-            <div class="user-menu">
-                <span id="username">Гость</span>
-                <div class="avatar" id="user-avatar">Г</div>
-                <button class="btn btn-small" id="logout-btn">Выйти</button>
+    <div class="container">
+        <div class="main-container fade-in">
+            <!-- Шапка -->
+            <div class="header-section">
+                <h1>🌳 Генеалогическое Дерево</h1>
+                <p class="subtitle">Создайте и визуализируйте историю вашей семьи</p>
             </div>
-        </div>
-    </header>
-
-    <!-- Главный контент приложения -->
-    <main id="app-content">
-        <!-- Страница древа -->
-        <section id="tree-page" class="page">
-            <div class="container">
-                <h2>Генеалогическое древо</h2>
-                
-                <div class="tree-controls">
-                    <button class="btn" id="auto-build-btn">
-                        <i class="fas fa-magic"></i> Автопостроение
-                    </button>
-                    <button class="btn btn-secondary" id="manual-add-btn">
-                        <i class="fas fa-hand-pointer"></i> Ручное добавление
-                    </button>
-                    <button class="btn btn-secondary" id="save-image-btn">
-                        <i class="fas fa-image"></i> Сохранить как картинку
-                    </button>
-                    <button class="btn btn-secondary" id="print-tree-btn">
-                        <i class="fas fa-print"></i> Распечатать
-                    </button>
-                </div>
-                
-                <div class="tree-auto-options" style="display: none;">
-                    <!-- Скрываем старые опции -->
-                </div>
-                
-                <div class="tree-visualization-container" id="tree-visualization-container">
-                    <div class="tree-empty-state">
-                        <i class="fas fa-tree" style="font-size: 4rem; color: #cbd5e0; margin-bottom: 20px;"></i>
-                        <h3>Дерево еще не построено</h3>
-                        <p>Нажмите "Автопостроение" чтобы создать ваше первое генеалогическое древо</p>
-                        <button class="btn" id="auto-build-btn-2" style="margin-top: 20px;">
-                            <i class="fas fa-magic"></i> Построить дерево
+            
+            <!-- Информация о пользователе -->
+            <div class="user-info-card">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h3 id="user-name">Загрузка...</h3>
+                        <p id="user-email"></p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <button class="btn btn-light" onclick="logout()">
+                            <i class="fas fa-sign-out-alt"></i> Выйти
                         </button>
                     </div>
                 </div>
-                
-                <div class="tree-stats">
-                    <div class="stat-card">
+            </div>
+            
+            <!-- Статистика -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
                         <i class="fas fa-users"></i>
-                        <h3 id="tree-people-count">0</h3>
-                        <p>Людей</p>
                     </div>
-                    <div class="stat-card">
-                        <i class="fas fa-images"></i>
-                        <h3 id="tree-photos-count">0</h3>
-                        <p>Фотографий</p>
+                    <div class="stat-number" id="stat-relatives">0</div>
+                    <div class="stat-label">Родственников</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-tree"></i>
                     </div>
-                    <div class="stat-card">
-                        <i class="fas fa-layer-group"></i>
-                        <h3 id="tree-generations">0</h3>
-                        <p>Поколений</p>
+                    <div class="stat-number" id="stat-trees">0</div>
+                    <div class="stat-label">Деревьев создано</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-history"></i>
                     </div>
-                    <div class="stat-card">
-                        <i class="fas fa-link"></i>
-                        <h3 id="tree-connections">0</h3>
-                        <p>Связей</p>
+                    <div class="stat-number" id="stat-depth">0</div>
+                    <div class="stat-label">Поколений</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <div class="stat-number" id="stat-years">0</div>
+                    <div class="stat-label">Лет истории</div>
+                </div>
+            </div>
+            
+            <!-- Секция построителя -->
+            <div class="builder-section">
+                <h2 class="text-center mb-4">🛠️ Построитель Дерева</h2>
+                <p class="text-center mb-4">Выберите режим построения вашего генеалогического дерева:</p>
+                
+                <div class="mode-selector">
+                    <div class="mode-card auto active" id="auto-mode" onclick="selectMode('auto')">
+                        <div class="mode-icon">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <h3>Авто-построение</h3>
+                        <p>Система проведет вас через весь процесс шаг за шагом. Идеально для новичков!</p>
+                        <div class="badge bg-primary">Рекомендуется</div>
+                    </div>
+                    
+                    <div class="mode-card manual" id="manual-mode" onclick="selectMode('manual')">
+                        <div class="mode-icon">
+                            <i class="fas fa-edit"></i>
+                        </div>
+                        <h3>Ручное построение</h3>
+                        <p>Полный контроль над каждым родственником и связями. Для опытных пользователей.</p>
+                        <div class="badge bg-warning text-dark">Расширенный</div>
+                    </div>
+                </div>
+                
+                <div class="feature-list">
+                    <h4><i class="fas fa-check-circle"></i> Что вы получите:</h4>
+                    <ul>
+                        <li><i class="fas fa-check"></i> Пошаговое добавление родственников с фотографиями</li>
+                        <li><i class="fas fa-check"></i> Автоматическое определение связей и поколений</li>
+                        <li><i class="fas fa-check"></i> Визуализацию дерева в 4 различных стилях</li>
+                        <li><i class="fas fa-check"></i> Возможность экспорта в PNG, PDF и JSON</li>
+                        <li><i class="fas fa-check"></i> Сохранение деревьев в вашем аккаунте</li>
+                        <li><i class="fas fa-check"></i> Редактирование и обновление в любое время</li>
+                    </ul>
+                </div>
+                
+                <div class="text-center mt-4">
+                    <button class="action-btn action-btn-primary pulse" id="start-builder-btn" 
+                            onclick="startTreeBuilder()" style="padding: 20px 40px; font-size: 1.2rem;">
+                        <i class="fas fa-play-circle"></i> Начать построение дерева
+                    </button>
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="action-btn action-btn-secondary" onclick="loadSampleTree()">
+                        <i class="fas fa-eye"></i> Посмотреть пример
+                    </button>
+                    <button class="action-btn action-btn-secondary" onclick="openTutorial()">
+                        <i class="fas fa-graduation-cap"></i> Обучение
+                    </button>
+                    <button class="action-btn action-btn-secondary" onclick="importTree()">
+                        <i class="fas fa-file-import"></i> Импорт данных
+                    </button>
+                    <button class="action-btn action-btn-secondary" onclick="exportAllData()">
+                        <i class="fas fa-file-export"></i> Экспорт всех данных
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Последние деревья -->
+            <div class="recent-trees">
+                <h3><i class="fas fa-history"></i> Последние деревья</h3>
+                <div class="tree-list" id="recent-trees-list">
+                    <!-- Динамически загружаемые деревья -->
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Загрузка...</span>
+                        </div>
+                        <p class="mt-3">Загрузка истории деревьев...</p>
                     </div>
                 </div>
             </div>
-        </section>
-    </main>
-
-    <!-- Подвал -->
-    <footer>
-        <div class="container">
-            <div class="copyright">
-                <p>© 2024 История моей семьи. Все права защищены.</p>
+            
+            <!-- Справка -->
+            <div class="help-section">
+                <h4><i class="fas fa-question-circle"></i> Нужна помощь?</h4>
+                <p>Если у вас возникли трудности с построением дерева или у вас есть вопросы:</p>
+                <div class="mt-3">
+                    <button class="btn btn-info me-2" onclick="openHelp()">
+                        <i class="fas fa-question-circle"></i> Справка
+                    </button>
+                    <button class="btn btn-outline-info" onclick="contactSupport()">
+                        <i class="fas fa-headset"></i> Поддержка
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Футер -->
+            <div class="footer">
+                <p>🌳 Генеалогическое Дерево © 2024 | Система авто-построения v2.0</p>
+                <p class="text-muted">Все данные защищены и хранятся в зашифрованном виде</p>
             </div>
         </div>
-    </footer>
-
-    <!-- Модальные окна -->
-    <div class="modal-overlay hidden" id="modal-overlay"></div>
-    
-    <!-- Уведомления -->
-    <div id="notification" class="notification">
-        <div class="notification-content">
-            <span id="notification-text"></span>
-            <button class="notification-close">&times;</button>
-        </div>
     </div>
-
-    <!-- Загрузчик -->
-    <div id="loader" class="loader-overlay hidden">
-        <div class="loader"></div>
-        <div class="loader-text" id="loader-text">Загрузка...</div>
-    </div>
-
-    <!-- Подключаем библиотеки -->
-    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     
-    <!-- Подключаем наши файлы в правильном порядке -->
+    <!-- Модальные окна будут добавляться сюда -->
+    
+    <!-- Подключение скриптов -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="supabase.js"></script>
     <script src="app.js"></script>
+    
+    <!-- Система модальных окон -->
+    <script src="modal-system.js"></script>
+    
+    <!-- Построитель дерева -->
     <script src="tree-builder.js"></script>
-    <script src="tree-engine.js"></script>
-<script src="tree-builder.js"></script>
-<script src="modal-system.js"></script>
     
     <script>
         // Инициализация страницы
-        document.addEventListener('DOMContentLoaded', async () => {
-            console.log('🌳 Страница дерева загружается...');
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🌳 Страница дерева инициализируется...');
             
             // Проверка авторизации
-            const checkAuth = () => {
-                if (!window.currentUser) {
-                    console.log('❌ Пользователь не авторизован');
-                    window.showNotification('Для доступа к этой странице необходимо войти в систему', 'error');
-                    setTimeout(() => {
-                        window.location.href = 'auth.html';
-                    }, 1500);
-                    return false;
-                }
-                console.log('✅ Пользователь авторизован:', window.currentUser.email);
-                return true;
-            };
+            checkAuth();
             
-            // Даем время на загрузку данных пользователя
-            setTimeout(() => {
-                if (!checkAuth()) return;
-                
-                // Инициализируем данные дерева если их нет
-                if (!window.treeData) {
-                    window.treeData = {
-                        people: [],
-                        currentPerson: null,
-                        treeStructure: null
-                    };
-                }
-                
-                // Обработчики кнопок
-                document.getElementById('auto-build-btn')?.addEventListener('click', () => {
-                    console.log('🎯 Кнопка авто-построения нажата');
-                    if (!window.currentUser) {
-                        window.showNotification('Для построения дерева необходимо войти в систему', 'error');
-                        setTimeout(() => {
-                            window.location.href = 'auth.html';
-                        }, 1500);
-                        return;
-                    }
-                    // Запускаем пошаговое построение
-                    if (window.startTreeBuilder) {
-                        window.startTreeBuilder();
-                    } else {
-                        console.error('❌ startTreeBuilder не найден!');
-                    }
-                });
-                
-                document.getElementById('auto-build-btn-2')?.addEventListener('click', () => {
-                    console.log('🎯 Кнопка авто-построения 2 нажата');
-                    if (!window.currentUser) {
-                        window.showNotification('Для построения дерева необходимо войти в систему', 'error');
-                        setTimeout(() => {
-                            window.location.href = 'auth.html';
-                        }, 1500);
-                        return;
-                    }
-                    // Запускаем пошаговое построение
-                    if (window.startTreeBuilder) {
-                        window.startTreeBuilder();
-                    } else {
-                        console.error('❌ startTreeBuilder не найден!');
-                    }
-                });
-                
-                document.getElementById('manual-add-btn')?.addEventListener('click', () => {
-                    console.log('🎯 Кнопка ручного добавления нажата');
-                    if (!window.currentUser) {
-                        window.showNotification('Для добавления человека необходимо войти в систему', 'error');
-                        setTimeout(() => {
-                            window.location.href = 'auth.html';
-                        }, 1500);
-                        return;
-                    }
-                    // Запускаем добавление человека
-                    if (window.addNewPerson) {
-                        window.addNewPerson('other');
-                    } else {
-                        console.error('❌ addNewPerson не найден!');
-                    }
-                });
-                
-                document.getElementById('save-image-btn')?.addEventListener('click', () => {
-                    if (!window.currentUser) {
-                        window.showNotification('Для сохранения необходимо войти в систему', 'error');
-                        setTimeout(() => {
-                            window.location.href = 'auth.html';
-                        }, 1500);
-                        return;
-                    }
-                    if (window.saveTreeAsImage) window.saveTreeAsImage();
-                });
-                
-                document.getElementById('print-tree-btn')?.addEventListener('click', () => {
-                    if (!window.currentUser) {
-                        window.showNotification('Для печати необходимо войти в систему', 'error');
-                        setTimeout(() => {
-                            window.location.href = 'auth.html';
-                        }, 1500);
-                        return;
-                    }
-                    if (window.printTree) window.printTree();
-                });
-                
-                // Обновляем предпросмотр если есть данные
-                if (window.updateTreePreview && window.treeData && window.treeData.people.length > 0) {
-                    window.updateTreePreview();
-                }
-                
-                console.log('✅ Страница дерева инициализирована');
-                console.log('Доступные функции:', {
-                    startTreeBuilder: typeof window.startTreeBuilder,
-                    addNewPerson: typeof window.addNewPerson,
-                    updateTreePreview: typeof window.updateTreePreview,
-                    buildFinalTree: typeof window.buildFinalTree
-                });
-            }, 300);
+            // Загрузка статистики
+            loadStatistics();
+            
+            // Загрузка истории деревьев
+            loadRecentTrees();
+            
+            // Инициализация обработчиков
+            initEventHandlers();
+            
+            console.log('✅ Страница дерева готова');
         });
+        
+        // Проверка авторизации
+        async function checkAuth() {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) {
+                    document.getElementById('user-name').textContent = user.user_metadata?.full_name || user.email;
+                    document.getElementById('user-email').textContent = user.email;
+                } else {
+                    window.location.href = 'index.html';
+                }
+            } catch (error) {
+                console.error('Ошибка проверки авторизации:', error);
+                window.location.href = 'index.html';
+            }
+        }
+        
+        // Загрузка статистики
+        async function loadStatistics() {
+            try {
+                const { data: relatives } = await supabase
+                    .from('relatives')
+                    .select('*');
+                
+                const { data: trees } = await supabase
+                    .from('trees')
+                    .select('*');
+                
+                // Обновление статистики
+                document.getElementById('stat-relatives').textContent = relatives?.length || 0;
+                document.getElementById('stat-trees').textContent = trees?.length || 0;
+                
+                // Расчет поколений (простая логика)
+                if (relatives && relatives.length > 0) {
+                    const birthYears = relatives
+                        .map(r => new Date(r.birth_date).getFullYear())
+                        .filter(year => !isNaN(year));
+                    
+                    if (birthYears.length > 0) {
+                        const minYear = Math.min(...birthYears);
+                        const maxYear = Math.max(...birthYears);
+                        const yearsDiff = maxYear - minYear;
+                        
+                        document.getElementById('stat-years').textContent = yearsDiff;
+                        
+                        // Простая оценка поколений (каждые 25 лет)
+                        document.getElementById('stat-depth').textContent = Math.ceil(yearsDiff / 25) || 1;
+                    }
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки статистики:', error);
+            }
+        }
+        
+        // Загрузка последних деревьев
+        async function loadRecentTrees() {
+            try {
+                const { data: trees, error } = await supabase
+                    .from('trees')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(4);
+                
+                const container = document.getElementById('recent-trees-list');
+                
+                if (error) throw error;
+                
+                if (!trees || trees.length === 0) {
+                    container.innerHTML = `
+                        <div class="col-12 text-center py-5">
+                            <div class="text-muted">
+                                <i class="fas fa-tree fa-3x mb-3"></i>
+                                <p>У вас пока нет созданных деревьев</p>
+                                <button class="btn btn-primary" onclick="startTreeBuilder()">
+                                    Создать первое дерево
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                container.innerHTML = trees.map(tree => `
+                    <div class="tree-item" onclick="openTree('${tree.id}')">
+                        <div class="tree-name">${tree.name}</div>
+                        <div class="tree-info">
+                            <span>${tree.relatives_count || 0} род.</span>
+                            <span>${new Date(tree.created_at).toLocaleDateString('ru-RU')}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Ошибка загрузки деревьев:', error);
+                document.getElementById('recent-trees-list').innerHTML = `
+                    <div class="col-12 text-center py-5 text-danger">
+                        <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
+                        <p>Ошибка загрузки деревьев</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Выбор режима
+        function selectMode(mode) {
+            const autoMode = document.getElementById('auto-mode');
+            const manualMode = document.getElementById('manual-mode');
+            const startBtn = document.getElementById('start-builder-btn');
+            
+            if (mode === 'auto') {
+                autoMode.classList.add('active');
+                manualMode.classList.remove('active');
+                startBtn.innerHTML = '<i class="fas fa-bolt"></i> Начать авто-построение';
+            } else {
+                manualMode.classList.remove('active');
+                autoMode.classList.add('active');
+                startBtn.innerHTML = '<i class="fas fa-edit"></i> Начать ручное построение';
+            }
+            
+            // Сохраняем выбор в localStorage
+            localStorage.setItem('tree-builder-mode', mode);
+        }
+        
+        // Запуск построителя дерева
+        function startTreeBuilder() {
+            const mode = localStorage.getItem('tree-builder-mode') || 'auto';
+            
+            console.log(`🚀 Запуск построителя в режиме: ${mode}`);
+            
+            // Используем функцию из tree-builder.js
+            if (typeof window.startTreeBuilder === 'function') {
+                window.startTreeBuilder(mode);
+            } else {
+                console.error('Функция startTreeBuilder не найдена!');
+                alert('Система построения дерева еще не загружена. Пожалуйста, обновите страницу.');
+            }
+        }
+        
+        // Открыть дерево
+        function openTree(treeId) {
+            alert(`Открытие дерева ${treeId} - функция в разработке`);
+            // В будущем: window.openTreeViewer(treeId);
+        }
+        
+        // Загрузить пример дерева
+        function loadSampleTree() {
+            window.ModalSystem.createModal('sample-tree', {
+                title: '👁️ Пример генеалогического дерева',
+                content: `
+                    <div style="text-align:center;">
+                        <div style="font-family:monospace;font-size:12px;background:#f8f9fa;padding:20px;border-radius:10px;margin:20px 0;">
+                            <pre>
+        Иван Иванов (1950)
+            |
+        ┌─────┴─────┐
+        │           │
+    Пётр Иванов    Мария Иванова
+    (1975)         (1978)
+        |               |
+    ┌───┴───┐       ┌───┴───┐
+    │       │       │       │
+Алексей   Ольга   Дмитрий  Анна
+(2000)   (2002)   (2005)  (2008)
+                            </pre>
+                        </div>
+                        <p>Это пример структуры генеалогического дерева</p>
+                        <div class="mt-4">
+                            <button class="btn btn-primary" onclick="window.ModalSystem.closeModal('sample-tree'); startTreeBuilder();">
+                                Создать подобное дерево
+                            </button>
+                        </div>
+                    </div>
+                `,
+                width: '500px'
+            });
+        }
+        
+        // Открыть обучение
+        function openTutorial() {
+            window.ModalSystem.createModal('tutorial', {
+                title: '🎓 Обучение работе с построителем',
+                content: `
+                    <div style="max-height:400px;overflow-y:auto;">
+                        <h4>Как работает авто-построение:</h4>
+                        <ol>
+                            <li><strong>Шаг 1:</strong> Выберите линию родства (отца, матери или обе)</li>
+                            <li><strong>Шаг 2:</strong> Добавляйте родственников через удобную форму</li>
+                            <li><strong>Шаг 3:</strong> Заполняйте информацию: ФИО, даты, фото, роль</li>
+                            <li><strong>Шаг 4:</strong> Система автоматически организует связи между родственниками</li>
+                            <li><strong>Шаг 5:</strong> Настройте внешний вид дерева</li>
+                            <li><strong>Шаг 6:</strong> Получите готовое дерево и экспортируйте его</li>
+                        </ol>
+                        
+                        <h4 class="mt-4">Советы:</h4>
+                        <ul>
+                            <li>Начинайте с ближайших родственников (родители, бабушки/дедушки)</li>
+                            <li>Используйте фотографии для лучшей визуализации</li>
+                            <li>Заполняйте даты рождения для расчета поколений</li>
+                            <li>Сохраняйте промежуточные результаты</li>
+                        </ul>
+                        
+                        <div class="alert alert-info mt-4">
+                            <i class="fas fa-lightbulb"></i> 
+                            <strong>Совет:</strong> Для начала используйте авто-построение - оно проще для новичков!
+                        </div>
+                    </div>
+                `,
+                width: '600px',
+                buttons: [
+                    {
+                        text: 'Закрыть',
+                        type: 'secondary'
+                    },
+                    {
+                        text: 'Начать обучение',
+                        type: 'primary',
+                        onClick: () => {
+                            window.ModalSystem.closeModal('tutorial');
+                            setTimeout(() => startTreeBuilder(), 300);
+                        }
+                    }
+                ]
+            });
+        }
+        
+        // Импорт дерева
+        function importTree() {
+            window.ModalSystem.createModal('import-tree', {
+                title: '📥 Импорт данных',
+                content: `
+                    <div>
+                        <p>Вы можете импортировать данные о родственниках из:</p>
+                        <div class="mt-3">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="importType" id="importJson" checked>
+                                <label class="form-check-label" for="importJson">
+                                    JSON файл (рекомендуется)
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="importType" id="importGedcom">
+                                <label class="form-check-label" for="importGedcom">
+                                    GEDCOM файл (стандарт генеалогии)
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="importType" id="importCsv">
+                                <label class="form-check-label" for="importCsv">
+                                    CSV/Excel таблица
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <div class="mb-3">
+                                <label class="form-label">Выберите файл:</label>
+                                <input type="file" class="form-control" id="importFile" accept=".json,.ged,.csv,.xlsx">
+                            </div>
+                            
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <strong>Внимание:</strong> Импорт перезапишет текущие данные. Рекомендуется сделать резервную копию.
+                            </div>
+                        </div>
+                    </div>
+                `,
+                width: '500px',
+                buttons: [
+                    {
+                        text: 'Отмена',
+                        type: 'secondary'
+                    },
+                    {
+                        text: 'Импортировать',
+                        type: 'primary',
+                        onClick: () => {
+                            alert('Функция импорта в разработке');
+                            window.ModalSystem.closeModal('import-tree');
+                        }
+                    }
+                ]
+            });
+        }
+        
+        // Экспорт всех данных
+        function exportAllData() {
+            window.ModalSystem.createModal('export-data', {
+                title: '📤 Экспорт данных',
+                content: `
+                    <div>
+                        <p>Выберите формат для экспорта всех ваших данных:</p>
+                        <div class="mt-3">
+                            <button class="btn btn-outline-primary w-100 mb-2" onclick="exportFormat('json')">
+                                <i class="fas fa-file-code"></i> JSON (полные данные)
+                            </button>
+                            <button class="btn btn-outline-success w-100 mb-2" onclick="exportFormat('pdf')">
+                                <i class="fas fa-file-pdf"></i> PDF документ
+                            </button>
+                            <button class="btn btn-outline-info w-100 mb-2" onclick="exportFormat('png')">
+                                <i class="fas fa-image"></i> PNG изображение
+                            </button>
+                            <button class="btn btn-outline-secondary w-100" onclick="exportFormat('csv')">
+                                <i class="fas fa-file-csv"></i> CSV таблица
+                            </button>
+                        </div>
+                        
+                        <div class="alert alert-info mt-4">
+                            <i class="fas fa-info-circle"></i>
+                            JSON формат содержит все данные и может быть использован для восстановления.
+                        </div>
+                    </div>
+                `,
+                width: '450px'
+            });
+        }
+        
+        // Функция экспорта в выбранном формате
+        function exportFormat(format) {
+            window.ModalSystem.closeModal('export-data');
+            
+            switch(format) {
+                case 'json':
+                    alert('Экспорт в JSON - функция в разработке');
+                    break;
+                case 'pdf':
+                    alert('Экспорт в PDF - функция в разработке');
+                    break;
+                case 'png':
+                    alert('Экспорт в PNG - функция в разработке');
+                    break;
+                case 'csv':
+                    alert('Экспорт в CSV - функция в разработке');
+                    break;
+            }
+        }
+        
+        // Открыть справку
+        function openHelp() {
+            window.open('help.html', '_blank');
+        }
+        
+        // Связаться с поддержкой
+        function contactSupport() {
+            window.location.href = 'mailto:support@example.com?subject=Помощь с генеалогическим деревом';
+        }
+        
+        // Выход из системы
+        async function logout() {
+            try {
+                const { error } = await supabase.auth.signOut();
+                if (error) throw error;
+                
+                window.location.href = 'index.html';
+            } catch (error) {
+                console.error('Ошибка выхода:', error);
+                alert('Ошибка при выходе из системы');
+            }
+        }
+        
+        // Инициализация обработчиков событий
+        function initEventHandlers() {
+            // Загрузка сохраненного режима
+            const savedMode = localStorage.getItem('tree-builder-mode') || 'auto';
+            selectMode(savedMode);
+            
+            // Обработка изменения режима при клике
+            document.getElementById('auto-mode').addEventListener('click', () => selectMode('auto'));
+            document.getElementById('manual-mode').addEventListener('click', () => selectMode('manual'));
+            
+            // Добавляем анимацию при наведении на кнопку старта
+            const startBtn = document.getElementById('start-builder-btn');
+            startBtn.addEventListener('mouseenter', function() {
+                this.classList.remove('pulse');
+            });
+            
+            startBtn.addEventListener('mouseleave', function() {
+                this.classList.add('pulse');
+            });
+            
+            // Обновление статистики каждые 30 секунд
+            setInterval(loadStatistics, 30000);
+            
+            console.log('✅ Обработчики событий инициализированы');
+        }
+        
+        // Глобальные функции для доступа из консоли
+        window.treePage = {
+            refreshStats: loadStatistics,
+            refreshTrees: loadRecentTrees,
+            startBuilder: startTreeBuilder,
+            openSample: loadSampleTree,
+            openTutorial: openTutorial
+        };
+        
+        console.log('🌳 Страница дерева полностью загружена');
+        console.log('Доступные функции:', Object.keys(window.treePage));
     </script>
 </body>
 </html>
