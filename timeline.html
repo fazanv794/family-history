@@ -58,6 +58,7 @@
                             <option value="birthday">День рождения</option>
                             <option value="wedding">Свадьба</option>
                             <option value="anniversary">Годовщина</option>
+                            <option value="holiday">Праздник</option>
                             <option value="other">Другое</option>
                         </select>
                     </div>
@@ -116,6 +117,12 @@
                     <div class="form-group">
                         <label for="event-description">Описание</label>
                         <textarea id="event-description" rows="4" placeholder="Расскажите о событии..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="event-media-url">Ссылка на медиа (URL)</label>
+                        <input type="url" id="event-media-url" placeholder="https://example.com/photo.jpg">
+                        <small style="color: #718096;">Можно вставить ссылку на фото или видео</small>
                     </div>
                     
                     <div class="modal-footer">
@@ -212,6 +219,10 @@
                 
                 const icon = getEventIcon(event.event_type);
                 
+                // Проверяем есть ли медиа
+                const hasMedia = event.media_url && event.media_url.trim() !== '';
+                const mediaType = hasMedia ? window.getMediaTypeFromUrl(event.media_url) : null;
+                
                 html += `
                     <div class="timeline-event" style="display: flex; gap: 15px; margin-bottom: 20px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
                         <div class="event-icon" style="background: #667eea; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
@@ -221,12 +232,36 @@
                             <h3 style="margin-bottom: 5px; color: #2d3748;">${event.title}</h3>
                             <div class="event-date" style="color: #718096; font-size: 0.9rem; margin-bottom: 10px;">${formattedDate}</div>
                             ${event.description ? `<p style="color: #4a5568; margin-bottom: 15px;">${event.description}</p>` : ''}
+                            
+                            ${hasMedia ? `
+                                <div class="event-media" style="margin: 15px 0;">
+                                    <div style="font-size: 0.9rem; color: #718096; margin-bottom: 8px;">
+                                        <i class="fas fa-paperclip"></i> Прикрепленное медиа:
+                                    </div>
+                                    ${mediaType === 'image' ? `
+                                        <a href="${event.media_url}" target="_blank" style="display: block;">
+                                            <img src="${event.media_url}" 
+                                                 alt="${event.title}" 
+                                                 style="max-width: 100%; max-height: 200px; border-radius: 8px; border: 1px solid #e2e8f0;"
+                                                 onerror="this.style.display='none';">
+                                        </a>
+                                    ` : `
+                                        <div style="padding: 10px; background: #f7fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+                                            <a href="${event.media_url}" target="_blank" style="color: #667eea; text-decoration: none; display: flex; align-items: center; gap: 8px;">
+                                                <i class="fas fa-external-link-alt"></i>
+                                                <span>${mediaType === 'video' ? 'Видео' : 'Файл'}: ${event.media_url.substring(0, 50)}...</span>
+                                            </a>
+                                        </div>
+                                    `}
+                                </div>
+                            ` : ''}
+                            
                             <div style="margin-top: 10px;">
                                 <button class="btn btn-small edit-event-btn" data-id="${event.id}" style="margin-right: 5px;">
-                                    <i class="fas fa-edit"></i>
+                                    <i class="fas fa-edit"></i> Изменить
                                 </button>
                                 <button class="btn btn-small btn-danger delete-event-btn" data-id="${event.id}">
-                                    <i class="fas fa-trash"></i>
+                                    <i class="fas fa-trash"></i> Удалить
                                 </button>
                             </div>
                         </div>
@@ -290,6 +325,7 @@
             document.getElementById('event-date').value = event.date.split('T')[0];
             document.getElementById('event-type').value = event.event_type || 'other';
             document.getElementById('event-description').value = event.description || '';
+            document.getElementById('event-media-url').value = event.media_url || '';
             
             // Показываем модальное окно
             window.showModal('add-event-modal');
@@ -313,18 +349,26 @@
                     title: document.getElementById('event-title').value,
                     date: document.getElementById('event-date').value,
                     event_type: document.getElementById('event-type').value,
-                    description: document.getElementById('event-description').value
+                    description: document.getElementById('event-description').value,
+                    media_url: document.getElementById('event-media-url').value
                 };
                 
                 window.showLoader('Сохранение изменений...');
                 
                 try {
-                    const { error } = await window.supabaseClient
-                        .from('events')
-                        .update(updatedEvent)
-                        .eq('id', eventId);
-                    
-                    if (error) throw error;
+                    // Если пользователь авторизован, обновляем в Supabase
+                    if (window.currentUser && window.supabaseClient) {
+                        try {
+                            const { error } = await window.supabaseClient
+                                .from('events')
+                                .update(updatedEvent)
+                                .eq('id', eventId);
+                            
+                            if (error) throw error;
+                        } catch (supabaseError) {
+                            console.warn('Не удалось обновить в Supabase:', supabaseError);
+                        }
+                    }
                     
                     // Обновляем в локальном массиве
                     const index = window.events.findIndex(e => e.id === eventId);
@@ -332,9 +376,38 @@
                         window.events[index] = { ...window.events[index], ...updatedEvent };
                     }
                     
+                    // Если есть новая ссылка на медиа, добавляем ее в медиатеку
+                    if (updatedEvent.media_url && updatedEvent.media_url.trim() !== '') {
+                        const mediaExists = window.media.some(m => m.file_url === updatedEvent.media_url);
+                        if (!mediaExists) {
+                            const mediaItem = {
+                                id: Date.now() + Math.random(),
+                                file_url: updatedEvent.media_url,
+                                file_type: window.getMediaTypeFromUrl(updatedEvent.media_url),
+                                description: updatedEvent.description || `Медиа для события: ${updatedEvent.title}`,
+                                created_at: new Date().toISOString(),
+                                is_external: true
+                            };
+                            
+                            window.media.unshift(mediaItem);
+                            console.log('✅ Медиа добавлено в медиатеку из события');
+                            
+                            // Событие об изменении данных медиа
+                            window.dispatchEvent(new CustomEvent('mediaChanged'));
+                        }
+                    }
+                    
                     window.showNotification('✅ Событие обновлено!', 'success');
                     window.closeAllModals();
                     updateTimeline();
+                    
+                    // Сохраняем в localStorage
+                    window.saveToLocalStorage();
+                    
+                    // Обновляем медиатеку если есть медиа
+                    if (updatedEvent.media_url && typeof window.updateMediaGrid === 'function') {
+                        window.updateMediaGrid();
+                    }
                     
                 } catch (error) {
                     console.error('Ошибка обновления события:', error);
@@ -352,12 +425,19 @@
             window.showLoader('Удаление события...');
             
             try {
-                const { error } = await window.supabaseClient
-                    .from('events')
-                    .delete()
-                    .eq('id', eventId);
-                
-                if (error) throw error;
+                // Если пользователь авторизован, удаляем из Supabase
+                if (window.currentUser && window.supabaseClient) {
+                    try {
+                        const { error } = await window.supabaseClient
+                            .from('events')
+                            .delete()
+                            .eq('id', eventId);
+                        
+                        if (error) throw error;
+                    } catch (supabaseError) {
+                        console.warn('Не удалось удалить из Supabase:', supabaseError);
+                    }
+                }
                 
                 // Удаляем из локального массива
                 const index = window.events.findIndex(e => e.id === eventId);
@@ -366,6 +446,10 @@
                 }
                 
                 window.showNotification('✅ Событие удалено!', 'success');
+                
+                // Сохраняем в localStorage
+                window.saveToLocalStorage();
+                
                 updateTimeline();
                 
             } catch (error) {
@@ -388,7 +472,12 @@
             document.getElementById('add-event-btn')?.addEventListener('click', () => {
                 // Сбрасываем форму
                 const form = document.getElementById('add-event-form-modal');
-                if (form) form.reset();
+                if (form) {
+                    form.reset();
+                    // Устанавливаем сегодняшнюю дату по умолчанию
+                    const today = new Date().toISOString().split('T')[0];
+                    document.getElementById('event-date').value = today;
+                }
                 
                 // Возвращаем оригинальный заголовок и текст кнопки
                 const modalTitle = document.querySelector('#add-event-modal h3');
@@ -411,6 +500,9 @@
         
         // Экспортируем функции
         window.updateTimeline = updateTimeline;
+        window.getEventIcon = getEventIcon;
+        window.editEvent = editEvent;
+        window.deleteEvent = deleteEvent;
     </script>
 </body>
 </html>

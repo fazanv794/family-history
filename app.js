@@ -251,6 +251,16 @@ function setupCommonEventListeners() {
         saveToLocalStorage();
     });
     
+    // Сохраняем данные при изменении событий
+    window.addEventListener('eventsChanged', () => {
+        saveToLocalStorage();
+    });
+    
+    // Сохраняем данные при изменении медиа
+    window.addEventListener('mediaChanged', () => {
+        saveToLocalStorage();
+    });
+    
     console.log('✅ Обработчики событий настроены');
 }
 
@@ -591,6 +601,8 @@ async function handleAddEvent(e) {
     const date = document.getElementById('event-date').value;
     const eventType = document.getElementById('event-type').value;
     const description = document.getElementById('event-description').value;
+    const mediaUrl = document.getElementById('event-media-url').value;
+    const peopleIds = document.getElementById('event-people')?.value || '';
     
     if (!title || !date) {
         showNotification('Заполните обязательные поля', 'error');
@@ -606,6 +618,8 @@ async function handleAddEvent(e) {
             date: date,
             event_type: eventType || 'other',
             description: description || null,
+            media_url: mediaUrl || null,
+            people_ids: peopleIds || null,
             created_at: new Date().toISOString()
         };
         
@@ -634,6 +648,9 @@ async function handleAddEvent(e) {
         
         // Сохраняем в localStorage
         saveToLocalStorage();
+        
+        // Событие об изменении данных событий
+        window.dispatchEvent(new CustomEvent('eventsChanged'));
         
         // Обновляем ленту событий если мы на странице событий
         if (typeof window.updateTimeline === 'function') {
@@ -665,28 +682,28 @@ async function handleUploadMedia(e) {
     
     const filesInput = document.getElementById('upload-files');
     const description = document.getElementById('upload-description').value;
+    const mediaUrl = document.getElementById('upload-url').value;
     
-    if (!filesInput.files || filesInput.files.length === 0) {
-        showNotification('Выберите файлы для загрузки', 'error');
+    // Проверяем, что есть либо файлы, либо URL
+    if ((!filesInput.files || filesInput.files.length === 0) && !mediaUrl) {
+        showNotification('Выберите файлы или укажите ссылку на медиа', 'error');
         return;
     }
     
-    showLoader('Загрузка файлов...');
+    showLoader('Загрузка медиа...');
     
     try {
-        const files = Array.from(filesInput.files);
         const newMediaItems = [];
         
-        for (const file of files) {
-            // В реальном приложении здесь загрузка в Supabase Storage
-            const fakeUrl = `https://via.placeholder.com/300/667eea/ffffff?text=${encodeURIComponent(file.name.split('.')[0])}`;
-            
+        // Если есть URL, добавляем его как медиа
+        if (mediaUrl) {
             const mediaItem = {
                 id: Date.now() + Math.random(),
-                file_url: fakeUrl,
-                file_type: file.type.startsWith('image/') ? 'image' : 'file',
-                description: description || file.name,
-                created_at: new Date().toISOString()
+                file_url: mediaUrl,
+                file_type: getMediaTypeFromUrl(mediaUrl),
+                description: description || 'Ссылка на медиа',
+                created_at: new Date().toISOString(),
+                is_external: true
             };
             
             // Если пользователь авторизован, сохраняем в Supabase
@@ -700,7 +717,7 @@ async function handleUploadMedia(e) {
                     
                     if (!error && data && data[0]) {
                         mediaItem.id = data[0].id;
-                        console.log('✅ Медиа сохранено в Supabase');
+                        console.log('✅ Медиа (URL) сохранено в Supabase');
                     }
                 } catch (supabaseError) {
                     console.warn('Не удалось сохранить в Supabase, сохраняем локально:', supabaseError);
@@ -710,13 +727,60 @@ async function handleUploadMedia(e) {
             newMediaItems.push(mediaItem);
         }
         
+        // Если есть файлы, обрабатываем их
+        if (filesInput.files && filesInput.files.length > 0) {
+            const files = Array.from(filesInput.files);
+            
+            for (const file of files) {
+                // В реальном приложении здесь загрузка в Supabase Storage
+                // Для демо-режима используем Data URL
+                const fileUrl = await readFileAsDataURL(file);
+                
+                const mediaItem = {
+                    id: Date.now() + Math.random(),
+                    file_url: fileUrl,
+                    file_type: file.type.startsWith('image/') ? 'image' : 
+                               file.type.startsWith('video/') ? 'video' : 'file',
+                    description: description || file.name,
+                    file_name: file.name,
+                    file_size: file.size,
+                    file_type_mime: file.type,
+                    created_at: new Date().toISOString(),
+                    is_external: false
+                };
+                
+                // Если пользователь авторизован, сохраняем в Supabase
+                if (window.currentUser && window.supabaseClient) {
+                    try {
+                        mediaItem.user_id = window.currentUser.id;
+                        const { data, error } = await window.supabaseClient
+                            .from('media')
+                            .insert([mediaItem])
+                            .select();
+                        
+                        if (!error && data && data[0]) {
+                            mediaItem.id = data[0].id;
+                            console.log('✅ Медиа (файл) сохранено в Supabase');
+                        }
+                    } catch (supabaseError) {
+                        console.warn('Не удалось сохранить в Supabase, сохраняем локально:', supabaseError);
+                    }
+                }
+                
+                newMediaItems.push(mediaItem);
+            }
+        }
+        
         window.media.unshift(...newMediaItems);
         
-        showNotification(`✅ Загружено ${files.length} файлов!`, 'success');
+        showNotification(`✅ Добавлено ${newMediaItems.length} медиафайлов!`, 'success');
         closeAllModals();
         
         // Сохраняем в localStorage
         saveToLocalStorage();
+        
+        // Событие об изменении данных медиа
+        window.dispatchEvent(new CustomEvent('mediaChanged'));
         
         // Обновляем медиатеку если мы на странице медиа
         if (typeof window.updateMediaGrid === 'function') {
@@ -730,9 +794,35 @@ async function handleUploadMedia(e) {
         
     } catch (error) {
         console.error('Ошибка загрузки медиа:', error);
-        showNotification('Ошибка загрузки файлов', 'error');
+        showNotification('Ошибка загрузки медиа', 'error');
     } finally {
         hideLoader();
+    }
+}
+
+// Чтение файла как Data URL
+function readFileAsDataURL(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+// Определение типа медиа по URL
+function getMediaTypeFromUrl(url) {
+    const lowerUrl = url.toLowerCase();
+    if (lowerUrl.match(/\.(jpg|jpeg|png|gif|bmp|webp|svg)$/)) {
+        return 'image';
+    } else if (lowerUrl.match(/\.(mp4|avi|mov|wmv|flv|webm|mkv)$/)) {
+        return 'video';
+    } else if (lowerUrl.match(/\.(mp3|wav|ogg|flac|aac)$/)) {
+        return 'audio';
+    } else if (lowerUrl.match(/\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt)$/)) {
+        return 'document';
+    } else {
+        return 'link';
     }
 }
 
@@ -1113,7 +1203,15 @@ function updateRecentEvents() {
                 <div class="event-content" style="flex: 1;">
                     <h3 style="margin-bottom: 5px; color: #2d3748;">${event.title}</h3>
                     <div class="event-date" style="color: #718096; font-size: 0.9rem; margin-bottom: 10px;">${date}</div>
-                    ${event.description ? `<p style="color: #4a5568;">${event.description}</p>` : ''}
+                    ${event.description ? `<p style="color: #4a5568; margin-bottom: 10px;">${event.description}</p>` : ''}
+                    ${event.media_url ? `
+                        <div style="margin-top: 10px;">
+                            <div style="font-size: 0.9rem; color: #718096; margin-bottom: 5px;">Прикреплено медиа:</div>
+                            <a href="${event.media_url}" target="_blank" style="color: #667eea; text-decoration: none; font-size: 0.9rem;">
+                                <i class="fas fa-link"></i> ${getMediaTypeFromUrl(event.media_url) === 'image' ? 'Изображение' : 'Ссылка'}
+                            </a>
+                        </div>
+                    ` : ''}
                 </div>
             </div>
         `;
@@ -1248,5 +1346,359 @@ window.hideLoader = hideLoader;
 window.loadUserData = loadUserData;
 window.saveToLocalStorage = saveToLocalStorage;
 window.loadFromLocalStorage = loadFromLocalStorage;
+window.getMediaTypeFromUrl = getMediaTypeFromUrl;
+
+// Добавьте эти функции в конец файла app.js, перед последней строкой console.log
+
+// Функция для обработки добавления события (обновленная)
+async function handleAddEvent(e) {
+    console.log('📅 Добавление события');
+    e.preventDefault();
+    
+    const title = document.getElementById('event-title').value;
+    const date = document.getElementById('event-date').value;
+    const eventType = document.getElementById('event-type').value;
+    const description = document.getElementById('event-description').value;
+    const mediaUrl = document.getElementById('event-media-url')?.value || '';
+    
+    if (!title || !date) {
+        showNotification('Заполните обязательные поля', 'error');
+        return;
+    }
+    
+    showLoader('Добавление события...');
+    
+    try {
+        const newEvent = {
+            id: Date.now() + Math.random(),
+            title: title,
+            date: date,
+            event_type: eventType || 'other',
+            description: description || null,
+            media_url: mediaUrl || null,
+            created_at: new Date().toISOString()
+        };
+        
+        // Если пользователь авторизован, сохраняем в Supabase
+        if (window.currentUser && window.supabaseClient) {
+            try {
+                newEvent.user_id = window.currentUser.id;
+                const { data, error } = await window.supabaseClient
+                    .from('events')
+                    .insert([newEvent])
+                    .select();
+                
+                if (!error && data && data[0]) {
+                    newEvent.id = data[0].id;
+                    console.log('✅ Событие сохранено в Supabase');
+                }
+            } catch (supabaseError) {
+                console.warn('Не удалось сохранить в Supabase, сохраняем локально:', supabaseError);
+            }
+        }
+        
+        window.events.unshift(newEvent);
+        
+        // Если есть ссылка на медиа, автоматически добавляем ее в медиатеку
+        if (mediaUrl && mediaUrl.trim() !== '') {
+            const mediaItem = {
+                id: Date.now() + Math.random(),
+                file_url: mediaUrl,
+                file_type: getMediaTypeFromUrl(mediaUrl),
+                description: description || `Медиа для события: ${title}`,
+                created_at: new Date().toISOString(),
+                is_external: true
+            };
+            
+            // Проверяем, нет ли уже такой ссылки в медиатеке
+            const existingMedia = window.media.find(m => m.file_url === mediaUrl);
+            if (!existingMedia) {
+                window.media.unshift(mediaItem);
+                console.log('✅ Медиа добавлено в медиатеку из события');
+                
+                // Сохраняем медиа в Supabase если пользователь авторизован
+                if (window.currentUser && window.supabaseClient) {
+                    try {
+                        mediaItem.user_id = window.currentUser.id;
+                        const { data, error } = await window.supabaseClient
+                            .from('media')
+                            .insert([mediaItem])
+                            .select();
+                        
+                        if (!error && data && data[0]) {
+                            mediaItem.id = data[0].id;
+                        }
+                    } catch (supabaseError) {
+                        console.warn('Не удалось сохранить медиа в Supabase:', supabaseError);
+                    }
+                }
+                
+                // Событие об изменении данных медиа
+                window.dispatchEvent(new CustomEvent('mediaChanged'));
+            }
+        }
+        
+        showNotification('✅ Событие успешно добавлено!', 'success');
+        closeAllModals();
+        
+        // Сохраняем в localStorage
+        saveToLocalStorage();
+        
+        // Событие об изменении данных событий
+        window.dispatchEvent(new CustomEvent('eventsChanged'));
+        
+        // Обновляем ленту событий если мы на странице событий
+        if (typeof window.updateTimeline === 'function') {
+            window.updateTimeline();
+        }
+        
+        // Обновляем главную страницу если мы на ней
+        if (typeof window.updateRecentEvents === 'function') {
+            window.updateRecentEvents();
+        }
+        
+        // Обновляем статистику
+        if (typeof window.updateStats === 'function') {
+            window.updateStats();
+        }
+        
+        // Обновляем медиатеку если есть медиа
+        if (mediaUrl && typeof window.updateMediaGrid === 'function') {
+            window.updateMediaGrid();
+        }
+        
+    } catch (error) {
+        console.error('Ошибка добавления события:', error);
+        showNotification('Ошибка добавления события', 'error');
+    } finally {
+        hideLoader();
+    }
+}
+
+// Функция для обработки загрузки медиа (обновленная)
+async function handleUploadMedia(e) {
+    console.log('📁 Загрузка медиа');
+    e.preventDefault();
+    
+    const filesInput = document.getElementById('upload-files');
+    const description = document.getElementById('upload-description').value;
+    const mediaUrl = document.getElementById('upload-url')?.value || '';
+    
+    // Проверяем, что есть либо файлы, либо URL
+    if ((!filesInput.files || filesInput.files.length === 0) && !mediaUrl) {
+        showNotification('Выберите файлы или укажите ссылку на медиа', 'error');
+        return;
+    }
+    
+    showLoader('Загрузка медиа...');
+    
+    try {
+        const newMediaItems = [];
+        
+        // Если есть URL, добавляем его как медиа
+        if (mediaUrl) {
+            const mediaItem = {
+                id: Date.now() + Math.random(),
+                file_url: mediaUrl,
+                file_type: getMediaTypeFromUrl(mediaUrl),
+                description: description || 'Ссылка на медиа',
+                created_at: new Date().toISOString(),
+                is_external: true
+            };
+            
+            // Если пользователь авторизован, сохраняем в Supabase
+            if (window.currentUser && window.supabaseClient) {
+                try {
+                    mediaItem.user_id = window.currentUser.id;
+                    const { data, error } = await window.supabaseClient
+                        .from('media')
+                        .insert([mediaItem])
+                        .select();
+                    
+                    if (!error && data && data[0]) {
+                        mediaItem.id = data[0].id;
+                        console.log('✅ Медиа (URL) сохранено в Supabase');
+                    }
+                } catch (supabaseError) {
+                    console.warn('Не удалось сохранить в Supabase, сохраняем локально:', supabaseError);
+                }
+            }
+            
+            newMediaItems.push(mediaItem);
+        }
+        
+        // Если есть файлы, обрабатываем их
+        if (filesInput.files && filesInput.files.length > 0) {
+            const files = Array.from(filesInput.files);
+            
+            for (const file of files) {
+                // В реальном приложении здесь загрузка в Supabase Storage
+                // Для демо-режима используем Data URL или оставляем как есть
+                let fileUrl;
+                
+                if (file.size < 5 * 1024 * 1024) { // 5MB лимит для Data URL
+                    fileUrl = await readFileAsDataURL(file);
+                } else {
+                    // Для больших файлов просто используем имя файла
+                    fileUrl = `file://${file.name}`;
+                }
+                
+                const mediaItem = {
+                    id: Date.now() + Math.random(),
+                    file_url: fileUrl,
+                    file_type: file.type.startsWith('image/') ? 'image' : 
+                               file.type.startsWith('video/') ? 'video' : 'document',
+                    description: description || file.name,
+                    file_name: file.name,
+                    file_size: file.size,
+                    file_type_mime: file.type,
+                    created_at: new Date().toISOString(),
+                    is_external: false
+                };
+                
+                // Если пользователь авторизован, сохраняем в Supabase
+                if (window.currentUser && window.supabaseClient) {
+                    try {
+                        mediaItem.user_id = window.currentUser.id;
+                        const { data, error } = await window.supabaseClient
+                            .from('media')
+                            .insert([mediaItem])
+                            .select();
+                        
+                        if (!error && data && data[0]) {
+                            mediaItem.id = data[0].id;
+                            console.log('✅ Медиа (файл) сохранено в Supabase');
+                        }
+                    } catch (supabaseError) {
+                        console.warn('Не удалось сохранить в Supabase, сохраняем локально:', supabaseError);
+                    }
+                }
+                
+                newMediaItems.push(mediaItem);
+            }
+        }
+        
+        window.media.unshift(...newMediaItems);
+        
+        showNotification(`✅ Добавлено ${newMediaItems.length} медиафайлов!`, 'success');
+        closeAllModals();
+        
+        // Сохраняем в localStorage
+        saveToLocalStorage();
+        
+        // Событие об изменении данных медиа
+        window.dispatchEvent(new CustomEvent('mediaChanged'));
+        
+        // Обновляем медиатеку если мы на странице медиа
+        if (typeof window.updateMediaGrid === 'function') {
+            window.updateMediaGrid();
+        }
+        
+        // Обновляем статистику
+        if (typeof window.updateStats === 'function') {
+            window.updateStats();
+        }
+        
+    } catch (error) {
+        console.error('Ошибка загрузки медиа:', error);
+        showNotification('Ошибка загрузки медиа', 'error');
+    } finally {
+        hideLoader();
+    }
+}
+
+// Функция для обновления последних событий на главной странице (обновленная)
+function updateRecentEvents() {
+    console.log('📅 Обновление последних событий');
+    
+    const container = document.getElementById('recent-events-list');
+    if (!container) {
+        console.log('❌ Контейнер для событий не найден');
+        return;
+    }
+    
+    const events = window.events || [];
+    const recentEvents = events.slice(0, 5);
+    
+    console.log('Событий:', recentEvents.length);
+    
+    if (recentEvents.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #718096; padding: 20px;">Событий пока нет</p>';
+        return;
+    }
+    
+    let html = '';
+    recentEvents.forEach(event => {
+        const date = new Date(event.date).toLocaleDateString('ru-RU');
+        const icon = getEventIcon(event.event_type);
+        
+        // Проверяем есть ли медиа
+        const hasMedia = event.media_url && event.media_url.trim() !== '';
+        const mediaType = hasMedia ? getMediaTypeFromUrl(event.media_url) : null;
+        
+        html += `
+            <div class="timeline-event" style="display: flex; gap: 15px; margin-bottom: 15px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                <div class="event-icon" style="background: #667eea; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i class="${icon}"></i>
+                </div>
+                <div class="event-content" style="flex: 1;">
+                    <h3 style="margin-bottom: 5px; color: #2d3748;">${event.title}</h3>
+                    <div class="event-date" style="color: #718096; font-size: 0.9rem; margin-bottom: 10px;">${date}</div>
+                    ${event.description ? `<p style="color: #4a5568; margin-bottom: 10px;">${event.description}</p>` : ''}
+                    
+                    ${hasMedia ? `
+                        <div style="margin-top: 10px;">
+                            <div style="font-size: 0.9rem; color: #718096; margin-bottom: 5px;">
+                                <i class="fas fa-paperclip"></i> Прикреплено медиа
+                            </div>
+                            ${mediaType === 'image' ? `
+                                <a href="${event.media_url}" target="_blank">
+                                    <img src="${event.media_url}" 
+                                         alt="${event.title}" 
+                                         style="max-width: 100px; max-height: 100px; border-radius: 6px; border: 1px solid #e2e8f0; object-fit: cover;"
+                                         onerror="this.style.display='none';">
+                                </a>
+                            ` : `
+                                <a href="${event.media_url}" target="_blank" style="color: #667eea; text-decoration: none; font-size: 0.9rem;">
+                                    <i class="fas fa-link"></i> ${mediaType === 'video' ? 'Видео' : 'Ссылка на медиа'}
+                                </a>
+                            `}
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+    console.log('✅ События обновлены');
+}
+
+// Функция для определения типа медиа по URL
+function getMediaTypeFromUrl(url) {
+    if (!url) return 'link';
+    
+    const lowerUrl = url.toLowerCase();
+    if (lowerUrl.match(/\.(jpg|jpeg|png|gif|bmp|webp|svg)$/) || 
+        lowerUrl.includes('image/') || 
+        lowerUrl.startsWith('data:image/')) {
+        return 'image';
+    } else if (lowerUrl.match(/\.(mp4|avi|mov|wmv|flv|webm|mkv)$/) || 
+               lowerUrl.includes('video/') || 
+               lowerUrl.startsWith('data:video/')) {
+        return 'video';
+    } else if (lowerUrl.match(/\.(mp3|wav|ogg|flac|aac)$/) || 
+               lowerUrl.includes('audio/') || 
+               lowerUrl.startsWith('data:audio/')) {
+        return 'audio';
+    } else if (lowerUrl.match(/\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt)$/)) {
+        return 'document';
+    } else {
+        return 'link';
+    }
+}
+
+// Экспортируем новые функции
+window.getMediaTypeFromUrl = getMediaTypeFromUrl;
 
 console.log('✅ App.js загружен');

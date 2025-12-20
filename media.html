@@ -44,20 +44,26 @@
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
                     <h2>Семейный архив</h2>
                     <button class="btn" id="upload-media-btn">
-                        <i class="fas fa-upload"></i> Загрузить фото
+                        <i class="fas fa-upload"></i> Загрузить медиа
                     </button>
                 </div>
                 
-                <div class="media-controls">
-                    <input type="text" id="media-search" placeholder="Поиск по описанию или имени..." style="flex: 1; padding: 10px; border: 2px solid #e2e8f0; border-radius: 6px;">
-                    <select id="media-sort" style="width: auto; padding: 10px; border: 2px solid #e2e8f0; border-radius: 6px;">
+                <div class="media-controls" style="display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap;">
+                    <input type="text" id="media-search" placeholder="Поиск по описанию или имени..." style="flex: 1; min-width: 250px; padding: 12px 15px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1rem;">
+                    <select id="media-sort" style="width: auto; padding: 12px 15px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1rem;">
                         <option value="newest">Сначала новые</option>
                         <option value="oldest">Сначала старые</option>
                         <option value="name">По имени</option>
                     </select>
+                    <select id="media-type-filter" style="width: auto; padding: 12px 15px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1rem;">
+                        <option value="all">Все типы</option>
+                        <option value="image">Фотографии</option>
+                        <option value="video">Видео</option>
+                        <option value="document">Документы</option>
+                    </select>
                 </div>
                 
-                <div class="media-grid" id="media-grid">
+                <div class="media-grid" id="media-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 25px;">
                     <!-- Медиа будут загружены здесь -->
                 </div>
             </div>
@@ -80,24 +86,30 @@
     <div id="upload-modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Загрузить фотографии</h3>
+                <h3>Загрузить медиа</h3>
                 <button class="modal-close">&times;</button>
             </div>
             <div class="modal-body">
                 <form id="upload-form-modal">
                     <div class="form-group">
+                        <label for="upload-url">Ссылка на медиа (URL)</label>
+                        <input type="url" id="upload-url" placeholder="https://example.com/photo.jpg">
+                        <small style="color: #718096;">Или выберите файлы ниже</small>
+                    </div>
+                    
+                    <div class="form-group">
                         <label for="upload-files">Выберите файлы</label>
-                        <div style="border: 2px dashed #cbd5e0; border-radius: 8px; padding: 30px; text-align: center; margin-bottom: 15px;">
+                        <div class="file-upload-area" onclick="document.getElementById('upload-files').click()">
                             <i class="fas fa-cloud-upload-alt" style="font-size: 3rem; color: #a0aec0; margin-bottom: 15px;"></i>
                             <p>Перетащите файлы сюда или нажмите для выбора</p>
-                            <input type="file" id="upload-files" multiple accept="image/*" class="file-input" style="display: none;">
+                            <input type="file" id="upload-files" multiple accept="image/*,video/*" class="file-input" style="display: none;">
                             <button type="button" class="btn btn-small" id="browse-files-btn">
                                 Выбрать файлы
                             </button>
                         </div>
-                        <div id="file-list" style="display: none;">
-                            <p>Выбранные файлы:</p>
-                            <ul id="selected-files-list"></ul>
+                        <div id="file-list" style="display: none; margin-top: 15px;">
+                            <p style="font-weight: 500; margin-bottom: 10px;">Выбранные файлы:</p>
+                            <ul id="selected-files-list" style="list-style: none; padding: 0;"></ul>
                         </div>
                     </div>
                     
@@ -148,13 +160,22 @@
             
             const searchText = document.getElementById('media-search')?.value.toLowerCase() || '';
             const sortBy = document.getElementById('media-sort')?.value || 'newest';
+            const typeFilter = document.getElementById('media-type-filter')?.value || 'all';
             
             let filteredMedia = window.media || [];
             
-            // Поиск
+            // Поиск по тексту
             if (searchText) {
                 filteredMedia = filteredMedia.filter(item => 
-                    item.description?.toLowerCase().includes(searchText)
+                    (item.description?.toLowerCase().includes(searchText)) ||
+                    (item.file_name?.toLowerCase().includes(searchText))
+                );
+            }
+            
+            // Фильтр по типу
+            if (typeFilter !== 'all') {
+                filteredMedia = filteredMedia.filter(item => 
+                    item.file_type === typeFilter
                 );
             }
             
@@ -165,38 +186,79 @@
                 } else if (sortBy === 'oldest') {
                     return new Date(a.created_at) - new Date(b.created_at);
                 } else if (sortBy === 'name') {
-                    return (a.description || '').localeCompare(b.description || '');
+                    return (a.description || a.file_name || '').localeCompare(b.description || b.file_name || '');
                 }
                 return 0;
             });
             
             if (filteredMedia.length === 0) {
                 container.innerHTML = `
-                    <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #718096; background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-                        <i class="fas fa-images" style="font-size: 3rem; margin-bottom: 20px; color: #cbd5e0;"></i>
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: #718096; background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                        <i class="fas fa-images" style="font-size: 4rem; margin-bottom: 20px; color: #cbd5e0;"></i>
                         <h3 style="margin-bottom: 10px; color: #4a5568;">Медиафайлов пока нет</h3>
-                        <p>Загрузите первое фото в ваш семейный архив</p>
+                        <p style="margin-bottom: 25px;">Загрузите первое фото или видео в ваш семейный архив</p>
+                        <button class="btn" id="upload-first-media-btn">
+                            <i class="fas fa-upload"></i> Загрузить первое медиа
+                        </button>
                     </div>
                 `;
+                
+                document.getElementById('upload-first-media-btn')?.addEventListener('click', () => {
+                    window.showModal('upload-modal');
+                });
+                
                 return;
             }
             
             let html = '';
             filteredMedia.forEach(item => {
+                const isImage = item.file_type === 'image';
+                const isVideo = item.file_type === 'video';
+                const isExternal = item.is_external === true;
+                const createdDate = new Date(item.created_at).toLocaleDateString('ru-RU');
+                
+                let mediaPreview = '';
+                if (isImage) {
+                    mediaPreview = `
+                        <img src="${item.file_url}" 
+                             alt="${item.description || 'Фото'}" 
+                             style="width: 100%; height: 180px; object-fit: cover; border-radius: 8px 8px 0 0;"
+                             onerror="this.onerror=null; this.src='https://via.placeholder.com/300/667eea/ffffff?text=Фото';">
+                    `;
+                } else if (isVideo) {
+                    mediaPreview = `
+                        <div style="width: 100%; height: 180px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px 8px 0 0; display: flex; align-items: center; justify-content: center; color: white; font-size: 3rem;">
+                            <i class="fas fa-play-circle"></i>
+                        </div>
+                    `;
+                } else {
+                    mediaPreview = `
+                        <div style="width: 100%; height: 180px; background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); border-radius: 8px 8px 0 0; display: flex; align-items: center; justify-content: center; color: white; font-size: 3rem;">
+                            <i class="fas fa-file"></i>
+                        </div>
+                    `;
+                }
+                
                 html += `
-                    <div class="media-item" style="border-radius: 8px; overflow: hidden; box-shadow: 0 3px 10px rgba(0,0,0,0.1); background: white; transition: all 0.3s;">
-                        <img src="${item.file_url}" alt="${item.description || 'Фото'}" 
-                             onerror="this.src='https://via.placeholder.com/300/667eea/ffffff?text=Фото'"
-                             style="width: 100%; height: 200px; object-fit: cover;">
-                        <div class="media-description" style="padding: 15px;">
-                            <div style="margin-bottom: 10px;">${item.description || 'Без описания'}</div>
-                            <div style="font-size: 0.8rem; color: #718096; margin-bottom: 10px;">
-                                ${new Date(item.created_at).toLocaleDateString('ru-RU')}
+                    <div class="media-item" style="border-radius: 8px; overflow: hidden; box-shadow: 0 3px 15px rgba(0,0,0,0.08); background: white; transition: all 0.3s; border: 1px solid #e2e8f0;">
+                        ${mediaPreview}
+                        <div class="media-description" style="padding: 20px;">
+                            <div style="margin-bottom: 10px; font-weight: 500; color: #2d3748; height: 50px; overflow: hidden; text-overflow: ellipsis;">
+                                ${item.description || 'Без описания'}
                             </div>
-                            <div style="display: flex; gap: 5px;">
+                            <div style="font-size: 0.85rem; color: #718096; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                                <span>${createdDate}</span>
+                                ${isExternal ? '<span style="background: #e6fffa; color: #234e52; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem;">Ссылка</span>' : ''}
+                            </div>
+                            <div style="display: flex; gap: 8px;">
                                 <button class="btn btn-small view-media-btn" data-id="${item.id}" style="flex: 1;">
                                     <i class="fas fa-eye"></i> Просмотр
                                 </button>
+                                ${!isExternal ? `
+                                    <button class="btn btn-small" onclick="downloadMedia('${item.id}')">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                ` : ''}
                                 <button class="btn btn-small btn-danger delete-media-btn" data-id="${item.id}">
                                     <i class="fas fa-trash"></i>
                                 </button>
@@ -228,19 +290,57 @@
             const item = (window.media || []).find(m => m.id === mediaId);
             if (!item) return;
             
+            const isImage = item.file_type === 'image';
+            const isVideo = item.file_type === 'video';
+            
+            let mediaContent = '';
+            if (isImage) {
+                mediaContent = `
+                    <img src="${item.file_url}" alt="${item.description || 'Фото'}" 
+                         style="width: 100%; max-height: 400px; object-fit: contain; border-radius: 8px; margin-bottom: 20px;">
+                `;
+            } else if (isVideo) {
+                mediaContent = `
+                    <video controls style="width: 100%; max-height: 400px; border-radius: 8px; margin-bottom: 20px;">
+                        <source src="${item.file_url}" type="video/mp4">
+                        Ваш браузер не поддерживает видео.
+                    </video>
+                `;
+            } else {
+                mediaContent = `
+                    <div style="background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); width: 100%; height: 200px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 4rem; margin-bottom: 20px;">
+                        <i class="fas fa-file"></i>
+                    </div>
+                `;
+            }
+            
             // Создаем модальное окно для просмотра
             const modalHtml = `
-                <div class="modal" id="view-media-modal">
+                <div class="modal" id="view-media-modal" style="max-width: 700px;">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h3>Просмотр медиа</h3>
                             <button class="modal-close">&times;</button>
                         </div>
                         <div class="modal-body">
-                            <img src="${item.file_url}" alt="${item.description || 'Фото'}" 
-                                 style="width: 100%; border-radius: 8px; margin-bottom: 20px;">
-                            <h4 style="margin-bottom: 10px;">${item.description || 'Без описания'}</h4>
-                            <p style="color: #718096;">Загружено: ${new Date(item.created_at).toLocaleDateString('ru-RU')}</p>
+                            ${mediaContent}
+                            <h4 style="margin-bottom: 10px; color: #2d3748;">${item.description || 'Без описания'}</h4>
+                            <div style="color: #718096; margin-bottom: 10px;">
+                                <div><strong>Тип:</strong> ${item.file_type === 'image' ? 'Изображение' : item.file_type === 'video' ? 'Видео' : 'Документ'}</div>
+                                <div><strong>Загружено:</strong> ${new Date(item.created_at).toLocaleDateString('ru-RU')}</div>
+                                ${item.file_name ? `<div><strong>Имя файла:</strong> ${item.file_name}</div>` : ''}
+                                ${item.file_size ? `<div><strong>Размер:</strong> ${(item.file_size / 1024 / 1024).toFixed(2)} MB</div>` : ''}
+                            </div>
+                            <div style="margin-top: 20px; display: flex; gap: 10px;">
+                                <a href="${item.file_url}" target="_blank" class="btn" style="flex: 1;">
+                                    <i class="fas fa-external-link-alt"></i> Открыть в новой вкладке
+                                </a>
+                                ${!item.is_external ? `
+                                    <button class="btn btn-secondary" onclick="downloadMedia('${item.id}')" style="flex: 1;">
+                                        <i class="fas fa-download"></i> Скачать
+                                    </button>
+                                ` : ''}
+                            </div>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary cancel-btn">
@@ -262,18 +362,39 @@
             document.querySelector('#view-media-modal .cancel-btn')?.addEventListener('click', window.closeAllModals);
         }
         
+        function downloadMedia(mediaId) {
+            const item = (window.media || []).find(m => m.id === mediaId);
+            if (!item || item.is_external) return;
+            
+            const link = document.createElement('a');
+            link.href = item.file_url;
+            link.download = item.file_name || `media-${mediaId}`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            window.showNotification('✅ Скачивание началось', 'success');
+        }
+        
         async function deleteMedia(mediaId) {
             if (!confirm('Удалить этот медиафайл?')) return;
             
             window.showLoader('Удаление медиафайла...');
             
             try {
-                const { error } = await window.supabaseClient
-                    .from('media')
-                    .delete()
-                    .eq('id', mediaId);
-                
-                if (error) throw error;
+                // Если пользователь авторизован, удаляем из Supabase
+                if (window.currentUser && window.supabaseClient) {
+                    try {
+                        const { error } = await window.supabaseClient
+                            .from('media')
+                            .delete()
+                            .eq('id', mediaId);
+                        
+                        if (error) throw error;
+                    } catch (supabaseError) {
+                        console.warn('Не удалось удалить из Supabase:', supabaseError);
+                    }
+                }
                 
                 // Удаляем из локального массива
                 const index = window.media.findIndex(m => m.id === mediaId);
@@ -282,6 +403,10 @@
                 }
                 
                 window.showNotification('✅ Медиафайл удален!', 'success');
+                
+                // Сохраняем в localStorage
+                window.saveToLocalStorage();
+                
                 updateMediaGrid();
                 
             } catch (error) {
@@ -290,6 +415,38 @@
             } finally {
                 window.hideLoader();
             }
+        }
+        
+        function showSelectedFiles() {
+            const filesInput = document.getElementById('upload-files');
+            const fileList = document.getElementById('file-list');
+            const listContainer = document.getElementById('selected-files-list');
+            
+            if (!filesInput || !fileList || !listContainer) return;
+            
+            const files = filesInput.files;
+            
+            if (!files || files.length === 0) {
+                fileList.style.display = 'none';
+                return;
+            }
+            
+            listContainer.innerHTML = '';
+            
+            Array.from(files).forEach((file, index) => {
+                const li = document.createElement('li');
+                li.style.padding = '8px 12px';
+                li.style.background = '#f7fafc';
+                li.style.borderRadius = '6px';
+                li.style.marginBottom = '8px';
+                li.style.border = '1px solid #e2e8f0';
+                li.style.fontSize = '0.9rem';
+                li.style.color = '#4a5568';
+                li.textContent = `${index + 1}. ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+                listContainer.appendChild(li);
+            });
+            
+            fileList.style.display = 'block';
         }
         
         // Инициализация страницы
@@ -302,18 +459,35 @@
             
             // Обработчик кнопки загрузки медиа
             document.getElementById('upload-media-btn')?.addEventListener('click', () => {
+                // Сбрасываем форму
+                const form = document.getElementById('upload-form-modal');
+                if (form) {
+                    form.reset();
+                    const fileList = document.getElementById('file-list');
+                    if (fileList) fileList.style.display = 'none';
+                }
+                
                 window.showModal('upload-modal');
             });
             
             // Обработчики поиска и сортировки
             document.getElementById('media-search')?.addEventListener('input', updateMediaGrid);
             document.getElementById('media-sort')?.addEventListener('change', updateMediaGrid);
+            document.getElementById('media-type-filter')?.addEventListener('change', updateMediaGrid);
+            
+            // Обработчик выбора файлов
+            document.getElementById('browse-files-btn')?.addEventListener('click', () => {
+                document.getElementById('upload-files').click();
+            });
+            
+            document.getElementById('upload-files')?.addEventListener('change', showSelectedFiles);
         });
         
         // Экспортируем функции
         window.updateMediaGrid = updateMediaGrid;
         window.viewMedia = viewMedia;
         window.deleteMedia = deleteMedia;
+        window.showSelectedFiles = showSelectedFiles;
     </script>
 </body>
 </html>
