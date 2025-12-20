@@ -338,11 +338,16 @@
             if (submitBtn) submitBtn.textContent = 'Сохранить изменения';
             submitBtn.dataset.editingId = eventId;
             
-            // Временное изменение обработчика
+            // Сохраняем текущий обработчик формы
             const form = document.getElementById('add-event-form-modal');
             const originalSubmit = form.onsubmit;
             
-            form.onsubmit = async (e) => {
+            // Удаляем старый обработчик
+            const newForm = form.cloneNode(true);
+            form.parentNode.replaceChild(newForm, form);
+            
+            // Добавляем новый обработчик
+            newForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 
                 const updatedEvent = {
@@ -399,10 +404,11 @@
                     
                     window.showNotification('✅ Событие обновлено!', 'success');
                     window.closeAllModals();
-                    updateTimeline();
                     
                     // Сохраняем в localStorage
                     window.saveToLocalStorage();
+                    
+                    updateTimeline();
                     
                     // Обновляем медиатеку если есть медиа
                     if (updatedEvent.media_url && typeof window.updateMediaGrid === 'function') {
@@ -414,9 +420,8 @@
                     window.showNotification('Ошибка обновления события', 'error');
                 } finally {
                     window.hideLoader();
-                    form.onsubmit = originalSubmit; // Восстанавливаем обработчик
                 }
-            };
+            });
         }
         
         async function deleteEvent(eventId) {
@@ -462,21 +467,49 @@
         
         // Инициализация страницы
         document.addEventListener('DOMContentLoaded', async () => {
+            console.log('📅 Инициализация страницы ленты событий...');
+            
             // Загружаем данные
             await window.loadUserData();
+            
+            console.log('✅ Данные загружены, события:', window.events?.length || 0);
             
             // Обновляем ленту событий
             updateTimeline();
             
             // Обработчик кнопки добавления события
             document.getElementById('add-event-btn')?.addEventListener('click', () => {
-                // Сбрасываем форму
+                console.log('📝 Открытие формы добавления события');
+                
+                // Сбрасываем форму - используем новый подход
+                const today = new Date().toISOString().split('T')[0];
+                
+                // Устанавливаем значения напрямую
+                const titleInput = document.getElementById('event-title');
+                const dateInput = document.getElementById('event-date');
+                const typeSelect = document.getElementById('event-type');
+                const descTextarea = document.getElementById('event-description');
+                const mediaInput = document.getElementById('event-media-url');
+                
+                if (titleInput) titleInput.value = '';
+                if (dateInput) dateInput.value = today;
+                if (typeSelect) typeSelect.value = 'birthday';
+                if (descTextarea) descTextarea.value = '';
+                if (mediaInput) mediaInput.value = '';
+                
+                // Удаляем старый обработчик формы если он есть
                 const form = document.getElementById('add-event-form-modal');
                 if (form) {
-                    form.reset();
-                    // Устанавливаем сегодняшнюю дату по умолчанию
-                    const today = new Date().toISOString().split('T')[0];
-                    document.getElementById('event-date').value = today;
+                    const newForm = form.cloneNode(true);
+                    form.parentNode.replaceChild(newForm, form);
+                    
+                    // Добавляем новый обработчик
+                    newForm.addEventListener('submit', async function(e) {
+                        e.preventDefault();
+                        console.log('📨 Отправка формы добавления события');
+                        
+                        await window.handleAddEvent(e);
+                    });
                 }
                 
                 // Возвращаем оригинальный заголовок и текст кнопки
@@ -496,13 +529,121 @@
             // Обработчики фильтров
             document.getElementById('filter-year')?.addEventListener('change', updateTimeline);
             document.getElementById('filter-type')?.addEventListener('change', updateTimeline);
+            
+            // Показываем количество событий в консоли для отладки
+            console.log('📊 Текущее количество событий:', window.events?.length || 0);
         });
+        
+        // Функция для добавления события из формы (альтернативная)
+        async function addEventFromForm(e) {
+            e.preventDefault();
+            console.log('📨 Добавление события из формы');
+            
+            const title = document.getElementById('event-title').value;
+            const date = document.getElementById('event-date').value;
+            const eventType = document.getElementById('event-type').value;
+            const description = document.getElementById('event-description').value;
+            const mediaUrl = document.getElementById('event-media-url')?.value || '';
+            
+            console.log('Данные формы:', { title, date, eventType, description, mediaUrl });
+            
+            if (!title || !date) {
+                window.showNotification('Заполните обязательные поля', 'error');
+                return;
+            }
+            
+            window.showLoader('Добавление события...');
+            
+            try {
+                const newEvent = {
+                    id: Date.now() + Math.random(),
+                    title: title,
+                    date: date,
+                    event_type: eventType || 'other',
+                    description: description || null,
+                    media_url: mediaUrl || null,
+                    created_at: new Date().toISOString()
+                };
+                
+                // Если пользователь авторизован, сохраняем в Supabase
+                if (window.currentUser && window.supabaseClient) {
+                    try {
+                        newEvent.user_id = window.currentUser.id;
+                        const { data, error } = await window.supabaseClient
+                            .from('events')
+                            .insert([newEvent])
+                            .select();
+                        
+                        if (!error && data && data[0]) {
+                            newEvent.id = data[0].id;
+                            console.log('✅ Событие сохранено в Supabase');
+                        }
+                    } catch (supabaseError) {
+                        console.warn('Не удалось сохранить в Supabase, сохраняем локально:', supabaseError);
+                    }
+                }
+                
+                // Добавляем событие
+                window.events.unshift(newEvent);
+                console.log('✅ Событие добавлено локально. Всего событий:', window.events.length);
+                
+                // Если есть ссылка на медиа, добавляем ее в медиатеку
+                if (mediaUrl && mediaUrl.trim() !== '') {
+                    const mediaExists = window.media.some(m => m.file_url === mediaUrl);
+                    if (!mediaExists) {
+                        const mediaItem = {
+                            id: Date.now() + Math.random(),
+                            file_url: mediaUrl,
+                            file_type: window.getMediaTypeFromUrl(mediaUrl),
+                            description: description || `Медиа для события: ${title}`,
+                            created_at: new Date().toISOString(),
+                            is_external: true
+                        };
+                        
+                        window.media.unshift(mediaItem);
+                        console.log('✅ Медиа добавлено в медиатеку из события');
+                    }
+                }
+                
+                window.showNotification('✅ Событие успешно добавлено!', 'success');
+                window.closeAllModals();
+                
+                // Сохраняем в localStorage
+                window.saveToLocalStorage();
+                console.log('💾 Данные сохранены в localStorage');
+                
+                // Обновляем ленту событий
+                updateTimeline();
+                
+                // Обновляем главную страницу если мы на ней
+                if (typeof window.updateRecentEvents === 'function') {
+                    window.updateRecentEvents();
+                }
+                
+                // Обновляем статистику
+                if (typeof window.updateStats === 'function') {
+                    window.updateStats();
+                }
+                
+                // Обновляем медиатеку если есть медиа
+                if (mediaUrl && typeof window.updateMediaGrid === 'function') {
+                    window.updateMediaGrid();
+                }
+                
+            } catch (error) {
+                console.error('Ошибка добавления события:', error);
+                window.showNotification('Ошибка добавления события', 'error');
+            } finally {
+                window.hideLoader();
+            }
+        }
         
         // Экспортируем функции
         window.updateTimeline = updateTimeline;
         window.getEventIcon = getEventIcon;
         window.editEvent = editEvent;
         window.deleteEvent = deleteEvent;
+        window.addEventFromForm = addEventFromForm;
     </script>
 </body>
 </html>
