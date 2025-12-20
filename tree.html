@@ -273,30 +273,87 @@
         document.addEventListener('DOMContentLoaded', async () => {
             console.log('🌳 Страница дерева загружается...');
             
-            // Проверка авторизации
-            if (!window.currentUser) {
-                window.showNotification('Для доступа к этой странице необходимо войти в систему', 'error');
-                setTimeout(() => {
-                    window.location.href = 'auth.html';
-                }, 1500);
-                return;
-            }
+            // Проверка авторизации - ОЖИДАЕМ загрузки пользователя
+            const checkAuth = () => {
+                if (!window.currentUser) {
+                    console.log('❌ Пользователь не авторизован');
+                    window.showNotification('Для доступа к этой странице необходимо войти в систему', 'error');
+                    setTimeout(() => {
+                        window.location.href = 'auth.html';
+                    }, 1500);
+                    return false;
+                }
+                console.log('✅ Пользователь авторизован:', window.currentUser.email);
+                return true;
+            };
             
-            // Обработчики кнопок
-            document.getElementById('auto-build-btn')?.addEventListener('click', autoBuildTree);
-            document.getElementById('auto-build-btn-2')?.addEventListener('click', autoBuildTree);
-            document.getElementById('manual-add-btn')?.addEventListener('click', () => {
-                window.showModal('add-person-modal');
-            });
-            document.getElementById('save-image-btn')?.addEventListener('click', saveTreeAsImage);
-            document.getElementById('print-tree-btn')?.addEventListener('click', printTree);
-            
-            // Обновляем статистику
-            if (window.updateTreeStats) {
-                updateTreeStats();
-            }
-            
-            console.log('✅ Страница дерева инициализирована');
+            // Даем время на загрузку данных пользователя
+            setTimeout(() => {
+                if (!checkAuth()) return;
+                
+                // Обработчики кнопок
+                document.getElementById('auto-build-btn')?.addEventListener('click', () => {
+                    if (!window.currentUser) {
+                        window.showNotification('Для построения дерева необходимо войти в систему', 'error');
+                        setTimeout(() => {
+                            window.location.href = 'auth.html';
+                        }, 1500);
+                        return;
+                    }
+                    if (window.autoBuildTree) autoBuildTree();
+                });
+                
+                document.getElementById('auto-build-btn-2')?.addEventListener('click', () => {
+                    if (!window.currentUser) {
+                        window.showNotification('Для построения дерева необходимо войти в систему', 'error');
+                        setTimeout(() => {
+                            window.location.href = 'auth.html';
+                        }, 1500);
+                        return;
+                    }
+                    if (window.autoBuildTree) autoBuildTree();
+                });
+                
+                document.getElementById('manual-add-btn')?.addEventListener('click', () => {
+                    if (!window.currentUser) {
+                        window.showNotification('Для добавления человека необходимо войти в систему', 'error');
+                        setTimeout(() => {
+                            window.location.href = 'auth.html';
+                        }, 1500);
+                        return;
+                    }
+                    window.showModal('add-person-modal');
+                });
+                
+                document.getElementById('save-image-btn')?.addEventListener('click', () => {
+                    if (!window.currentUser) {
+                        window.showNotification('Для сохранения необходимо войти в систему', 'error');
+                        setTimeout(() => {
+                            window.location.href = 'auth.html';
+                        }, 1500);
+                        return;
+                    }
+                    if (window.saveTreeAsImage) saveTreeAsImage();
+                });
+                
+                document.getElementById('print-tree-btn')?.addEventListener('click', () => {
+                    if (!window.currentUser) {
+                        window.showNotification('Для печати необходимо войти в систему', 'error');
+                        setTimeout(() => {
+                            window.location.href = 'auth.html';
+                        }, 1500);
+                        return;
+                    }
+                    if (window.printTree) printTree();
+                });
+                
+                // Обновляем статистику
+                if (window.updateTreeStats) {
+                    updateTreeStats();
+                }
+                
+                console.log('✅ Страница дерева инициализирована');
+            }, 300); // Небольшая задержка для загрузки данных пользователя
         });
     </script>
 </body>
