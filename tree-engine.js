@@ -1,15 +1,30 @@
-// tree-engine.js - Улучшенный движок дерева с выбором ролей
+// tree-engine.js - Улучшенный движок дерева (без демо-режимов)
 
 console.log('🌳 Tree Engine загружается...');
 
 // Основная функция построения дерева
 function autoBuildTree() {
+    // Проверка авторизации
+    if (!window.currentUser) {
+        window.showNotification('Для построения дерева необходимо войти в систему', 'error');
+        setTimeout(() => {
+            window.location.href = 'auth.html';
+        }, 1500);
+        return;
+    }
+    
     // Показываем модальное окно с выбором ролей
     showTreeBuilderModal();
 }
 
 // Модальное окно построения дерева
 function showTreeBuilderModal() {
+    // Проверка авторизации
+    if (!window.currentUser) {
+        window.showNotification('Для построения дерева необходимо войти в систему', 'error');
+        return;
+    }
+    
     const modalHtml = `
         <div class="modal show" id="tree-builder-modal">
             <div class="modal-content" style="max-width: 800px;">
@@ -156,6 +171,12 @@ function showTreeBuilderModal() {
 
 // Построение семейного дерева
 function buildFamilyTree(centerPersonId) {
+    // Проверка авторизации
+    if (!window.currentUser) {
+        window.showNotification('Для построения дерева необходимо войти в систему', 'error');
+        return;
+    }
+    
     window.showLoader('Построение генеалогического древа...');
     
     setTimeout(() => {
@@ -581,6 +602,15 @@ function editPerson(personId) {
 
 // Сохранение дерева как изображения
 function saveTreeAsImage() {
+    // Проверка авторизации
+    if (!window.currentUser) {
+        window.showNotification('Для сохранения дерева необходимо войти в систему', 'error');
+        setTimeout(() => {
+            window.location.href = 'auth.html';
+        }, 1500);
+        return;
+    }
+    
     const container = document.getElementById('tree-visualization-container');
     if (!container || container.innerHTML.includes('tree-empty-state')) {
         window.showNotification('Сначала постройте дерево', 'error');
@@ -598,6 +628,15 @@ function saveTreeAsImage() {
 
 // Печать дерева
 function printTree() {
+    // Проверка авторизации
+    if (!window.currentUser) {
+        window.showNotification('Для печати дерева необходимо войти в систему', 'error');
+        setTimeout(() => {
+            window.location.href = 'auth.html';
+        }, 1500);
+        return;
+    }
+    
     const container = document.getElementById('tree-visualization-container');
     if (!container || container.innerHTML.includes('tree-empty-state')) {
         window.showNotification('Сначала постройте дерево', 'error');

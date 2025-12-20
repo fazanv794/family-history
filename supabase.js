@@ -1,4 +1,4 @@
-// supabase.js - Упрощенный клиент для работы
+// supabase.js - Клиент для работы с Supabase (без демо-режима)
 
 console.log('🔧 Supabase.js загружается...');
 
@@ -18,188 +18,63 @@ try {
         throw new Error('Библиотека Supabase не загружена');
     }
 } catch (error) {
-    console.warn('⚠️ Используем локальное хранилище:', error.message);
+    console.error('❌ Ошибка создания Supabase клиента:', error.message);
     
-    // Создаем простую заглушку с localStorage
+    // Показываем ошибку
+    setTimeout(() => {
+        if (window.showNotification) {
+            window.showNotification(
+                'Ошибка подключения к базе данных. Пожалуйста, обновите страницу.', 
+                'error'
+            );
+        }
+    }, 1000);
+    
+    // Создаем заглушку, которая требует авторизацию
     supabaseClient = {
         auth: {
-            getUser: async () => {
-                try {
-                    const userData = localStorage.getItem('family_tree_user');
-                    return { 
-                        data: { 
-                            user: userData ? JSON.parse(userData) : null 
-                        }, 
-                        error: null 
-                    };
-                } catch (e) {
-                    console.error('Ошибка получения пользователя:', e);
-                    return { data: { user: null }, error: null };
-                }
-            },
-            signUp: async ({ email, password, options }) => {
-                console.log('📝 Регистрация:', email);
-                try {
-                    const user = {
-                        id: 'user_' + Date.now(),
-                        email: email,
-                        user_metadata: options?.data || {},
-                        created_at: new Date().toISOString()
-                    };
-                    localStorage.setItem('family_tree_user', JSON.stringify(user));
-                    localStorage.setItem('family_tree_email', email);
-                    localStorage.setItem('family_tree_password', password);
-                    return { data: { user }, error: null };
-                } catch (e) {
-                    console.error('Ошибка регистрации:', e);
-                    return { data: null, error: { message: 'Ошибка регистрации' } };
-                }
-            },
-            signInWithPassword: async ({ email, password }) => {
-                console.log('🔐 Вход:', email);
-                
-                try {
-                    // Проверяем существующих пользователей
-                    const savedEmail = localStorage.getItem('family_tree_email');
-                    const savedPassword = localStorage.getItem('family_tree_password');
-                    
-                    let user = null;
-                    try {
-                        user = JSON.parse(localStorage.getItem('family_tree_user') || 'null');
-                    } catch (e) {
-                        console.log('Нет сохраненного пользователя');
-                    }
-                    
-                    // Если пользователь существует и пароль совпадает
-                    if (user && savedEmail === email && savedPassword === password) {
-                        console.log('✅ Пользователь найден, вход выполнен');
-                    } else {
-                        // Создаем нового пользователя
-                        console.log('🆕 Создаем нового пользователя');
-                        user = {
-                            id: 'user_' + Date.now(),
-                            email: email,
-                            user_metadata: { name: email.split('@')[0] || 'Пользователь' },
-                            created_at: new Date().toISOString()
-                        };
-                        localStorage.setItem('family_tree_user', JSON.stringify(user));
-                        localStorage.setItem('family_tree_email', email);
-                        localStorage.setItem('family_tree_password', password);
-                    }
-                    
-                    return { 
-                        data: { 
-                            user: user,
-                            session: {
-                                access_token: 'local_token_' + Date.now(),
-                                refresh_token: 'local_refresh_' + Date.now()
-                            }
-                        }, 
-                        error: null 
-                    };
-                } catch (e) {
-                    console.error('Ошибка входа:', e);
-                    return { 
-                        data: null, 
-                        error: { message: 'Ошибка входа: ' + e.message } 
-                    };
-                }
-            },
-            signOut: async () => {
-                console.log('🚪 Выход');
-                try {
-                    localStorage.removeItem('family_tree_user');
-                    // Не удаляем данные, чтобы пользователь мог вернуться
-                    return { error: null };
-                } catch (e) {
-                    console.error('Ошибка выхода:', e);
-                    return { error: { message: 'Ошибка выхода' } };
-                }
-            },
-            updateUser: async (data) => {
-                console.log('✏️ Обновление пользователя');
-                try {
-                    const user = JSON.parse(localStorage.getItem('family_tree_user') || '{}');
-                    const updatedUser = { ...user, ...data };
-                    localStorage.setItem('family_tree_user', JSON.stringify(updatedUser));
-                    return { data: { user: updatedUser }, error: null };
-                } catch (e) {
-                    console.error('Ошибка обновления:', e);
-                    return { data: null, error: { message: 'Ошибка обновления' } };
-                }
-            }
+            getUser: async () => ({ 
+                data: { user: null }, 
+                error: { message: 'Требуется авторизация' } 
+            }),
+            signUp: async () => ({ 
+                data: null, 
+                error: { message: 'Функция недоступна' } 
+            }),
+            signInWithPassword: async () => ({ 
+                data: null, 
+                error: { message: 'Функция недоступна' } 
+            }),
+            signOut: async () => ({ 
+                error: { message: 'Нет активной сессии' } 
+            }),
+            updateUser: async () => ({ 
+                data: null, 
+                error: { message: 'Требуется авторизация' } 
+            })
         },
-        from: (table) => ({
-            select: (columns = '*') => ({
-                eq: (column, value) => ({
-                    order: (column, { ascending = true } = {}) => {
-                        console.log(`📊 Выбор из ${table}: ${column} = ${value}`);
-                        try {
-                            const allData = JSON.parse(localStorage.getItem('family_tree_data') || '{}');
-                            const tableData = allData[table] || [];
-                            const filteredData = tableData.filter(item => item[column] === value);
-                            return Promise.resolve({ data: filteredData, error: null });
-                        } catch (e) {
-                            console.error('Ошибка выборки данных:', e);
-                            return Promise.resolve({ data: [], error: null });
-                        }
-                    }
+        from: () => ({
+            select: () => ({
+                eq: () => ({
+                    order: () => Promise.resolve({ 
+                        data: [], 
+                        error: { message: 'Требуется авторизация' } 
+                    })
                 })
             }),
-            insert: (data) => {
-                console.log(`➕ Вставка в ${table}:`, data);
-                try {
-                    const allData = JSON.parse(localStorage.getItem('family_tree_data') || '{}');
-                    if (!allData[table]) allData[table] = [];
-                    
-                    const newData = data.map(item => ({
-                        ...item,
-                        id: table + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-                        created_at: new Date().toISOString()
-                    }));
-                    
-                    allData[table].push(...newData);
-                    localStorage.setItem('family_tree_data', JSON.stringify(allData));
-                    
-                    return Promise.resolve({ data: newData, error: null });
-                } catch (e) {
-                    console.error('Ошибка вставки данных:', e);
-                    return Promise.resolve({ data: null, error: { message: 'Ошибка вставки' } });
-                }
-            },
-            update: (data) => ({
-                eq: (column, value) => {
-                    console.log(`✏️ Обновление ${table}: ${column} = ${value}`, data);
-                    try {
-                        const allData = JSON.parse(localStorage.getItem('family_tree_data') || '{}');
-                        if (allData[table]) {
-                            allData[table] = allData[table].map(item => 
-                                item[column] === value ? { ...item, ...data } : item
-                            );
-                            localStorage.setItem('family_tree_data', JSON.stringify(allData));
-                        }
-                        return Promise.resolve({ error: null });
-                    } catch (e) {
-                        console.error('Ошибка обновления данных:', e);
-                        return Promise.resolve({ error: { message: 'Ошибка обновления' } });
-                    }
-                }
+            insert: () => Promise.resolve({ 
+                data: null, 
+                error: { message: 'Требуется авторизация' } 
+            }),
+            update: () => ({
+                eq: () => Promise.resolve({ 
+                    error: { message: 'Требуется авторизация' } 
+                })
             }),
             delete: () => ({
-                eq: (column, value) => {
-                    console.log(`🗑️ Удаление из ${table}: ${column} = ${value}`);
-                    try {
-                        const allData = JSON.parse(localStorage.getItem('family_tree_data') || '{}');
-                        if (allData[table]) {
-                            allData[table] = allData[table].filter(item => item[column] !== value);
-                            localStorage.setItem('family_tree_data', JSON.stringify(allData));
-                        }
-                        return Promise.resolve({ error: null });
-                    } catch (e) {
-                        console.error('Ошибка удаления данных:', e);
-                        return Promise.resolve({ error: { message: 'Ошибка удаления' } });
-                    }
-                }
+                eq: () => Promise.resolve({ 
+                    error: { message: 'Требуется авторизация' } 
+                })
             })
         })
     };
@@ -308,10 +183,5 @@ window.supabaseClient = supabaseClient;
 window.showNotification = showNotification;
 window.showLoader = showLoader;
 window.hideLoader = hideLoader;
-
-// Функция для проверки демо-режима
-window.isDemoMode = function() {
-    return localStorage.getItem('family_tree_user') && !localStorage.getItem('family_tree_email')?.includes('@');
-};
 
 console.log('✅ Supabase модуль загружен');

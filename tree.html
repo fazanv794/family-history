@@ -269,9 +269,18 @@
     <script src="app.js"></script>
     
     <script>
-        // Функция для авто-построения дерева (простая версия)
+        // Функция для авто-построения дерева
         function autoBuildTree() {
             console.log('🌳 Автопостроение дерева');
+            
+            // Проверка авторизации
+            if (!window.currentUser) {
+                window.showNotification('Для построения дерева необходимо войти в систему', 'error');
+                setTimeout(() => {
+                    window.location.href = 'auth.html';
+                }, 1500);
+                return;
+            }
             
             window.showLoader('Построение генеалогического древа...');
             
@@ -453,6 +462,15 @@
         }
         
         function saveTreeAsImage() {
+            // Проверка авторизации
+            if (!window.currentUser) {
+                window.showNotification('Для сохранения дерева необходимо войти в систему', 'error');
+                setTimeout(() => {
+                    window.location.href = 'auth.html';
+                }, 1500);
+                return;
+            }
+            
             const container = document.getElementById('tree-visualization-container');
             if (!container || container.innerHTML.includes('tree-empty-state')) {
                 window.showNotification('Сначала постройте дерево', 'error');
@@ -469,6 +487,15 @@
         }
         
         function printTree() {
+            // Проверка авторизации
+            if (!window.currentUser) {
+                window.showNotification('Для печати дерева необходимо войти в систему', 'error');
+                setTimeout(() => {
+                    window.location.href = 'auth.html';
+                }, 1500);
+                return;
+            }
+            
             const container = document.getElementById('tree-visualization-container');
             if (!container || container.innerHTML.includes('tree-empty-state')) {
                 window.showNotification('Сначала постройте дерево', 'error');
@@ -521,6 +548,15 @@
         // Инициализация страницы
         document.addEventListener('DOMContentLoaded', async () => {
             console.log('🌳 Страница дерева загружается...');
+            
+            // Проверка авторизации
+            if (!window.currentUser) {
+                window.showNotification('Для доступа к этой странице необходимо войти в систему', 'error');
+                setTimeout(() => {
+                    window.location.href = 'auth.html';
+                }, 1500);
+                return;
+            }
             
             // Обработчики кнопок
             document.getElementById('auto-build-btn')?.addEventListener('click', autoBuildTree);

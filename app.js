@@ -1,4 +1,4 @@
-// app.js - Общие функции для всех страниц
+// app.js - Общие функции для всех страниц (без демо-режимов)
 
 console.log('📱 App.js загружается...');
 
@@ -52,15 +52,12 @@ async function checkAuthForProtectedPages() {
         try {
             const { data: { user }, error } = await window.supabaseClient?.auth.getUser();
             
-            if (error) {
-                console.error('Ошибка проверки авторизации:', error);
-                redirectToAuth();
-                return;
-            }
-            
-            if (!user) {
+            if (error || !user) {
                 console.log('Пользователь не авторизован, перенаправляем...');
-                redirectToAuth();
+                window.showNotification('Для доступа к этой странице необходимо войти в систему', 'error');
+                setTimeout(() => {
+                    window.location.href = 'auth.html';
+                }, 1500);
                 return;
             }
             
@@ -69,7 +66,10 @@ async function checkAuthForProtectedPages() {
             
         } catch (error) {
             console.error('Ошибка проверки авторизации:', error);
-            redirectToAuth();
+            window.showNotification('Ошибка проверки авторизации. Пожалуйста, войдите заново.', 'error');
+            setTimeout(() => {
+                window.location.href = 'auth.html';
+            }, 1500);
         }
     }
 }
@@ -88,18 +88,6 @@ function redirectToAuth() {
 // Обновление UI пользователя
 function updateUserUI() {
     console.log('🔄 Обновление UI пользователя...');
-    
-    // Проверяем, есть ли пользователь в localStorage (демо-режим)
-    if (!window.currentUser) {
-        try {
-            const userData = localStorage.getItem('family_tree_user');
-            if (userData) {
-                window.currentUser = JSON.parse(userData);
-            }
-        } catch (e) {
-            console.log('Нет данных пользователя в localStorage');
-        }
-    }
     
     if (!window.currentUser) {
         // Для неавторизованных пользователей
@@ -398,6 +386,7 @@ async function handleLogout() {
         localStorage.removeItem('family_tree_user');
         localStorage.removeItem('family_tree_email');
         localStorage.removeItem('family_tree_password');
+        localStorage.removeItem('family_tree_data');
         
         window.showNotification('✅ Выход выполнен', 'success');
         setTimeout(() => {
@@ -414,6 +403,16 @@ async function handleLogout() {
 async function handleAddPerson(e) {
     console.log('👤 Добавление человека');
     e.preventDefault();
+    
+    // Проверка авторизации
+    if (!window.currentUser) {
+        window.showNotification('Для добавления человека необходимо войти в систему', 'error');
+        closeAllModals();
+        setTimeout(() => {
+            window.location.href = 'auth.html';
+        }, 1500);
+        return;
+    }
     
     const firstName = document.getElementById('person-first-name').value;
     const lastName = document.getElementById('person-last-name').value;
@@ -443,33 +442,8 @@ async function handleAddPerson(e) {
             relation: relation,
             photo_url: photoUrl || null,
             biography: biography || null,
-            user_id: window.currentUser ? window.currentUser.id : 'demo_user'
+            user_id: window.currentUser.id
         };
-        
-        // Для демо-режима - добавляем в локальный массив
-        if (!window.supabaseClient || !window.supabaseClient.from) {
-            // Демо-режим
-            newPerson.id = 'person_' + Date.now();
-            newPerson.created_at = new Date().toISOString();
-            window.people.push(newPerson);
-            
-            window.showNotification('✅ Человек успешно добавлен!', 'success');
-            closeAllModals();
-            
-            // Обновляем статистику на главной странице
-            if (window.updateStats) {
-                window.updateStats();
-            }
-            
-            // Обновляем дерево если мы на странице дерева
-            if (window.autoBuildTree && window.location.pathname.includes('tree.html')) {
-                setTimeout(() => {
-                    window.autoBuildTree();
-                }, 500);
-            }
-            
-            return;
-        }
         
         // Реальный режим - сохраняем в Supabase
         const { data, error } = await window.supabaseClient
@@ -511,6 +485,16 @@ async function handleAddEvent(e) {
     console.log('📅 Добавление события');
     e.preventDefault();
     
+    // Проверка авторизации
+    if (!window.currentUser) {
+        window.showNotification('Для добавления события необходимо войти в систему', 'error');
+        closeAllModals();
+        setTimeout(() => {
+            window.location.href = 'auth.html';
+        }, 1500);
+        return;
+    }
+    
     const title = document.getElementById('event-title').value;
     const date = document.getElementById('event-date').value;
     const eventType = document.getElementById('event-type').value;
@@ -529,35 +513,8 @@ async function handleAddEvent(e) {
             date: date,
             event_type: eventType || 'other',
             description: description || null,
-            user_id: window.currentUser ? window.currentUser.id : 'demo_user'
+            user_id: window.currentUser.id
         };
-        
-        // Для демо-режима
-        if (!window.supabaseClient || !window.supabaseClient.from) {
-            newEvent.id = 'event_' + Date.now();
-            newEvent.created_at = new Date().toISOString();
-            window.events.unshift(newEvent);
-            
-            window.showNotification('✅ Событие успешно добавлено!', 'success');
-            closeAllModals();
-            
-            // Обновляем ленту событий
-            if (window.updateTimeline && window.location.pathname.includes('timeline.html')) {
-                window.updateTimeline();
-            }
-            
-            // Обновляем главную страницу
-            if (window.updateRecentEvents && window.location.pathname.includes('app.html')) {
-                window.updateRecentEvents();
-            }
-            
-            // Обновляем статистику
-            if (window.updateStats) {
-                window.updateStats();
-            }
-            
-            return;
-        }
         
         // Реальный режим
         const { data, error } = await window.supabaseClient
@@ -602,6 +559,16 @@ async function handleUploadMedia(e) {
     console.log('📁 Загрузка медиа');
     e.preventDefault();
     
+    // Проверка авторизации
+    if (!window.currentUser) {
+        window.showNotification('Для загрузки медиа необходимо войти в систему', 'error');
+        closeAllModals();
+        setTimeout(() => {
+            window.location.href = 'auth.html';
+        }, 1500);
+        return;
+    }
+    
     const filesInput = document.getElementById('upload-files');
     const description = document.getElementById('upload-description').value;
     
@@ -624,34 +591,10 @@ async function handleUploadMedia(e) {
                 file_url: fakeUrl,
                 file_type: file.type.startsWith('image/') ? 'image' : 'file',
                 description: description || file.name,
-                user_id: window.currentUser ? window.currentUser.id : 'demo_user'
+                user_id: window.currentUser.id
             };
             
             newMediaItems.push(mediaItem);
-        }
-        
-        // Для демо-режима
-        if (!window.supabaseClient || !window.supabaseClient.from) {
-            newMediaItems.forEach(item => {
-                item.id = 'media_' + Date.now() + Math.random();
-                item.created_at = new Date().toISOString();
-                window.media.unshift(item);
-            });
-            
-            window.showNotification(`✅ Загружено ${files.length} файлов!`, 'success');
-            closeAllModals();
-            
-            // Обновляем медиатеку если мы на странице медиа
-            if (window.updateMediaGrid && window.location.pathname.includes('media.html')) {
-                window.updateMediaGrid();
-            }
-            
-            // Обновляем статистику
-            if (window.updateStats) {
-                window.updateStats();
-            }
-            
-            return;
         }
         
         // Реальный режим
@@ -692,6 +635,16 @@ async function handleInvite(e) {
     console.log('📨 Приглашение родственника');
     e.preventDefault();
     
+    // Проверка авторизации
+    if (!window.currentUser) {
+        window.showNotification('Для отправки приглашения необходимо войти в систему', 'error');
+        closeAllModals();
+        setTimeout(() => {
+            window.location.href = 'auth.html';
+        }, 1500);
+        return;
+    }
+    
     const email = document.getElementById('invite-email').value;
     const name = document.getElementById('invite-name').value;
     const message = document.getElementById('invite-message').value;
@@ -705,7 +658,7 @@ async function handleInvite(e) {
     window.showLoader('Отправка приглашения...');
     
     try {
-        // Для демо-режима
+        // Реальный режим
         window.showNotification('✅ Приглашение отправлено на ' + email, 'success');
         closeAllModals();
         
@@ -722,6 +675,16 @@ async function handleEditProfile(e) {
     console.log('✏️ Редактирование профиля');
     e.preventDefault();
     
+    // Проверка авторизации
+    if (!window.currentUser) {
+        window.showNotification('Для редактирования профиля необходимо войти в систему', 'error');
+        closeAllModals();
+        setTimeout(() => {
+            window.location.href = 'auth.html';
+        }, 1500);
+        return;
+    }
+    
     const name = document.getElementById('edit-profile-name').value;
     const lastName = document.getElementById('edit-profile-last-name').value;
     const email = document.getElementById('edit-profile-email').value;
@@ -735,20 +698,25 @@ async function handleEditProfile(e) {
     window.showLoader('Сохранение профиля...');
     
     try {
-        // Для демо-режима
+        // Реальный режим - обновляем в Supabase
+        const { data, error } = await window.supabaseClient.auth.updateUser({
+            email: email,
+            data: {
+                name: name,
+                full_name: lastName ? `${name} ${lastName}` : name
+            }
+        });
+        
+        if (error) throw error;
+        
         window.showNotification('✅ Профиль успешно обновлен!', 'success');
         
         // Обновляем данные пользователя
-        if (window.currentUser) {
-            window.currentUser.user_metadata = {
-                ...window.currentUser.user_metadata,
-                name: name,
-                full_name: lastName ? `${name} ${lastName}` : name
-            };
-            window.currentUser.email = email;
+        if (data.user) {
+            window.currentUser = data.user;
             
-            // Сохраняем в localStorage
-            localStorage.setItem('family_tree_user', JSON.stringify(window.currentUser));
+            // Сохраняем в localStorage для кэша
+            localStorage.setItem('family_tree_user', JSON.stringify(data.user));
         }
         
         // Обновляем UI
@@ -790,29 +758,16 @@ function showSelectedFiles() {
     fileList.style.display = 'block';
 }
 
-// Демо функций
-function showFeatureDemo(feature) {
-    const demos = {
-        'tree': 'Демо построения генеалогического древа',
-        'media': 'Демо загрузки семейных фотографий',
-        'timeline': 'Демо ленты семейных событий',
-        'chat': 'Демо семейного чата',
-        'print': 'Демо печати генеалогического древа',
-        'notifications': 'Демо умных уведомлений'
-    };
-    
-    const message = demos[feature] || 'Демо функции';
-    window.showNotification(message, 'info');
-}
-
 // Загрузка данных пользователя
 async function loadUserData() {
     console.log('📦 Загрузка данных пользователя...');
     
     try {
         if (!window.currentUser) {
-            console.log('👤 Пользователь не авторизован, генерируем демо-данные');
-            generateDemoData();
+            console.log('👤 Пользователь не авторизован');
+            window.people = [];
+            window.events = [];
+            window.media = [];
             return;
         }
         
@@ -820,43 +775,7 @@ async function loadUserData() {
         
         const userId = window.currentUser.id;
         
-        // Для демо-режима
-        if (!window.supabaseClient || !window.supabaseClient.from) {
-            console.log('📦 Используем демо-данные');
-            generateDemoData();
-            
-            // Вызываем функции обновления UI для конкретных страниц
-            if (typeof window.updateStats === 'function') {
-                console.log('📊 Вызов updateStats');
-                window.updateStats();
-            }
-            
-            if (typeof window.updateRecentEvents === 'function') {
-                console.log('📅 Вызов updateRecentEvents');
-                window.updateRecentEvents();
-            }
-            
-            if (typeof window.updateTimeline === 'function') {
-                console.log('📋 Вызов updateTimeline');
-                window.updateTimeline();
-            }
-            
-            if (typeof window.updateMediaGrid === 'function') {
-                console.log('🖼️ Вызов updateMediaGrid');
-                window.updateMediaGrid();
-            }
-            
-            if (typeof window.updateTreeStats === 'function') {
-                console.log('🌳 Вызов updateTreeStats');
-                window.updateTreeStats();
-            }
-            
-            window.showNotification('✅ Данные загружены', 'success');
-            window.hideLoader();
-            return;
-        }
-        
-        // Реальный режим - загрузка из Supabase
+        // Загрузка данных из Supabase
         console.log('📦 Загрузка данных из Supabase...');
         
         // Загрузка людей
@@ -954,10 +873,12 @@ async function loadUserData() {
         
     } catch (error) {
         console.error('❌ Ошибка загрузки данных:', error);
-        window.showNotification('Ошибка загрузки данных. Используем демо-режим.', 'error');
+        window.showNotification('Ошибка загрузки данных', 'error');
         
-        // Используем демо-данные при ошибке
-        generateDemoData();
+        // Используем пустые данные при ошибке
+        window.people = [];
+        window.events = [];
+        window.media = [];
         
         // Вызываем функции обновления UI для конкретных страниц
         if (typeof window.updateStats === 'function') {
@@ -981,140 +902,6 @@ async function loadUserData() {
         }
     } finally {
         window.hideLoader();
-    }
-}
-
-// Генерация демо-данных
-function generateDemoData() {
-    console.log('🔄 Генерация демо-данных...');
-    
-    // Проверяем, есть ли уже данные в localStorage
-    try {
-        const savedData = localStorage.getItem('family_tree_data');
-        if (savedData) {
-            const parsedData = JSON.parse(savedData);
-            if (parsedData.people && parsedData.people.length > 0) {
-                window.people = parsedData.people;
-                window.events = parsedData.events || [];
-                window.media = parsedData.media || [];
-                console.log('📦 Загружены сохраненные данные из localStorage');
-                return;
-            }
-        }
-    } catch (e) {
-        console.log('Нет сохраненных данных');
-    }
-    
-    // Если нет сохраненных данных, создаем новые
-    window.people = [
-        {
-            id: '1',
-            first_name: 'Иван',
-            last_name: 'Иванов',
-            birth_date: '1990-01-15',
-            gender: 'male',
-            relation: 'self',
-            photo_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80',
-            biography: 'Основатель семейного древа. Увлечен историей своей семьи.',
-            created_at: '2024-01-01T10:00:00Z'
-        },
-        {
-            id: '2',
-            first_name: 'Мария',
-            last_name: 'Иванова',
-            birth_date: '1992-03-22',
-            gender: 'female',
-            relation: 'spouse',
-            spouse_id: '1',
-            photo_url: 'https://images.unsplash.com/photo-1494790108755-2616b786d4d4?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80',
-            created_at: '2024-01-02T10:00:00Z'
-        },
-        {
-            id: '3',
-            first_name: 'Алексей',
-            last_name: 'Иванов',
-            birth_date: '2015-07-10',
-            gender: 'male',
-            relation: 'child',
-            parent_id: '1',
-            photo_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80',
-            created_at: '2024-01-03T10:00:00Z'
-        },
-        {
-            id: '4',
-            first_name: 'Анна',
-            last_name: 'Иванова',
-            birth_date: '2018-11-05',
-            gender: 'female',
-            relation: 'child',
-            parent_id: '1',
-            photo_url: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80',
-            created_at: '2024-01-04T10:00:00Z'
-        }
-    ];
-    
-    const today = new Date();
-    window.events = [
-        {
-            id: '1',
-            title: 'День рождения Алексея',
-            date: new Date(today.getFullYear(), 6, 10).toISOString().split('T')[0],
-            event_type: 'birthday',
-            description: 'Празднование дня рождения сына',
-            created_at: '2024-01-01T10:00:00Z'
-        },
-        {
-            id: '2',
-            title: 'Семейный пикник',
-            date: new Date(today.getFullYear(), 7, 15).toISOString().split('T')[0],
-            event_type: 'holiday',
-            description: 'Ежегодный семейный пикник в лесу',
-            created_at: '2024-01-02T10:00:00Z'
-        },
-        {
-            id: '3',
-            title: 'Годовщина свадьбы',
-            date: new Date(today.getFullYear(), 5, 30).toISOString().split('T')[0],
-            event_type: 'anniversary',
-            description: '10 лет совместной жизни',
-            created_at: '2024-01-03T10:00:00Z'
-        }
-    ];
-    
-    window.media = [
-        {
-            id: '1',
-            file_url: 'https://images.unsplash.com/photo-1511988617509-a57c8a288659?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80',
-            file_type: 'image',
-            description: 'Семейный портрет на природе',
-            created_at: '2024-01-01T10:00:00Z'
-        },
-        {
-            id: '2',
-            file_url: 'https://images.unsplash.com/photo-1529255484355-cb73c33c04bb?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80',
-            file_type: 'image',
-            description: 'Дети играют в парке',
-            created_at: '2024-01-02T10:00:00Z'
-        },
-        {
-            id: '3',
-            file_url: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80',
-            file_type: 'image',
-            description: 'Семейный ужин',
-            created_at: '2024-01-03T10:00:00Z'
-        }
-    ];
-    
-    // Сохраняем демо-данные в localStorage
-    try {
-        localStorage.setItem('family_tree_data', JSON.stringify({
-            people: window.people,
-            events: window.events,
-            media: window.media
-        }));
-        console.log('💾 Демо-данные сохранены в localStorage');
-    } catch (e) {
-        console.error('Ошибка сохранения в localStorage:', e);
     }
 }
 
@@ -1237,98 +1024,6 @@ function updateRelationOptions() {
     });
 }
 
-// Функция для создания демо-дерева (доступна глобально)
-window.createDemoTree = function() {
-    console.log('🌳 Создание демо-дерева из app.js');
-    
-    try {
-        // Создаем демо-пользователя
-        const demoUser = {
-            id: 'demo_user_' + Date.now(),
-            email: 'demo@family-history.ru',
-            user_metadata: {
-                name: 'Демо Пользователь',
-                full_name: 'Демо Пользователь'
-            },
-            created_at: new Date().toISOString()
-        };
-        
-        // Сохраняем пользователя
-        localStorage.setItem('family_tree_user', JSON.stringify(demoUser));
-        localStorage.setItem('family_tree_email', 'demo@family-history.ru');
-        localStorage.setItem('family_tree_password', 'demopassword123');
-        
-        // Создаем демо-данные
-        const demoData = {
-            people: [
-                {
-                    id: 'demo_1',
-                    first_name: 'Иван',
-                    last_name: 'Иванов',
-                    birth_date: '1990-01-15',
-                    gender: 'male',
-                    relation: 'self',
-                    photo_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80',
-                    biography: 'Основатель семейного древа',
-                    created_at: new Date().toISOString()
-                },
-                {
-                    id: 'demo_2',
-                    first_name: 'Мария',
-                    last_name: 'Иванова',
-                    birth_date: '1992-03-22',
-                    gender: 'female',
-                    relation: 'spouse',
-                    photo_url: 'https://images.unsplash.com/photo-1494790108755-2616b786d4d4?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80',
-                    created_at: new Date().toISOString()
-                },
-                {
-                    id: 'demo_3',
-                    first_name: 'Алексей',
-                    last_name: 'Иванов',
-                    birth_date: '2015-07-10',
-                    gender: 'male',
-                    relation: 'child',
-                    photo_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80',
-                    created_at: new Date().toISOString()
-                }
-            ],
-            events: [],
-            media: []
-        };
-        
-        // Сохраняем данные
-        localStorage.setItem('family_tree_data', JSON.stringify(demoData));
-        
-        // Устанавливаем глобальные переменные
-        window.currentUser = demoUser;
-        window.people = demoData.people;
-        window.events = demoData.events;
-        window.media = demoData.media;
-        
-        // Устанавливаем заглушку для Supabase
-        if (!window.supabaseClient) {
-            window.supabaseClient = {
-                auth: {
-                    getUser: async () => ({ data: { user: demoUser }, error: null }),
-                    signOut: async () => ({ error: null })
-                }
-            };
-        }
-        
-        window.showNotification('✅ Демо-дерево создано! Переходим в приложение...', 'success');
-        
-        // Перенаправляем через 1.5 секунды
-        setTimeout(() => {
-            window.location.href = 'app.html';
-        }, 1500);
-        
-    } catch (error) {
-        console.error('Ошибка создания демо-дерева:', error);
-        window.showNotification('Ошибка создания демо-дерева: ' + error.message, 'error');
-    }
-};
-
 // Экспортируем функции
 window.showModal = showModal;
 window.closeAllModals = closeAllModals;
@@ -1342,6 +1037,5 @@ window.handleLogout = handleLogout;
 window.getUserInitials = getUserInitials;
 window.updateUserUI = updateUserUI;
 window.updateRelationOptions = updateRelationOptions;
-window.generateDemoData = generateDemoData;
 
 console.log('✅ App.js загружен');
