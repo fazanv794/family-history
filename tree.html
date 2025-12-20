@@ -356,7 +356,6 @@
     <!-- Font Awesome -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
     
-    <!-- Наши скрипты -->
     <script src="modal-system.js"></script>
     <script src="tree-builder.js"></script>
     
@@ -385,12 +384,14 @@
             
             // Обновляем историю деревьев
             updateRecentTrees();
+            
+            // Добавляем обработчики для кнопок дерева
+            addTreeEventListeners();
         }
         
         // Загрузка статистики
         async function loadStatistics() {
-            // Здесь в будущем будет загрузка реальной статистики
-            // Пока используем тестовые данные
+            // Тестовые данные
             document.getElementById('stat-relatives').textContent = '12';
             document.getElementById('stat-trees').textContent = '3';
             document.getElementById('stat-depth').textContent = '4';
@@ -406,18 +407,16 @@
             const manualBtn = document.getElementById('manual-btn');
             const startBtn = document.getElementById('start-btn');
             
-            // Сбрасываем активный класс
             autoBtn.classList.remove('active');
             manualBtn.classList.remove('active');
             
-            // Устанавливаем активный режим
             if (mode === 'auto') {
                 autoBtn.classList.add('active');
-                startBtn.innerHTML = '🚀 Начать авто-построение';
+                startBtn.innerHTML = '<i class="fas fa-bolt"></i> Начать авто-построение';
                 startBtn.style.background = 'linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)';
             } else {
                 manualBtn.classList.add('active');
-                startBtn.innerHTML = '🎯 Начать ручное построение';
+                startBtn.innerHTML = '<i class="fas fa-edit"></i> Начать ручное построение';
                 startBtn.style.background = 'linear-gradient(135deg, #f39c12 0%, #e67e22 100%)';
             }
             
@@ -428,7 +427,6 @@
         function startBuilder() {
             console.log(`Запуск построителя в режиме: ${selectedMode}`);
             
-            // Проверяем, загружены ли необходимые скрипты
             if (!window.ModalSystem) {
                 alert('Ошибка: Система модальных окон не загружена!');
                 console.error('ModalSystem не найден');
@@ -441,7 +439,6 @@
                 return;
             }
             
-            // Запускаем построитель
             try {
                 window.startTreeBuilder(selectedMode);
             } catch (error) {
@@ -454,44 +451,56 @@
         function updateRecentTrees() {
             const container = document.getElementById('recent-trees');
             
-            // Проверяем, есть ли сохраненные деревья в localStorage
-            const savedTrees = localStorage.getItem('saved-trees');
+            // Показываем примеры деревьев
+            const exampleTrees = [
+                { id: 1, name: 'Семья Ивановых', relativesCount: 8, createdAt: '2024-01-15' },
+                { id: 2, name: 'Род Петровых', relativesCount: 12, createdAt: '2024-02-20' },
+                { id: 3, name: 'Моя семья', relativesCount: 5, createdAt: '2024-03-10' }
+            ];
             
-            if (savedTrees) {
-                try {
-                    const trees = JSON.parse(savedTrees);
-                    if (trees.length > 0) {
-                        container.innerHTML = trees.map(tree => `
-                            <div class="tree-item" onclick="openTree('${tree.id}')">
-                                <div class="name">${tree.name}</div>
-                                <div class="info">
-                                    ${tree.relativesCount} родственников • 
-                                    ${new Date(tree.createdAt).toLocaleDateString('ru-RU')}
-                                </div>
-                            </div>
-                        `).join('');
-                    }
-                } catch (e) {
-                    console.error('Ошибка загрузки деревьев:', e);
-                }
-            }
+            container.innerHTML = exampleTrees.map(tree => `
+                <div class="tree-item" onclick="openTree(${tree.id})">
+                    <div class="name">${tree.name}</div>
+                    <div class="info">
+                        ${tree.relativesCount} родственников • 
+                        ${new Date(tree.createdAt).toLocaleDateString('ru-RU')}
+                    </div>
+                </div>
+            `).join('');
         }
         
-        // Открытие дерева (заглушка)
+        // Открытие дерева
         function openTree(treeId) {
             window.Modal.alert(
-                'Открытие дерева', 
-                'Функция просмотра сохраненных деревьев будет реализована в следующем обновлении.'
+                'Пример дерева', 
+                'Это пример сохраненного дерева. Создайте свое дерево, чтобы увидеть эту функцию в действии!'
             );
         }
         
         // Выход из системы
         function logout() {
             if (confirm('Вы уверены, что хотите выйти?')) {
-                // Здесь должна быть логика выхода
-                // Пока просто перенаправляем на главную
                 window.location.href = 'index.html';
             }
+        }
+        
+        // Добавление обработчиков событий для дерева
+        function addTreeEventListeners() {
+            // Обработчик для кнопки "Быстрое дерево"
+            const quickTreeBtn = document.getElementById('quick-tree-btn');
+            if (quickTreeBtn) {
+                quickTreeBtn.addEventListener('click', function() {
+                    createQuickTree();
+                });
+            }
+        }
+        
+        // Создание быстрого дерева (демо)
+        function createQuickTree() {
+            window.Modal.alert(
+                'Быстрое дерево',
+                'Создайте полноценное дерево через построитель. Здесь вы сможете добавлять фотографии, биографии и создавать сложные семейные связи.'
+            );
         }
         
         // Глобальные функции для отладки
@@ -499,7 +508,8 @@
             startBuilder: startBuilder,
             selectMode: selectMode,
             getSelectedMode: () => selectedMode,
-            refreshStats: loadStatistics
+            refreshStats: loadStatistics,
+            createDemoTree: createQuickTree
         };
         
         console.log('✅ Функции страницы инициализированы');
