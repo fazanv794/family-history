@@ -1,351 +1,81 @@
-// tree-builder-simple.js - Упрощенный построитель дерева для tree.html
+// tree-builder-simple.js - Простой построитель дерева
 console.log('🌳 Tree Builder Simple загружается...');
 
-// Основные функции построителя
+// Глобальные переменные для построителя
+let currentStep = 1;
+let stepRelatives = [];
+let currentTreeName = 'Мое семейное дерево';
+let currentMode = 'auto';
+
+// Основная функция запуска построителя
 window.startTreeBuilder = function(mode = 'auto') {
     console.log(`🚀 Запуск Tree Builder в режиме: ${mode}`);
     
-    // Используем общую систему модальных окон
-    showTreeBuilderModal(mode);
+    currentMode = mode;
+    currentStep = 1;
+    stepRelatives = [];
+    currentTreeName = 'Мое семейное дерево';
+    
+    // Показываем начальное модальное окно
+    showBuilderIntroModal(mode);
 };
 
-function showTreeBuilderModal(mode) {
+// Показать начальное модальное окно построителя
+function showBuilderIntroModal(mode) {
     const content = `
-        <div style="text-align: center; padding: 20px 0;">
-            <i class="fas fa-tree" style="font-size: 4rem; color: #667eea; margin-bottom: 20px;"></i>
-            <h3 style="margin-bottom: 15px; color: #2d3748;">${mode === 'auto' ? 'Авто-построение' : 'Ручное построение'}</h3>
-            <p style="color: #718096; margin-bottom: 25px;">
-                ${mode === 'auto' 
-                    ? 'Система поможет вам поэтапно создать генеалогическое дерево' 
-                    : 'Вы полностью контролируете процесс построения'}
-            </p>
-        </div>
-        
-        <div style="margin-bottom: 25px;">
-            <div class="form-group">
-                <label class="form-label">Название дерева:</label>
-                <input type="text" id="tree-name-input" class="form-control" placeholder="Например: Семья Ивановых" value="Мое семейное дерево">
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label">Стартовая персона:</label>
-                <select id="root-person-select" class="form-control">
-                    <option value="self">Я (Вы)</option>
-                    <option value="father">Отец</option>
-                    <option value="mother">Мать</option>
-                    <option value="spouse">Супруг/а</option>
-                    <option value="custom">Другая персона</option>
-                </select>
-            </div>
-        </div>
-        
-        <div style="background: #f7fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
-            <h4 style="margin-top: 0; color: #4a5568; margin-bottom: 10px; font-size: 1rem;">
-                <i class="fas fa-info-circle" style="color: #4299e1; margin-right: 8px;"></i>
-                ${mode === 'auto' ? 'Авто-режим' : 'Ручной режим'}
-            </h4>
-            <p style="margin: 0; color: #718096; font-size: 0.9rem;">
-                ${mode === 'auto' 
-                    ? 'Система будет задавать вопросы о ваших родственниках и автоматически строить дерево' 
-                    : 'Вы сможете добавлять каждого родственника индивидуально, настраивая все параметры'}
-            </p>
-        </div>
-        
-        <div style="margin-top: 25px; text-align: center;">
-            <button class="btn btn-small" onclick="window.closeAllModals();" style="margin-right: 10px;">
-                <i class="fas fa-times"></i> Отмена
-            </button>
-            <button class="btn" onclick="startBuildingProcess('${mode}')">
-                <i class="fas fa-play"></i> Начать построение
-            </button>
-        </div>
-    `;
-    
-    // Используем общую функцию showModal из app.js
-    if (typeof window.showModal === 'function') {
-        // Создаем временное модальное окно
-        const modalId = 'tree-builder-intro';
-        const modalContent = `
-            <div class="modal-content" style="max-width: 600px;">
-                <div class="modal-header">
-                    <h3>🌳 Построитель генеалогического дерева</h3>
-                    <button class="modal-close">&times;</button>
-                </div>
-                <div class="modal-body">
-                    ${content}
-                </div>
-            </div>
-        `;
-        
-        // Создаем модальное окно вручную
-        const modalDiv = document.createElement('div');
-        modalDiv.className = 'modal';
-        modalDiv.id = modalId;
-        modalDiv.innerHTML = modalContent;
-        
-        const overlay = document.getElementById('modal-overlay');
-        if (overlay) {
-            overlay.innerHTML = '';
-            overlay.appendChild(modalDiv);
-            overlay.classList.remove('hidden');
-            modalDiv.classList.remove('hidden');
-            
-            // Добавляем обработчик закрытия
-            const closeBtn = modalDiv.querySelector('.modal-close');
-            if (closeBtn) {
-                closeBtn.addEventListener('click', window.closeAllModals);
-            }
-            
-            // Закрытие по клику на оверлей
-            overlay.onclick = (e) => {
-                if (e.target === overlay) {
-                    window.closeAllModals();
-                }
-            };
-        }
-    } else {
-        // Если showModal не доступен, создаем простую модалку
-        const modalHtml = `
-            <div class="modal show" id="tree-builder-intro">
-                <div class="modal-content" style="max-width: 600px;">
-                    <div class="modal-header">
-                        <h3>🌳 Построитель генеалогического дерева</h3>
-                        <button class="modal-close" onclick="document.getElementById('modal-overlay').classList.add('hidden')">&times;</button>
-                    </div>
-                    <div class="modal-body">
-                        ${content}
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        const overlay = document.getElementById('modal-overlay');
-        if (overlay) {
-            overlay.innerHTML = modalHtml;
-            overlay.classList.remove('hidden');
-        }
-    }
-}
-
-function startBuildingProcess(mode) {
-    const treeName = document.getElementById('tree-name-input')?.value || 'Мое семейное дерево';
-    const rootPerson = document.getElementById('root-person-select')?.value || 'self';
-    
-    console.log(`Начинаем построение: ${treeName}, корень: ${rootPerson}, режим: ${mode}`);
-    
-    // Закрываем текущее модальное окно
-    window.closeAllModals();
-    
-    // Показываем уведомление
-    window.showNotification(`Начинаем построение дерева "${treeName}"`, 'success');
-    
-    // Через секунду запускаем пошаговый построитель
-    setTimeout(() => {
-        startStepByStepBuilder(mode, treeName, rootPerson);
-    }, 1000);
-}
-
-function startStepByStepBuilder(mode, treeName, rootPerson) {
-    // Шаг 1: Добавление корневой персоны
-    showAddPersonStep(1, mode, treeName, rootPerson);
-}
-
-function showAddPersonStep(step, mode, treeName, rootPerson, relatives = []) {
-    const stepTitles = [
-        'Добавьте себя',
-        'Добавьте родителей',
-        'Добавьте супруга/супругу',
-        'Добавьте детей',
-        'Добавьте братьев и сестер'
-    ];
-    
-    const stepDescriptions = [
-        'Начните с добавления себя в качестве центральной персоны дерева',
-        'Добавьте информацию о ваших родителях',
-        'Если вы состоите в браке, добавьте информацию о супруге/супруге',
-        'Добавьте информацию о ваших детях',
-        'Добавьте информацию о ваших братьях и сестрах'
-    ];
-    
-    const currentStep = step - 1;
-    const totalSteps = 5;
-    
-    const content = `
-        <div style="margin-bottom: 25px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h4 style="margin: 0; color: #2d3748;">Шаг ${step} из ${totalSteps}</h4>
-                <div style="font-size: 0.9rem; color: #718096;">
-                    ${relatives.length} родственников добавлено
-                </div>
-            </div>
-            
-            <div class="progress" style="height: 8px; background: #e2e8f0; border-radius: 4px; margin-bottom: 20px; overflow: hidden;">
-                <div style="width: ${(step / totalSteps) * 100}%; height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); transition: width 0.3s;"></div>
-            </div>
-            
-            <h3 style="margin-bottom: 10px; color: #2d3748;">${stepTitles[currentStep] || 'Добавление родственников'}</h3>
-            <p style="color: #718096; margin-bottom: 25px;">${stepDescriptions[currentStep] || 'Добавьте информацию о родственниках'}</p>
-        </div>
-        
-        <div style="background: #f7fafc; padding: 20px; border-radius: 10px; margin-bottom: 25px; border: 1px solid #e2e8f0;">
-            <h4 style="margin-top: 0; margin-bottom: 15px; color: #4a5568;">
-                <i class="fas fa-user" style="color: #667eea; margin-right: 8px;"></i>
-                ${step === 1 ? 'Информация о вас' : 'Добавление родственника'}
-            </h4>
-            
-            <form id="add-person-step-form">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Имя *</label>
-                        <input type="text" id="step-first-name" class="form-control" placeholder="Имя" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Фамилия *</label>
-                        <input type="text" id="step-last-name" class="form-control" placeholder="Фамилия" required>
-                    </div>
-                </div>
-                
-                ${step === 1 ? '' : `
-                    <div class="form-group">
-                        <label class="form-label">Родство *</label>
-                        <select id="step-relation" class="form-control" required>
-                            <option value="">Выберите родство</option>
-                            ${step === 2 ? `
-                                <option value="father">Отец</option>
-                                <option value="mother">Мать</option>
-                            ` : ''}
-                            ${step === 3 ? `
-                                <option value="spouse">Супруг/а</option>
-                                <option value="partner">Партнер</option>
-                            ` : ''}
-                            ${step === 4 ? `
-                                <option value="son">Сын</option>
-                                <option value="daughter">Дочь</option>
-                            ` : ''}
-                            ${step === 5 ? `
-                                <option value="brother">Брат</option>
-                                <option value="sister">Сестра</option>
-                            ` : ''}
-                        </select>
-                    </div>
-                `}
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Дата рождения</label>
-                        <input type="date" id="step-birth-date" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Пол *</label>
-                        <select id="step-gender" class="form-control" required>
-                            <option value="">Выберите пол</option>
-                            <option value="male">Мужской</option>
-                            <option value="female">Женский</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="form-group" style="margin-top: 20px;">
-                    <button type="submit" class="btn" style="width: 100%;">
-                        <i class="fas fa-check"></i> ${step === 1 ? 'Сохранить и продолжить' : 'Добавить родственника'}
-                    </button>
-                </div>
-            </form>
-        </div>
-        
-        ${relatives.length > 0 ? `
-            <div style="margin-bottom: 20px;">
-                <h4 style="margin-bottom: 15px; color: #4a5568;">
-                    <i class="fas fa-users" style="color: #48bb78; margin-right: 8px;"></i>
-                    Добавленные родственники
-                </h4>
-                <div style="max-height: 200px; overflow-y: auto; background: white; border-radius: 8px; border: 1px solid #e2e8f0; padding: 10px;">
-                    ${relatives.map((person, index) => `
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: ${index < relatives.length - 1 ? '1px solid #e2e8f0' : 'none'};">
-                            <div>
-                                <div style="font-weight: 500; color: #2d3748;">${person.firstName} ${person.lastName}</div>
-                                <div style="font-size: 0.85rem; color: #718096;">
-                                    ${getRelationText(person.relation)} • ${person.gender === 'male' ? 'Мужской' : 'Женский'}
-                                </div>
-                            </div>
-                            <button class="btn-icon" onclick="removeRelativeFromStep(${index})" style="background: none; border: none; color: #f56565; cursor: pointer;">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        ` : ''}
-        
-        <div style="display: flex; justify-content: space-between; margin-top: 25px;">
-            ${step > 1 ? `
-                <button class="btn btn-secondary" onclick="goToStepInBuilder(${step - 1}, '${mode}', '${treeName}', '${rootPerson}')">
-                    <i class="fas fa-arrow-left"></i> Назад
-                </button>
-            ` : '<div></div>'}
-            
-            <div>
-                ${step < totalSteps ? `
-                    <button class="btn btn-secondary" onclick="skipStepInBuilder(${step}, '${mode}', '${treeName}', '${rootPerson}')" style="margin-right: 10px;">
-                        Пропустить
-                    </button>
-                    <button class="btn" onclick="completeStepInBuilder(${step}, '${mode}', '${treeName}', '${rootPerson}')">
-                        Далее <i class="fas fa-arrow-right"></i>
-                    </button>
-                ` : `
-                    <button class="btn" onclick="finishBuildingInBuilder('${mode}', '${treeName}', '${rootPerson}')">
-                        <i class="fas fa-check-circle"></i> Завершить построение
-                    </button>
-                `}
-            </div>
-        </div>
-    `;
-    
-    // Создаем модальное окно для шага
-    createStepModal(content, 'tree-step-modal', `Построение дерева: ${treeName}`);
-    
-    // Настраиваем форму
-    setTimeout(() => {
-        const form = document.getElementById('add-person-step-form');
-        if (form) {
-            form.onsubmit = (e) => {
-                e.preventDefault();
-                addPersonInStep(step, mode, treeName, rootPerson, relatives);
-            };
-        }
-        
-        // Если это первый шаг, предзаполняем данными пользователя
-        if (step === 1 && window.currentUser) {
-            const name = window.currentUser.user_metadata?.name || '';
-            const nameParts = name.split(' ');
-            if (document.getElementById('step-first-name')) {
-                document.getElementById('step-first-name').value = nameParts[0] || '';
-            }
-            if (document.getElementById('step-last-name')) {
-                document.getElementById('step-last-name').value = nameParts.slice(1).join(' ') || '';
-            }
-        }
-    }, 10);
-}
-
-function createStepModal(content, modalId, title) {
-    const modalContent = `
-        <div class="modal-content" style="max-width: 700px;">
+        <div class="modal-content" style="max-width: 600px;">
             <div class="modal-header">
-                <h3>${title}</h3>
+                <h3>🌳 Построитель генеалогического дерева</h3>
                 <button class="modal-close">&times;</button>
             </div>
             <div class="modal-body">
-                ${content}
+                <div style="text-align: center; padding: 20px 0;">
+                    <i class="fas fa-tree" style="font-size: 4rem; color: #667eea; margin-bottom: 20px;"></i>
+                    <h3 style="margin-bottom: 15px; color: #2d3748;">${mode === 'auto' ? 'Авто-построение' : 'Ручное построение'}</h3>
+                    <p style="color: #718096; margin-bottom: 25px;">
+                        ${mode === 'auto' 
+                            ? 'Система поможет вам поэтапно создать генеалогическое дерево' 
+                            : 'Вы полностью контролируете процесс построения'}
+                    </p>
+                </div>
+                
+                <div style="margin-bottom: 25px;">
+                    <div class="form-group">
+                        <label class="form-label">Название дерева:</label>
+                        <input type="text" id="tree-name-input" class="form-control" placeholder="Например: Семья Ивановых" value="${currentTreeName}">
+                    </div>
+                </div>
+                
+                <div style="background: #f7fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
+                    <h4 style="margin-top: 0; color: #4a5568; margin-bottom: 10px; font-size: 1rem;">
+                        <i class="fas fa-info-circle" style="color: #4299e1; margin-right: 8px;"></i>
+                        ${mode === 'auto' ? 'Авто-режим' : 'Ручной режим'}
+                    </h4>
+                    <p style="margin: 0; color: #718096; font-size: 0.9rem;">
+                        ${mode === 'auto' 
+                            ? 'Система будет задавать вопросы о ваших родственниках и автоматически строить дерево' 
+                            : 'Вы сможете добавлять каждого родственника индивидуально, настраивая все параметры'}
+                    </p>
+                </div>
+                
+                <div style="margin-top: 25px; text-align: center;">
+                    <button class="btn btn-secondary cancel-btn" style="margin-right: 10px;">
+                        <i class="fas fa-times"></i> Отмена
+                    </button>
+                    <button class="btn" id="start-building-btn">
+                        <i class="fas fa-play"></i> Начать построение
+                    </button>
+                </div>
             </div>
         </div>
     `;
     
-    // Создаем модальное окно вручную
+    // Создаем модальное окно
+    const modalId = 'tree-builder-intro';
     const modalDiv = document.createElement('div');
     modalDiv.className = 'modal';
     modalDiv.id = modalId;
-    modalDiv.innerHTML = modalContent;
+    modalDiv.innerHTML = content;
     
     const overlay = document.getElementById('modal-overlay');
     if (overlay) {
@@ -354,41 +84,342 @@ function createStepModal(content, modalId, title) {
         overlay.classList.remove('hidden');
         modalDiv.classList.remove('hidden');
         
-        // Добавляем обработчик закрытия
+        setTimeout(() => {
+            overlay.classList.add('active');
+            modalDiv.classList.add('active');
+        }, 10);
+        
+        // Добавляем обработчики
         const closeBtn = modalDiv.querySelector('.modal-close');
+        const cancelBtn = modalDiv.querySelector('.cancel-btn');
+        const startBtn = modalDiv.querySelector('#start-building-btn');
+        
         if (closeBtn) {
-            closeBtn.addEventListener('click', window.closeAllModals);
+            closeBtn.addEventListener('click', () => {
+                overlay.classList.remove('active');
+                setTimeout(() => {
+                    overlay.classList.add('hidden');
+                }, 300);
+            });
         }
         
-        // Закрытие по клику на оверлей
-        overlay.onclick = (e) => {
-            if (e.target === overlay) {
-                window.closeAllModals();
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => {
+                overlay.classList.remove('active');
+                setTimeout(() => {
+                    overlay.classList.add('hidden');
+                }, 300);
+            });
+        }
+        
+        if (startBtn) {
+            startBtn.addEventListener('click', () => {
+                currentTreeName = document.getElementById('tree-name-input')?.value || 'Мое семейное дерево';
+                overlay.classList.remove('active');
+                setTimeout(() => {
+                    overlay.classList.add('hidden');
+                    showStepModal(currentStep);
+                }, 300);
+            });
+        }
+        
+        // ESC
+        const escHandler = (e) => {
+            if (e.key === 'Escape') {
+                overlay.classList.remove('active');
+                setTimeout(() => {
+                    overlay.classList.add('hidden');
+                }, 300);
+                document.removeEventListener('keydown', escHandler);
             }
         };
+        document.addEventListener('keydown', escHandler);
+        
+        // Клик по overlay
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                overlay.classList.remove('active');
+                setTimeout(() => {
+                    overlay.classList.add('hidden');
+                }, 300);
+            }
+        });
     }
 }
 
-function getRelationText(relation) {
-    const relations = {
-        'self': 'Я',
-        'father': 'Отец',
-        'mother': 'Мать',
-        'spouse': 'Супруг/а',
-        'son': 'Сын',
-        'daughter': 'Дочь',
-        'brother': 'Брат',
-        'sister': 'Сестра',
-        'grandfather': 'Дедушка',
-        'grandmother': 'Бабушка'
-    };
-    return relations[relation] || relation;
+// Показать шаг построения
+function showStepModal(step) {
+    const steps = [
+        { title: 'Добавьте себя', description: 'Начните с добавления себя в качестве центральной персоны дерева' },
+        { title: 'Добавьте родителей', description: 'Добавьте информацию о ваших родителях' },
+        { title: 'Добавьте супруга/супругу', description: 'Если вы состоите в браке, добавьте информацию о супруге/супруге' },
+        { title: 'Добавьте детей', description: 'Добавьте информацию о ваших детях' },
+        { title: 'Добавьте братьев и сестер', description: 'Добавьте информацию о ваших братьях и сестрах' }
+    ];
+    
+    const currentStepData = steps[step - 1] || { title: 'Добавление родственников', description: 'Добавьте информацию о родственниках' };
+    const totalSteps = steps.length;
+    
+    const content = `
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3>🌳 Построение: ${currentTreeName}</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom: 25px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h4 style="margin: 0; color: #2d3748;">Шаг ${step} из ${totalSteps}</h4>
+                        <div style="font-size: 0.9rem; color: #718096;">
+                            ${stepRelatives.length} родственников добавлено
+                        </div>
+                    </div>
+                    
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${(step / totalSteps) * 100}%"></div>
+                    </div>
+                    
+                    <h3 style="margin-bottom: 10px; color: #2d3748;">${currentStepData.title}</h3>
+                    <p style="color: #718096; margin-bottom: 25px;">${currentStepData.description}</p>
+                </div>
+                
+                <div style="background: #f7fafc; padding: 20px; border-radius: 10px; margin-bottom: 25px; border: 1px solid #e2e8f0;">
+                    <h4 style="margin-top: 0; margin-bottom: 15px; color: #4a5568;">
+                        <i class="fas fa-user" style="color: #667eea; margin-right: 8px;"></i>
+                        ${step === 1 ? 'Информация о вас' : 'Добавление родственника'}
+                    </h4>
+                    
+                    <form id="add-person-step-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Имя *</label>
+                                <input type="text" id="step-first-name" class="form-control" placeholder="Имя" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Фамилия *</label>
+                                <input type="text" id="step-last-name" class="form-control" placeholder="Фамилия" required>
+                            </div>
+                        </div>
+                        
+                        ${step === 1 ? '' : `
+                            <div class="form-group">
+                                <label class="form-label">Родство *</label>
+                                <select id="step-relation" class="form-control" required>
+                                    <option value="">Выберите родство</option>
+                                    ${step === 2 ? `
+                                        <option value="father">Отец</option>
+                                        <option value="mother">Мать</option>
+                                    ` : ''}
+                                    ${step === 3 ? `
+                                        <option value="spouse">Супруг/а</option>
+                                        <option value="partner">Партнер</option>
+                                    ` : ''}
+                                    ${step === 4 ? `
+                                        <option value="son">Сын</option>
+                                        <option value="daughter">Дочь</option>
+                                    ` : ''}
+                                    ${step === 5 ? `
+                                        <option value="brother">Брат</option>
+                                        <option value="sister">Сестра</option>
+                                    ` : ''}
+                                </select>
+                            </div>
+                        `}
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Дата рождения</label>
+                                <input type="date" id="step-birth-date" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Пол *</label>
+                                <select id="step-gender" class="form-control" required>
+                                    <option value="">Выберите пол</option>
+                                    <option value="male">Мужской</option>
+                                    <option value="female">Женский</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group" style="margin-top: 20px;">
+                            <button type="submit" class="btn" style="width: 100%;">
+                                <i class="fas fa-check"></i> ${step === 1 ? 'Сохранить и продолжить' : 'Добавить родственника'}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                ${stepRelatives.length > 0 ? `
+                    <div style="margin-bottom: 20px;">
+                        <h4 style="margin-bottom: 15px; color: #4a5568;">
+                            <i class="fas fa-users" style="color: #48bb78; margin-right: 8px;"></i>
+                            Добавленные родственники
+                        </h4>
+                        <div style="max-height: 200px; overflow-y: auto; background: white; border-radius: 8px; border: 1px solid #e2e8f0; padding: 10px;">
+                            ${stepRelatives.map((person, index) => `
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: ${index < stepRelatives.length - 1 ? '1px solid #e2e8f0' : 'none'};">
+                                    <div>
+                                        <div style="font-weight: 500; color: #2d3748;">${person.firstName} ${person.lastName}</div>
+                                        <div style="font-size: 0.85rem; color: #718096;">
+                                            ${getRelationText(person.relation)} • ${person.gender === 'male' ? 'Мужской' : 'Женский'}
+                                        </div>
+                                    </div>
+                                    <button class="btn-icon" onclick="removeRelative(${index})" style="background: none; border: none; color: #f56565; cursor: pointer; padding: 5px;">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+                
+                <div style="display: flex; justify-content: space-between; margin-top: 25px;">
+                    ${step > 1 ? `
+                        <button class="btn btn-secondary" id="prev-step-btn">
+                            <i class="fas fa-arrow-left"></i> Назад
+                        </button>
+                    ` : '<div></div>'}
+                    
+                    <div>
+                        ${step < totalSteps ? `
+                            <button class="btn btn-secondary" id="skip-step-btn" style="margin-right: 10px;">
+                                Пропустить
+                            </button>
+                            <button class="btn" id="next-step-btn">
+                                Далее <i class="fas fa-arrow-right"></i>
+                            </button>
+                        ` : `
+                            <button class="btn" id="finish-building-btn">
+                                <i class="fas fa-check-circle"></i> Завершить построение
+                            </button>
+                        `}
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Создаем модальное окно
+    const modalId = 'tree-step-modal';
+    const modalDiv = document.createElement('div');
+    modalDiv.className = 'modal';
+    modalDiv.id = modalId;
+    modalDiv.innerHTML = content;
+    
+    const overlay = document.getElementById('modal-overlay');
+    if (overlay) {
+        overlay.innerHTML = '';
+        overlay.appendChild(modalDiv);
+        overlay.classList.remove('hidden');
+        modalDiv.classList.remove('hidden');
+        
+        setTimeout(() => {
+            overlay.classList.add('active');
+            modalDiv.classList.add('active');
+        }, 10);
+        
+        // Добавляем обработчики
+        const closeBtn = modalDiv.querySelector('.modal-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                overlay.classList.remove('active');
+                setTimeout(() => {
+                    overlay.classList.add('hidden');
+                }, 300);
+            });
+        }
+        
+        // Форма добавления
+        const form = modalDiv.querySelector('#add-person-step-form');
+        if (form) {
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                addPersonInStep(step);
+            });
+        }
+        
+        // Если это первый шаг, предзаполняем данными пользователя
+        if (step === 1 && window.currentUser) {
+            const name = window.currentUser.user_metadata?.name || '';
+            const nameParts = name.split(' ');
+            const firstNameInput = modalDiv.querySelector('#step-first-name');
+            const lastNameInput = modalDiv.querySelector('#step-last-name');
+            
+            if (firstNameInput) firstNameInput.value = nameParts[0] || '';
+            if (lastNameInput) lastNameInput.value = nameParts.slice(1).join(' ') || '';
+        }
+        
+        // Кнопки навигации
+        const prevBtn = modalDiv.querySelector('#prev-step-btn');
+        if (prevBtn) {
+            prevBtn.addEventListener('click', () => {
+                overlay.classList.remove('active');
+                setTimeout(() => {
+                    overlay.classList.add('hidden');
+                    showStepModal(step - 1);
+                }, 300);
+            });
+        }
+        
+        const skipBtn = modalDiv.querySelector('#skip-step-btn');
+        if (skipBtn) {
+            skipBtn.addEventListener('click', () => {
+                overlay.classList.remove('active');
+                setTimeout(() => {
+                    overlay.classList.add('hidden');
+                    showStepModal(step + 1);
+                }, 300);
+            });
+        }
+        
+        const nextBtn = modalDiv.querySelector('#next-step-btn');
+        if (nextBtn) {
+            nextBtn.addEventListener('click', () => {
+                overlay.classList.remove('active');
+                setTimeout(() => {
+                    overlay.classList.add('hidden');
+                    showStepModal(step + 1);
+                }, 300);
+            });
+        }
+        
+        const finishBtn = modalDiv.querySelector('#finish-building-btn');
+        if (finishBtn) {
+            finishBtn.addEventListener('click', () => {
+                overlay.classList.remove('active');
+                setTimeout(() => {
+                    overlay.classList.add('hidden');
+                    finishBuilding();
+                }, 300);
+            });
+        }
+        
+        // ESC
+        const escHandler = (e) => {
+            if (e.key === 'Escape') {
+                overlay.classList.remove('active');
+                setTimeout(() => {
+                    overlay.classList.add('hidden');
+                }, 300);
+                document.removeEventListener('keydown', escHandler);
+            }
+        };
+        document.addEventListener('keydown', escHandler);
+        
+        // Клик по overlay
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                overlay.classList.remove('active');
+                setTimeout(() => {
+                    overlay.classList.add('hidden');
+                }, 300);
+            }
+        });
+    }
 }
 
-// Глобальные переменные для построителя
-let stepRelatives = [];
-
-function addPersonInStep(step, mode, treeName, rootPerson, relatives) {
+// Добавить человека на текущем шаге
+function addPersonInStep(step) {
     const firstName = document.getElementById('step-first-name')?.value;
     const lastName = document.getElementById('step-last-name')?.value;
     const birthDate = document.getElementById('step-birth-date')?.value;
@@ -415,58 +446,65 @@ function addPersonInStep(step, mode, treeName, rootPerson, relatives) {
     // Показываем уведомление
     window.showNotification(`${firstName} ${lastName} добавлен(а)`, 'success');
     
-    // Очищаем форму
-    const form = document.getElementById('add-person-step-form');
-    if (form) form.reset();
-    
     // Обновляем текущий шаг
-    showAddPersonStep(step, mode, treeName, rootPerson, stepRelatives);
+    const overlay = document.getElementById('modal-overlay');
+    if (overlay) {
+        overlay.classList.remove('active');
+        setTimeout(() => {
+            overlay.classList.add('hidden');
+            showStepModal(step);
+        }, 300);
+    }
 }
 
-// Глобальные функции для вызова из onclick
-window.removeRelativeFromStep = function(index) {
+// Удалить родственника
+window.removeRelative = function(index) {
     stepRelatives.splice(index, 1);
     
-    // Получаем текущие параметры из DOM
-    const step = 1; // В реальном приложении нужно сохранять текущий шаг
-    const mode = 'auto'; // В реальном приложении нужно сохранять режим
-    const treeName = document.getElementById('tree-name-input')?.value || 'Мое семейное дерево';
-    const rootPerson = document.getElementById('root-person-select')?.value || 'self';
-    
-    showAddPersonStep(step, mode, treeName, rootPerson, stepRelatives);
+    const overlay = document.getElementById('modal-overlay');
+    if (overlay) {
+        overlay.classList.remove('active');
+        setTimeout(() => {
+            overlay.classList.add('hidden');
+            showStepModal(currentStep);
+        }, 300);
+    }
 };
 
-window.goToStepInBuilder = function(step, mode, treeName, rootPerson) {
-    showAddPersonStep(step, mode, treeName, rootPerson, stepRelatives);
-};
+// Получить текст отношения
+function getRelationText(relation) {
+    const relations = {
+        'self': 'Я',
+        'father': 'Отец',
+        'mother': 'Мать',
+        'spouse': 'Супруг/а',
+        'son': 'Сын',
+        'daughter': 'Дочь',
+        'brother': 'Брат',
+        'sister': 'Сестра',
+        'grandfather': 'Дедушка',
+        'grandmother': 'Бабушка'
+    };
+    return relations[relation] || relation;
+}
 
-window.skipStepInBuilder = function(step, mode, treeName, rootPerson) {
-    // Переходим к следующему шагу
-    completeStepInBuilder(step, mode, treeName, rootPerson);
-};
-
-window.completeStepInBuilder = function(step, mode, treeName, rootPerson) {
-    const nextStep = step + 1;
-    showAddPersonStep(nextStep, mode, treeName, rootPerson, stepRelatives);
-};
-
-window.finishBuildingInBuilder = function(mode, treeName, rootPerson) {
-    // Закрываем модальное окно
-    window.closeAllModals();
-    
+// Завершить построение
+function finishBuilding() {
     // Сохраняем дерево
-    saveTreeToDatabase(treeName, stepRelatives);
+    saveTreeToDatabase(currentTreeName, stepRelatives);
     
     // Показываем уведомление
-    window.showNotification(`✅ Дерево "${treeName}" успешно создано!`, 'success');
+    window.showNotification(`✅ Дерево "${currentTreeName}" успешно создано!`, 'success');
     
     // Обновляем интерфейс
-    updateTreeInterface(stepRelatives, treeName);
+    updateTreeInterface(stepRelatives, currentTreeName);
     
-    // Очищаем временные данные
+    // Сбрасываем данные
+    currentStep = 1;
     stepRelatives = [];
-};
+}
 
+// Сохранить дерево в базу данных
 function saveTreeToDatabase(treeName, relatives) {
     console.log('Сохранение дерева:', { treeName, relatives });
     
@@ -484,6 +522,7 @@ function saveTreeToDatabase(treeName, relatives) {
     }
 }
 
+// Обновить интерфейс дерева
 function updateTreeInterface(relatives, treeName) {
     const container = document.getElementById('tree-visualization-container');
     const emptyState = document.getElementById('tree-empty-state');
@@ -513,8 +552,8 @@ function updateTreeInterface(relatives, treeName) {
         const relationText = getRelationText(person.relation);
         
         html += `
-            <div style="background: white; border-radius: 10px; padding: 15px; width: 160px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); border: 2px solid ${bgColor};">
-                <div style="width: 60px; height: 60px; border-radius: 50%; background: ${bgColor}; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; margin: 0 auto 10px;">
+            <div class="person-card ${person.gender} ${person.relation === 'self' ? 'self' : ''}">
+                <div class="person-avatar ${person.gender} ${person.relation === 'self' ? 'self' : ''}">
                     ${person.firstName.charAt(0)}${person.lastName.charAt(0)}
                 </div>
                 <div style="font-weight: bold; margin-bottom: 5px; color: #2d3748;">${person.firstName}</div>
