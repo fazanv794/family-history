@@ -1,8 +1,13 @@
-// modal-system.js - улучшенная версия с поддержкой форм
+/**
+ * ModalSystem - система модальных окон
+ */
+
 class ModalSystem {
     constructor() {
         this.modals = new Map();
+        this.zIndex = 10000;
         this.initStyles();
+        console.log('✅ ModalSystem инициализирован');
     }
 
     initStyles() {
@@ -19,14 +24,16 @@ class ModalSystem {
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                z-index: 10000;
+                z-index: ${this.zIndex};
                 opacity: 0;
-                transition: opacity 0.3s;
+                visibility: hidden;
+                transition: opacity 0.3s, visibility 0.3s;
                 backdrop-filter: blur(5px);
             }
             
             .ms-modal-overlay.active {
                 opacity: 1;
+                visibility: visible;
             }
             
             .ms-modal {
@@ -37,12 +44,12 @@ class ModalSystem {
                 max-height: 90vh;
                 overflow: hidden;
                 box-shadow: 0 25px 50px rgba(0,0,0,0.25);
-                transform: translateY(30px);
+                transform: translateY(30px) scale(0.95);
                 transition: transform 0.3s;
             }
             
             .ms-modal.active {
-                transform: translateY(0);
+                transform: translateY(0) scale(1);
             }
             
             .ms-modal-header {
@@ -144,6 +151,15 @@ class ModalSystem {
                 background: #27ae60;
             }
             
+            .ms-modal-button-danger {
+                background: #e74c3c;
+                color: white;
+            }
+            
+            .ms-modal-button-danger:hover {
+                background: #c0392b;
+            }
+            
             /* Формы */
             .ms-form-group {
                 margin-bottom: 20px;
@@ -182,105 +198,11 @@ class ModalSystem {
                 gap: 15px;
             }
             
-            .ms-form-file {
-                border: 2px dashed #ddd;
-                border-radius: 8px;
-                padding: 30px;
-                text-align: center;
-                cursor: pointer;
-                transition: border 0.2s;
-            }
-            
-            .ms-form-file:hover {
-                border-color: #4361ee;
-            }
-            
-            .ms-form-file input {
-                display: none;
-            }
-            
-            .ms-form-file-label {
-                color: #666;
-                font-size: 14px;
-            }
-            
-            .ms-form-file-icon {
-                font-size: 32px;
-                color: #4361ee;
-                margin-bottom: 10px;
-            }
-            
-            /* Списки */
-            .ms-relative-list {
-                border: 1px solid #e9ecef;
-                border-radius: 8px;
-                overflow: hidden;
-            }
-            
-            .ms-relative-item {
-                padding: 16px;
-                border-bottom: 1px solid #e9ecef;
-                display: flex;
-                align-items: center;
-                gap: 15px;
-                transition: background 0.2s;
-            }
-            
-            .ms-relative-item:hover {
-                background: #f8f9fa;
-            }
-            
-            .ms-relative-item:last-child {
-                border-bottom: none;
-            }
-            
-            .ms-relative-avatar {
-                width: 50px;
-                height: 50px;
-                border-radius: 50%;
-                background: #4361ee;
-                color: white;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 20px;
-                font-weight: bold;
-            }
-            
-            .ms-relative-info {
-                flex: 1;
-            }
-            
-            .ms-relative-name {
-                font-weight: 600;
-                margin: 0 0 5px 0;
-                color: #333;
-            }
-            
-            .ms-relative-details {
-                font-size: 12px;
-                color: #666;
-                margin: 0;
-            }
-            
-            .ms-relative-actions {
-                display: flex;
-                gap: 8px;
-            }
-            
-            .ms-action-button {
-                padding: 6px 12px;
-                border-radius: 6px;
-                border: none;
-                cursor: pointer;
-                font-size: 12px;
-            }
-            
             /* Шаги */
             .ms-steps {
                 display: flex;
                 justify-content: space-between;
-                margin-bottom: 30px;
+                margin: 20px 0 30px;
                 position: relative;
             }
             
@@ -331,45 +253,8 @@ class ModalSystem {
                 font-weight: 500;
             }
             
-            /* Дерево */
-            .ms-tree-preview {
-                background: #f8f9fa;
-                border-radius: 12px;
-                padding: 20px;
-                text-align: center;
-                margin-top: 20px;
-                border: 2px dashed #e9ecef;
-            }
-            
-            .ms-tree-placeholder {
-                color: #666;
-                font-size: 14px;
-            }
-            
-            /* Уведомления */
-            .ms-alert {
-                padding: 15px;
-                border-radius: 8px;
-                margin-bottom: 20px;
-                display: flex;
-                align-items: center;
-                gap: 12px;
-            }
-            
-            .ms-alert-info {
-                background: #e3f2fd;
-                color: #0d47a1;
-                border-left: 4px solid #2196f3;
-            }
-            
-            .ms-alert-success {
-                background: #e8f5e9;
-                color: #1b5e20;
-                border-left: 4px solid #4caf50;
-            }
-            
-            .ms-alert-icon {
-                font-size: 20px;
+            body.ms-modal-open {
+                overflow: hidden;
             }
         `;
 
@@ -380,6 +265,9 @@ class ModalSystem {
     }
 
     createModal(id, options = {}) {
+        // Закрываем старое окно с таким же ID
+        this.closeModal(id);
+
         const defaultOptions = {
             title: 'Модальное окно',
             subtitle: '',
@@ -395,19 +283,10 @@ class ModalSystem {
 
         const config = { ...defaultOptions, ...options };
 
-        // Закрываем старое окно с таким же ID
-        this.closeModal(id);
-
         // Создаем overlay
         const overlay = document.createElement('div');
         overlay.className = 'ms-modal-overlay';
         overlay.id = `ms-overlay-${id}`;
-
-        // Создаем модальное окно
-        const modal = document.createElement('div');
-        modal.className = 'ms-modal';
-        modal.id = `ms-modal-${id}`;
-        modal.style.width = config.width;
 
         // Шаги (если нужны)
         let stepsHTML = '';
@@ -426,58 +305,55 @@ class ModalSystem {
         }
 
         // Заголовок
-        const header = document.createElement('div');
-        header.className = 'ms-modal-header';
-        header.innerHTML = `
-            ${config.showCloseButton ? '<button class="ms-modal-close">&times;</button>' : ''}
-            <h2 class="ms-modal-title">${config.title}</h2>
-            ${config.subtitle ? `<p class="ms-modal-subtitle">${config.subtitle}</p>` : ''}
-            ${stepsHTML}
+        const headerHTML = `
+            <div class="ms-modal-header">
+                ${config.showCloseButton ? '<button class="ms-modal-close">&times;</button>' : ''}
+                <h2 class="ms-modal-title">${config.title}</h2>
+                ${config.subtitle ? `<p class="ms-modal-subtitle">${config.subtitle}</p>` : ''}
+                ${stepsHTML}
+            </div>
         `;
 
         // Тело
-        const body = document.createElement('div');
-        body.className = 'ms-modal-body';
-        
-        const contentDiv = document.createElement('div');
-        contentDiv.className = 'ms-modal-content';
-        
-        if (typeof config.content === 'string') {
-            contentDiv.innerHTML = config.content;
-        } else if (config.content instanceof HTMLElement) {
-            contentDiv.appendChild(config.content);
-        } else if (typeof config.content === 'function') {
-            contentDiv.appendChild(config.content());
+        const bodyHTML = `
+            <div class="ms-modal-body">
+                <div class="ms-modal-content">
+                    ${typeof config.content === 'string' ? config.content : ''}
+                </div>
+            </div>
+        `;
+
+        // Футер
+        let footerHTML = '';
+        if (config.buttons && config.buttons.length > 0) {
+            const buttonsHTML = config.buttons.map(btn => `
+                <button class="ms-modal-button ms-modal-button-${btn.type || 'secondary'}"
+                        onclick="window.ModalSystem.handleButtonClick('${id}', ${JSON.stringify(btn).replace(/'/g, "\\'")})">
+                    ${btn.text}
+                </button>
+            `).join('');
+
+            footerHTML = `
+                <div class="ms-modal-footer">
+                    ${buttonsHTML}
+                </div>
+            `;
         }
-        
-        body.appendChild(contentDiv);
 
-        // Футер с кнопками
-        const footer = document.createElement('div');
-        footer.className = 'ms-modal-footer';
+        // Собираем модальное окно
+        const modalHTML = `
+            <div class="ms-modal" id="ms-modal-${id}" style="width: ${config.width}">
+                ${headerHTML}
+                ${bodyHTML}
+                ${footerHTML}
+            </div>
+        `;
 
-        config.buttons.forEach(btn => {
-            const button = document.createElement('button');
-            button.className = `ms-modal-button ms-modal-button-${btn.type || 'secondary'}`;
-            button.textContent = btn.text;
-            button.onclick = (e) => {
-                if (btn.onClick) btn.onClick(e);
-                if (btn.closeOnClick !== false) this.closeModal(id);
-            };
-            footer.appendChild(button);
-        });
-
-        // Собираем всё вместе
-        modal.appendChild(header);
-        modal.appendChild(body);
-        modal.appendChild(footer);
-        overlay.appendChild(modal);
-
-        // Добавляем в DOM
+        overlay.innerHTML = modalHTML;
         document.body.appendChild(overlay);
-        document.body.style.overflow = 'hidden';
+        document.body.classList.add('ms-modal-open');
 
-        // Обработчики
+        // Обработчики событий
         if (config.showCloseButton) {
             overlay.querySelector('.ms-modal-close').onclick = () => this.closeModal(id);
         }
@@ -494,16 +370,37 @@ class ModalSystem {
         };
         document.addEventListener('keydown', escHandler);
 
-        // Сохраняем данные
-        this.modals.set(id, { overlay, escHandler });
+        // Сохраняем конфиг и обработчики
+        this.modals.set(id, {
+            overlay,
+            escHandler,
+            config
+        });
 
-        // Анимация
+        // Анимация появления
         setTimeout(() => {
             overlay.classList.add('active');
-            modal.classList.add('active');
+            overlay.querySelector('.ms-modal').classList.add('active');
         }, 10);
 
+        // Если передан HTMLElement, добавляем его в контент
+        if (config.content instanceof HTMLElement) {
+            const contentDiv = overlay.querySelector('.ms-modal-content');
+            contentDiv.innerHTML = '';
+            contentDiv.appendChild(config.content);
+        }
+
         return overlay;
+    }
+
+    handleButtonClick(modalId, buttonConfig) {
+        if (buttonConfig.onClick && typeof buttonConfig.onClick === 'function') {
+            buttonConfig.onClick();
+        }
+        
+        if (buttonConfig.closeOnClick !== false) {
+            this.closeModal(modalId);
+        }
     }
 
     closeModal(id) {
@@ -512,48 +409,98 @@ class ModalSystem {
 
         const { overlay, escHandler } = modalData;
 
+        // Удаляем обработчик ESC
         document.removeEventListener('keydown', escHandler);
 
-        overlay.querySelector('.ms-modal').classList.remove('active');
+        // Анимация закрытия
+        const modal = overlay.querySelector('.ms-modal');
+        modal.classList.remove('active');
         overlay.classList.remove('active');
 
+        // Удаляем через время
         setTimeout(() => {
             if (overlay.parentNode) {
                 overlay.parentNode.removeChild(overlay);
             }
             this.modals.delete(id);
 
+            // Если нет открытых модалок, разблокируем скролл
             if (this.modals.size === 0) {
-                document.body.style.overflow = '';
+                document.body.classList.remove('ms-modal-open');
             }
         }, 300);
     }
 
-    updateModal(id, options) {
-        const modalData = this.modals.get(id);
-        if (!modalData) return;
-
-        const { overlay } = modalData;
-        const modal = overlay.querySelector('.ms-modal');
-        
-        if (options.title) {
-            const titleEl = modal.querySelector('.ms-modal-title');
-            if (titleEl) titleEl.textContent = options.title;
-        }
-        
-        if (options.content) {
-            const contentEl = modal.querySelector('.ms-modal-content');
-            if (contentEl) {
-                contentEl.innerHTML = '';
-                if (typeof options.content === 'string') {
-                    contentEl.innerHTML = options.content;
-                } else if (options.content instanceof HTMLElement) {
-                    contentEl.appendChild(options.content);
-                }
-            }
-        }
+    closeAll() {
+        this.modals.forEach((_, id) => this.closeModal(id));
     }
 }
 
-// Глобальный экземпляр
+// Создаем глобальный экземпляр
 window.ModalSystem = new ModalSystem();
+
+// Простые утилиты
+window.Modal = {
+    alert: function(title, message) {
+        return window.ModalSystem.createModal('alert_' + Date.now(), {
+            title,
+            content: `<p>${message}</p>`,
+            buttons: [{
+                text: 'OK',
+                type: 'primary'
+            }]
+        });
+    },
+
+    confirm: function(title, message, onConfirm, onCancel) {
+        return window.ModalSystem.createModal('confirm_' + Date.now(), {
+            title,
+            content: `<p>${message}</p>`,
+            buttons: [
+                {
+                    text: 'Отмена',
+                    type: 'secondary',
+                    onClick: onCancel
+                },
+                {
+                    text: 'Подтвердить',
+                    type: 'primary',
+                    onClick: onConfirm
+                }
+            ]
+        });
+    },
+
+    prompt: function(title, defaultValue, onConfirm) {
+        const inputId = 'prompt-input-' + Date.now();
+        const content = `
+            <p>${title}</p>
+            <input type="text" 
+                   id="${inputId}" 
+                   value="${defaultValue || ''}"
+                   class="ms-form-input"
+                   placeholder="Введите значение">
+        `;
+
+        return window.ModalSystem.createModal('prompt_' + Date.now(), {
+            title,
+            content,
+            buttons: [
+                {
+                    text: 'Отмена',
+                    type: 'secondary'
+                },
+                {
+                    text: 'OK',
+                    type: 'primary',
+                    onClick: () => {
+                        const input = document.getElementById(inputId);
+                        if (onConfirm) onConfirm(input.value);
+                    }
+                }
+            ]
+        });
+    }
+};
+
+console.log('✅ ModalSystem загружен');

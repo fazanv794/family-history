@@ -1,201 +1,184 @@
-// tree-builder.js - полная версия генеалогического построителя
+/**
+ * Tree Builder - построитель генеалогического дерева
+ */
+
 (function() {
-    console.log('🌳 Genealogy Tree Builder загружается...');
+    console.log('🌳 Tree Builder загружается...');
     
     // Хранилище данных
-    const treeData = {
-        relatives: [],
-        currentStep: 1,
-        selectedLine: null
-    };
-
-    // Конфигурация ролей
-    const ROLES = {
-        'great-grandfather': 'Прадедушка',
-        'great-grandmother': 'Прабабушка',
-        'grandfather': 'Дедушка',
-        'grandmother': 'Бабушка',
-        'father': 'Отец',
-        'mother': 'Мать',
-        'uncle': 'Дядя',
-        'aunt': 'Тетя',
-        'brother': 'Брат',
-        'sister': 'Сестра',
-        'son': 'Сын',
-        'daughter': 'Дочь',
-        'grandson': 'Внук',
-        'granddaughter': 'Внучка'
-    };
-
-    const LINES = {
-        'father': 'Линия отца',
-        'mother': 'Линия матери',
-        'both': 'Обе линии'
-    };
-
-    // Основная функция запуска
-    window.startTreeBuilder = function(mode = 'auto') {
-        console.log(`🚀 Запуск Tree Builder в режиме: ${mode}`);
+    let relatives = [];
+    let currentMode = 'auto';
+    
+    // Конфигурация
+    const CONFIG = {
+        ROLES: {
+            'great-grandfather': 'Прадедушка',
+            'great-grandmother': 'Прабабушка',
+            'grandfather': 'Дедушка',
+            'grandmother': 'Бабушка',
+            'father': 'Отец',
+            'mother': 'Мать',
+            'uncle': 'Дядя',
+            'aunt': 'Тетя',
+            'brother': 'Брат',
+            'sister': 'Сестра',
+            'son': 'Сын',
+            'daughter': 'Дочь',
+            'grandson': 'Внук',
+            'granddaughter': 'Внучка'
+        },
         
-        if (mode === 'auto') {
-            startAutoBuilder();
-        } else {
-            startManualBuilder();
+        LINES: {
+            'father': 'Линия отца',
+            'mother': 'Линия матери',
+            'both': 'Обе линии'
         }
     };
-
-    // Авто-построение
-    function startAutoBuilder() {
-        treeData.relatives = [];
-        treeData.currentStep = 1;
+    
+    // Основная функция
+    window.startTreeBuilder = function(mode = 'auto') {
+        console.log(`🚀 Запуск Tree Builder в режиме: ${mode}`);
+        currentMode = mode;
+        relatives = [];
         
-        showBuilderModal('auto');
-    }
-
-    // Ручное построение
-    function startManualBuilder() {
-        treeData.relatives = [];
-        treeData.currentStep = 1;
-        
-        showBuilderModal('manual');
-    }
-
-    // Показать основное окно построителя
-    function showBuilderModal(mode) {
+        showMainModal();
+    };
+    
+    // Показать главное модальное окно
+    function showMainModal() {
         const content = `
-            <div class="ms-alert ms-alert-info">
-                <div class="ms-alert-icon">💡</div>
-                <div>
-                    <strong>${mode === 'auto' ? 'Автоматическое построение' : 'Ручное построение'}</strong>
-                    <p style="margin:5px 0 0 0;font-size:13px;">
-                        ${mode === 'auto' 
-                            ? 'Система поможет вам поэтапно создать генеалогическое дерево' 
-                            : 'Добавляйте родственников вручную, контролируя каждый шаг'}
-                    </p>
-                </div>
+            <div class="ms-alert" style="background:#e3f2fd;color:#0d47a1;padding:15px;border-radius:8px;margin-bottom:20px;">
+                <strong>${currentMode === 'auto' ? '⚡ Авто-построение' : '🎯 Ручное построение'}</strong>
+                <p style="margin:5px 0 0 0;font-size:14px;">
+                    ${currentMode === 'auto' 
+                        ? 'Система поможет вам поэтапно создать дерево' 
+                        : 'Вы полностью контролируете процесс построения'}
+                </p>
             </div>
             
             <div class="ms-form-group">
                 <label class="ms-form-label">Выберите линию родства:</label>
                 <select class="ms-form-select" id="family-line">
-                    <option value="">-- Выберите линию --</option>
                     <option value="father">Линия отца</option>
                     <option value="mother">Линия матери</option>
                     <option value="both">Обе линии</option>
                 </select>
             </div>
             
-            <div id="relatives-container">
-                <div class="ms-alert ms-alert-info">
-                    <div class="ms-alert-icon">👤</div>
-                    <div>
-                        <strong>Добавьте родственников</strong>
-                        <p style="margin:5px 0 0 0;font-size:13px;">Начните с добавления первого родственника</p>
-                    </div>
-                </div>
-                
-                <div class="ms-relative-list" id="relatives-list">
-                    <div class="ms-tree-preview">
-                        <div class="ms-tree-placeholder">
-                            🌳 Пока нет добавленных родственников
-                        </div>
-                    </div>
-                </div>
-                
-                <div style="text-align:center;margin:30px 0;">
-                    <button class="ms-modal-button ms-modal-button-primary" 
-                            onclick="window.treeBuilder?.addRelative()" 
-                            style="padding:15px 30px;font-size:16px;">
-                        + Добавить родственника
-                    </button>
+            <div style="text-align:center;margin:30px 0;">
+                <button class="ms-modal-button ms-modal-button-primary" 
+                        onclick="window.treeBuilder?.addRelative()" 
+                        style="padding:15px 30px;font-size:16px;">
+                    👤 Добавить первого родственника
+                </button>
+            </div>
+            
+            <div id="relatives-list" style="min-height:100px;">
+                <div style="text-align:center;padding:40px 20px;color:#999;">
+                    <div style="font-size:48px;margin-bottom:10px;">👥</div>
+                    <p>Пока нет добавленных родственников</p>
                 </div>
             </div>
             
-            <div id="tree-preview-container" style="display:none;">
-                <h4 style="margin-top:0;margin-bottom:15px;">Предпросмотр дерева:</h4>
-                <div class="ms-tree-preview" id="tree-preview">
-                    <div class="ms-tree-placeholder">
-                        ⏳ Заполните информацию о родственниках
-                    </div>
-                </div>
+            <div class="ms-alert" style="background:#e8f5e9;color:#1b5e20;padding:15px;border-radius:8px;margin-top:20px;">
+                <strong>💡 Совет:</strong> Начните с добавления себя или ближайших родственников.
             </div>
         `;
-
+        
         window.ModalSystem.createModal('tree-builder-main', {
-            title: '🌳 Построитель Генеалогического Древа',
-            subtitle: mode === 'auto' ? 'Автоматический режим' : 'Ручной режим',
+            title: '🌳 Построитель Генеалогического Дерева',
+            subtitle: 'Шаг 1: Добавление родственников',
             content: content,
             width: '700px',
             showSteps: true,
             currentStep: 1,
             totalSteps: 3,
+            showCloseButton: true,
+            closeOnOverlay: true,
             buttons: [
                 {
                     text: 'Отмена',
                     type: 'secondary',
                     onClick: () => {
-                        treeData.relatives = [];
-                        window.ModalSystem.closeModal('tree-builder-main');
+                        console.log('Построение отменено');
                     }
                 },
                 {
-                    text: 'Продолжить',
+                    text: 'Далее',
                     type: 'primary',
                     onClick: () => {
-                        if (treeData.relatives.length === 0) {
-                            alert('Добавьте хотя бы одного родственника!');
+                        if (relatives.length === 0) {
+                            window.Modal.alert('Внимание', 'Добавьте хотя бы одного родственника!');
                             return;
                         }
-                        proceedToStep2();
+                        showPreviewModal();
                     }
                 }
             ]
         });
-
-        // Инициализация
-        setTimeout(() => {
-            document.getElementById('family-line').onchange = function() {
-                treeData.selectedLine = this.value;
-                updateTreePreview();
-            };
-        }, 100);
+        
+        // Обновляем список родственников
+        updateRelativesList();
     }
-
+    
     // Добавить родственника
     window.treeBuilder = {
         addRelative: function() {
-            showRelativeForm();
+            showAddRelativeModal();
+        },
+        
+        editRelative: function(id) {
+            const relative = relatives.find(r => r.id === id);
+            if (relative) {
+                showAddRelativeModal(relative);
+            }
+        },
+        
+        removeRelative: function(id) {
+            if (confirm('Удалить этого родственника?')) {
+                relatives = relatives.filter(r => r.id !== id);
+                updateRelativesList();
+                showNotification('Родственник удален');
+            }
         }
     };
-
-    // Форма добавления родственника
-    function showRelativeForm() {
+    
+    // Показать форму добавления родственника
+    function showAddRelativeModal(relativeToEdit = null) {
+        const isEdit = !!relativeToEdit;
+        const relative = relativeToEdit || {};
+        
         const content = `
             <form id="relative-form">
                 <div class="ms-form-row">
                     <div class="ms-form-group">
                         <label class="ms-form-label">Фамилия *</label>
-                        <input type="text" class="ms-form-input" id="last-name" required>
+                        <input type="text" class="ms-form-input" id="last-name" 
+                               value="${relative.lastName || ''}" required>
                     </div>
                     <div class="ms-form-group">
                         <label class="ms-form-label">Имя *</label>
-                        <input type="text" class="ms-form-input" id="first-name" required>
+                        <input type="text" class="ms-form-input" id="first-name" 
+                               value="${relative.firstName || ''}" required>
                     </div>
                 </div>
                 
                 <div class="ms-form-group">
                     <label class="ms-form-label">Отчество</label>
-                    <input type="text" class="ms-form-input" id="middle-name">
+                    <input type="text" class="ms-form-input" id="middle-name" 
+                           value="${relative.middleName || ''}">
                 </div>
                 
                 <div class="ms-form-row">
                     <div class="ms-form-group">
                         <label class="ms-form-label">Дата рождения</label>
-                        <input type="date" class="ms-form-input" id="birth-date">
+                        <input type="date" class="ms-form-input" id="birth-date" 
+                               value="${relative.birthDate || ''}">
                     </div>
                     <div class="ms-form-group">
                         <label class="ms-form-label">Дата смерти (если есть)</label>
-                        <input type="date" class="ms-form-input" id="death-date">
+                        <input type="date" class="ms-form-input" id="death-date" 
+                               value="${relative.deathDate || ''}">
                     </div>
                 </div>
                 
@@ -203,8 +186,10 @@
                     <label class="ms-form-label">Роль в семье *</label>
                     <select class="ms-form-select" id="relative-role" required>
                         <option value="">-- Выберите роль --</option>
-                        ${Object.entries(ROLES).map(([key, value]) => 
-                            `<option value="${key}">${value}</option>`
+                        ${Object.entries(CONFIG.ROLES).map(([key, value]) => 
+                            `<option value="${key}" ${relative.role === key ? 'selected' : ''}>
+                                ${value}
+                            </option>`
                         ).join('')}
                     </select>
                 </div>
@@ -213,328 +198,233 @@
                     <label class="ms-form-label">Линия родства *</label>
                     <select class="ms-form-select" id="relative-line" required>
                         <option value="">-- Выберите линию --</option>
-                        <option value="father">Линия отца</option>
-                        <option value="mother">Линия матери</option>
+                        <option value="father" ${relative.line === 'father' ? 'selected' : ''}>Линия отца</option>
+                        <option value="mother" ${relative.line === 'mother' ? 'selected' : ''}>Линия матери</option>
                     </select>
                 </div>
                 
                 <div class="ms-form-group">
                     <label class="ms-form-label">Биография</label>
                     <textarea class="ms-form-textarea" id="bio" rows="3" 
-                              placeholder="Краткая информация о человеке..."></textarea>
+                              placeholder="Краткая информация о человеке...">${relative.bio || ''}</textarea>
                 </div>
                 
                 <div class="ms-form-group">
                     <label class="ms-form-label">Заметки</label>
                     <textarea class="ms-form-textarea" id="notes" rows="2" 
-                              placeholder="Дополнительные заметки..."></textarea>
+                              placeholder="Дополнительные заметки...">${relative.notes || ''}</textarea>
                 </div>
                 
-                <div class="ms-form-group">
-                    <label class="ms-form-label">Фотография</label>
-                    <div class="ms-form-file" onclick="document.getElementById('photo-input').click()">
-                        <div class="ms-form-file-icon">📷</div>
-                        <div class="ms-form-file-label">Нажмите для загрузки фото</div>
-                        <input type="file" id="photo-input" accept="image/*" style="display:none;">
-                    </div>
-                    <div id="photo-preview" style="margin-top:10px;display:none;">
-                        <img id="preview-image" style="max-width:100px;border-radius:8px;">
-                    </div>
-                </div>
-                
-                <div class="ms-alert ms-alert-info" style="margin-top:30px;">
-                    <div class="ms-alert-icon">ℹ️</div>
-                    <div>
-                        <strong>Подсказка</strong>
-                        <p style="margin:5px 0 0 0;font-size:13px;">
-                            Начните с ближайших родственников (родители, бабушки/дедушки), 
-                            затем переходите к более дальним родственникам.
-                        </p>
-                    </div>
+                <div class="ms-alert" style="background:#fff3cd;color:#856404;padding:15px;border-radius:8px;margin-top:20px;">
+                    <strong>ℹ️ Информация:</strong> Поля, отмеченные *, обязательны для заполнения.
                 </div>
             </form>
         `;
-
+        
         window.ModalSystem.createModal('add-relative', {
-            title: '👤 Добавить родственника',
-            subtitle: 'Шаг 1 из 2 - Информация о человеке',
+            title: isEdit ? '✏️ Редактировать родственника' : '👤 Добавить родственника',
             content: content,
-            width: '650px',
-            showSteps: true,
-            currentStep: 1,
-            totalSteps: 2,
+            width: '600px',
             buttons: [
                 {
                     text: 'Отмена',
-                    type: 'secondary',
-                    onClick: () => {
-                        window.ModalSystem.closeModal('add-relative');
-                    }
+                    type: 'secondary'
                 },
                 {
-                    text: 'Сохранить',
+                    text: isEdit ? 'Сохранить изменения' : 'Добавить',
                     type: 'primary',
-                    onClick: saveRelative
+                    onClick: () => saveRelative(relativeToEdit?.id)
                 }
             ]
         });
-
-        // Инициализация формы
-        setTimeout(() => {
-            const photoInput = document.getElementById('photo-input');
-            const photoPreview = document.getElementById('photo-preview');
-            const previewImage = document.getElementById('preview-image');
-            
-            if (photoInput) {
-                photoInput.onchange = function(e) {
-                    const file = e.target.files[0];
-                    if (file) {
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            previewImage.src = e.target.result;
-                            photoPreview.style.display = 'block';
-                        };
-                        reader.readAsDataURL(file);
-                    }
-                };
-            }
-        }, 100);
     }
-
+    
     // Сохранить родственника
-    function saveRelative() {
+    function saveRelative(existingId = null) {
         const form = document.getElementById('relative-form');
         if (!form.checkValidity()) {
-            form.reportValidity();
+            alert('Пожалуйста, заполните все обязательные поля!');
             return;
         }
-
+        
         const relative = {
-            id: Date.now(),
+            id: existingId || Date.now(),
             lastName: document.getElementById('last-name').value.trim(),
             firstName: document.getElementById('first-name').value.trim(),
             middleName: document.getElementById('middle-name').value.trim(),
             birthDate: document.getElementById('birth-date').value,
             deathDate: document.getElementById('death-date').value || null,
             role: document.getElementById('relative-role').value,
-            roleText: ROLES[document.getElementById('relative-role').value],
+            roleText: CONFIG.ROLES[document.getElementById('relative-role').value],
             line: document.getElementById('relative-line').value,
-            lineText: LINES[document.getElementById('relative-line').value],
+            lineText: CONFIG.LINES[document.getElementById('relative-line').value],
             bio: document.getElementById('bio').value.trim(),
             notes: document.getElementById('notes').value.trim(),
-            photo: document.getElementById('preview-image')?.src || null,
             createdAt: new Date().toISOString()
         };
-
-        treeData.relatives.push(relative);
+        
+        if (existingId) {
+            // Обновляем существующего
+            const index = relatives.findIndex(r => r.id === existingId);
+            if (index !== -1) {
+                relatives[index] = relative;
+            }
+        } else {
+            // Добавляем нового
+            relatives.push(relative);
+        }
         
         window.ModalSystem.closeModal('add-relative');
-        
         updateRelativesList();
-        updateTreePreview();
-        
-        // Показать уведомление об успешном добавлении
-        showNotification(`Родственник ${relative.firstName} ${relative.lastName} добавлен!`);
+        showNotification(existingId ? 'Изменения сохранены' : 'Родственник добавлен');
     }
-
+    
     // Обновить список родственников
     function updateRelativesList() {
         const container = document.getElementById('relatives-list');
         if (!container) return;
-
-        if (treeData.relatives.length === 0) {
+        
+        if (relatives.length === 0) {
             container.innerHTML = `
-                <div class="ms-tree-preview">
-                    <div class="ms-tree-placeholder">🌳 Пока нет добавленных родственников</div>
+                <div style="text-align:center;padding:40px 20px;color:#999;">
+                    <div style="font-size:48px;margin-bottom:10px;">👥</div>
+                    <p>Пока нет добавленных родственников</p>
                 </div>
             `;
             return;
         }
-
-        container.innerHTML = treeData.relatives.map(relative => `
-            <div class="ms-relative-item" data-id="${relative.id}">
-                <div class="ms-relative-avatar" style="background: ${relative.line === 'father' ? '#4361ee' : '#e91e63'}">
+        
+        container.innerHTML = relatives.map(relative => `
+            <div class="relative-item" 
+                 style="border:1px solid #e9ecef;border-radius:10px;padding:15px;margin-bottom:10px;display:flex;align-items:center;gap:15px;">
+                <div style="width:50px;height:50px;border-radius:50%;background:${relative.line === 'father' ? '#4361ee' : '#e91e63'};color:white;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:18px;">
                     ${relative.firstName.charAt(0)}${relative.lastName.charAt(0)}
                 </div>
-                <div class="ms-relative-info">
-                    <h4 class="ms-relative-name">
+                <div style="flex:1;">
+                    <div style="font-weight:bold;color:#333;">
                         ${relative.lastName} ${relative.firstName} ${relative.middleName || ''}
-                    </h4>
-                    <p class="ms-relative-details">
-                        <strong>Роль:</strong> ${relative.roleText} | 
-                        <strong>Линия:</strong> ${relative.lineText} |
-                        <strong>Дата рождения:</strong> ${relative.birthDate || 'не указана'}
-                    </p>
+                    </div>
+                    <div style="font-size:12px;color:#666;margin-top:5px;">
+                        ${relative.roleText} • ${relative.lineText}
+                        ${relative.birthDate ? `• 📅 ${relative.birthDate}` : ''}
+                    </div>
                 </div>
-                <div class="ms-relative-actions">
-                    <button class="ms-action-button" 
-                            style="background:#4361ee;color:white;"
-                            onclick="window.treeBuilder?.editRelative(${relative.id})">
+                <div style="display:flex;gap:8px;">
+                    <button onclick="window.treeBuilder.editRelative(${relative.id})" 
+                            style="background:#4361ee;color:white;border:none;border-radius:6px;padding:8px 12px;cursor:pointer;font-size:12px;">
                         ✏️
                     </button>
-                    <button class="ms-action-button" 
-                            style="background:#e74c3c;color:white;"
-                            onclick="window.treeBuilder?.removeRelative(${relative.id})">
+                    <button onclick="window.treeBuilder.removeRelative(${relative.id})" 
+                            style="background:#e74c3c;color:white;border:none;border-radius:6px;padding:8px 12px;cursor:pointer;font-size:12px;">
                         🗑️
                     </button>
                 </div>
             </div>
         `).join('');
     }
-
-    // Редактировать родственника
-    window.treeBuilder.editRelative = function(id) {
-        const relative = treeData.relatives.find(r => r.id === id);
-        if (!relative) return;
-
-        // Заполняем форму данными родственника
-        document.getElementById('last-name').value = relative.lastName;
-        document.getElementById('first-name').value = relative.firstName;
-        document.getElementById('middle-name').value = relative.middleName || '';
-        document.getElementById('birth-date').value = relative.birthDate || '';
-        document.getElementById('death-date').value = relative.deathDate || '';
-        document.getElementById('relative-role').value = relative.role;
-        document.getElementById('relative-line').value = relative.line;
-        document.getElementById('bio').value = relative.bio || '';
-        document.getElementById('notes').value = relative.notes || '';
-        
-        // Удаляем старого родственника
-        treeData.relatives = treeData.relatives.filter(r => r.id !== id);
-        
-        // Показываем форму для редактирования
-        showRelativeForm();
-    };
-
-    // Удалить родственника
-    window.treeBuilder.removeRelative = function(id) {
-        if (confirm('Удалить этого родственника?')) {
-            treeData.relatives = treeData.relatives.filter(r => r.id !== id);
-            updateRelativesList();
-            updateTreePreview();
-            showNotification('Родственник удален');
-        }
-    };
-
-    // Перейти ко второму шагу
-    function proceedToStep2() {
+    
+    // Показать окно предпросмотра
+    function showPreviewModal() {
         const content = `
-            <div class="ms-alert ms-alert-success">
-                <div class="ms-alert-icon">✅</div>
-                <div>
-                    <strong>Отлично! Добавлено родственников: ${treeData.relatives.length}</strong>
-                    <p style="margin:5px 0 0 0;font-size:13px;">
-                        Проверьте правильность данных перед построением дерева
-                    </p>
-                </div>
-            </div>
-            
-            <div style="margin:20px 0;">
-                <h4 style="margin-top:0;margin-bottom:15px;">Список добавленных родственников:</h4>
-                <div class="ms-relative-list" style="max-height:300px;overflow-y:auto;">
-                    ${treeData.relatives.map(relative => `
-                        <div class="ms-relative-item">
-                            <div class="ms-relative-avatar" style="background: ${relative.line === 'father' ? '#4361ee' : '#e91e63'}">
-                                ${relative.firstName.charAt(0)}${relative.lastName.charAt(0)}
-                            </div>
-                            <div class="ms-relative-info">
-                                <h4 class="ms-relative-name">
-                                    ${relative.lastName} ${relative.firstName}
-                                </h4>
-                                <p class="ms-relative-details">
-                                    ${relative.roleText} • ${relative.lineText}
-                                </p>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
+            <div class="ms-alert" style="background:#e8f5e9;color:#1b5e20;padding:15px;border-radius:8px;margin-bottom:20px;">
+                <strong>✅ Отлично! Добавлено родственников: ${relatives.length}</strong>
+                <p style="margin:5px 0 0 0;font-size:14px;">Проверьте данные перед построением дерева</p>
             </div>
             
             <div class="ms-form-group">
-                <label class="ms-form-label">Название вашего семейного древа:</label>
+                <label class="ms-form-label">Название дерева:</label>
                 <input type="text" class="ms-form-input" id="tree-name" 
-                       placeholder="Например: Семья Ивановых" value="Моя семья">
+                       value="Моя семья" placeholder="Введите название">
             </div>
             
             <div class="ms-form-group">
-                <label class="ms-form-label">Стиль отображения дерева:</label>
+                <label class="ms-form-label">Стиль отображения:</label>
                 <select class="ms-form-select" id="tree-style">
                     <option value="classic">Классический (вертикальный)</option>
                     <option value="horizontal">Горизонтальный</option>
                     <option value="circular">Круговой</option>
-                    <option value="compact">Компактный</option>
                 </select>
             </div>
             
-            <div class="ms-form-group">
-                <label class="ms-form-label">
-                    <input type="checkbox" id="include-photos" checked> Включать фотографии
-                </label>
-                <label class="ms-form-label" style="display:block;margin-top:10px;">
-                    <input type="checkbox" id="include-dates" checked> Показывать даты
-                </label>
-                <label class="ms-form-label" style="display:block;margin-top:10px;">
-                    <input type="checkbox" id="auto-layout" checked> Автоматическая компоновка
-                </label>
+            <div style="background:#f8f9fa;padding:20px;border-radius:10px;margin:20px 0;">
+                <h4 style="margin-top:0;">Предпросмотр структуры:</h4>
+                <pre style="background:white;padding:15px;border-radius:8px;border:1px solid #e9ecef;overflow:auto;">
+${generateTreePreview()}
+                </pre>
             </div>
             
-            <div class="ms-alert ms-alert-info">
-                <div class="ms-alert-icon">⚠️</div>
-                <div>
-                    <strong>Внимание!</strong>
-                    <p style="margin:5px 0 0 0;font-size:13px;">
-                        После построения дерево можно будет редактировать, 
-                        экспортировать в PNG/PDF или сохранить в вашем аккаунте.
-                    </p>
-                </div>
+            <div class="ms-alert" style="background:#e3f2fd;color:#0d47a1;padding:15px;border-radius:8px;">
+                <strong>📊 Статистика:</strong><br>
+                👥 Всего родственников: ${relatives.length}<br>
+                👨 Линия отца: ${relatives.filter(r => r.line === 'father').length}<br>
+                👩 Линия матери: ${relatives.filter(r => r.line === 'mother').length}
             </div>
         `;
-
-        window.ModalSystem.updateModal('tree-builder-main', {
-            title: '🌳 Подготовка к построению',
-            subtitle: 'Шаг 2 из 3 - Проверка и настройки',
+        
+        window.ModalSystem.createModal('tree-preview', {
+            title: '🌳 Предпросмотр дерева',
+            subtitle: 'Шаг 2: Настройка и проверка',
             content: content,
+            width: '700px',
             showSteps: true,
             currentStep: 2,
+            totalSteps: 3,
             buttons: [
                 {
                     text: 'Назад',
                     type: 'secondary',
-                    onClick: () => showBuilderModal('auto')
+                    onClick: showMainModal
                 },
                 {
                     text: 'Построить дерево',
-                    type: 'success',
+                    type: 'primary',
                     onClick: buildTree
                 }
             ]
         });
     }
-
+    
+    // Генерация предпросмотра дерева
+    function generateTreePreview() {
+        if (relatives.length === 0) return 'Дерево пустое';
+        
+        let preview = '';
+        const root = relatives.find(r => r.role === 'father' || r.role === 'mother') || relatives[0];
+        
+        preview += `     ${root.firstName.charAt(0)}. ${root.lastName}\n`;
+        preview += `       |\n`;
+        preview += `   ┌───┴───┐\n`;
+        
+        const children = relatives.filter(r => 
+            ['son', 'daughter', 'grandson', 'granddaughter'].includes(r.role)
+        );
+        
+        if (children.length > 0) {
+            preview += '   ';
+            children.forEach((child, i) => {
+                preview += `${child.firstName.charAt(0)}. ${child.lastName}   `;
+                if ((i + 1) % 2 === 0 && i !== children.length - 1) preview += '\n   ';
+            });
+            if (children.length % 2 !== 0) preview += '\n';
+        }
+        
+        return preview;
+    }
+    
     // Построить дерево
     function buildTree() {
         const treeName = document.getElementById('tree-name').value.trim() || 'Мое семейное древо';
         const style = document.getElementById('tree-style').value;
-        const includePhotos = document.getElementById('include-photos').checked;
-        const includeDates = document.getElementById('include-dates').checked;
-        const autoLayout = document.getElementById('auto-layout').checked;
-
-        // Закрываем основное окно
-        window.ModalSystem.closeModal('tree-builder-main');
-
-        // Показываем окно построения
+        
+        window.ModalSystem.closeModal('tree-preview');
         showBuildingProgress();
-
-        // Имитация процесса построения
+        
+        // Имитация построения
         setTimeout(() => {
-            completeTreeBuilding({
-                name: treeName,
-                style: style,
-                relatives: treeData.relatives,
-                options: { includePhotos, includeDates, autoLayout }
-            });
+            showResultModal(treeName, style);
         }, 2000);
     }
-
+    
     // Показать прогресс построения
     function showBuildingProgress() {
         const content = `
@@ -542,39 +432,37 @@
                 <div style="font-size:60px;margin-bottom:20px;">🌳</div>
                 <h3 style="margin:0 0 15px 0;color:#4361ee;">Строим ваше семейное древо...</h3>
                 <p style="color:#666;margin-bottom:30px;">
-                    Обрабатываем ${treeData.relatives.length} родственников<br>
-                    Формируем связи и структуру
+                    Обрабатываем ${relatives.length} родственников
                 </p>
                 
                 <div style="background:#f8f9fa;border-radius:10px;padding:20px;margin:0 auto 30px;max-width:400px;">
-                    <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
-                        <span>Прогресс:</span>
-                        <span id="progress-percent">0%</span>
-                    </div>
                     <div style="height:10px;background:#e9ecef;border-radius:5px;overflow:hidden;">
-                        <div id="progress-bar" style="height:100%;background:linear-gradient(90deg, #4361ee, #3a0ca3);width:0%;transition:width 0.3s;"></div>
+                        <div id="progress-bar" style="height:100%;background:linear-gradient(90deg, #4361ee, #3a0ca3);width:0%;transition:width 1s;"></div>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;margin-top:10px;">
+                        <span style="color:#666;">Прогресс:</span>
+                        <span id="progress-percent" style="font-weight:bold;color:#4361ee;">0%</span>
                     </div>
                 </div>
                 
                 <div style="color:#999;font-size:14px;">
-                    ⏳ Это может занять несколько секунд
+                    ⏳ Пожалуйста, подождите...
                 </div>
             </div>
         `;
-
+        
         window.ModalSystem.createModal('building-progress', {
             title: '⚙️ Построение дерева',
             content: content,
             width: '500px',
             showCloseButton: false,
-            closeOnOverlay: false,
-            buttons: []
+            closeOnOverlay: false
         });
-
+        
         // Анимация прогресса
         let progress = 0;
         const interval = setInterval(() => {
-            progress += 10;
+            progress += 20;
             const progressBar = document.getElementById('progress-bar');
             const progressPercent = document.getElementById('progress-percent');
             
@@ -586,137 +474,68 @@
             if (progress >= 100) {
                 clearInterval(interval);
             }
-        }, 200);
+        }, 300);
     }
-
-    // Завершить построение дерева
-    function completeTreeBuilding(config) {
+    
+    // Показать результат
+    function showResultModal(treeName, style) {
         window.ModalSystem.closeModal('building-progress');
-
+        
         const content = `
             <div style="text-align:center;padding:20px;">
-                <div style="font-size:60px;margin-bottom:20px;color:#2ecc71;">✅</div>
-                <h3 style="margin:0 0 15px 0;color:#4361ee;">Дерево построено успешно!</h3>
+                <div style="font-size:60px;color:#2ecc71;margin-bottom:20px;">✅</div>
+                <h3 style="margin:0 0 15px 0;color:#4361ee;">Дерево построено!</h3>
                 <p style="color:#666;margin-bottom:30px;">
-                    <strong>${config.name}</strong><br>
-                    ${config.relatives.length} родственников • ${config.style} стиль
+                    <strong>${treeName}</strong><br>
+                    ${relatives.length} родственников • ${style} стиль
                 </p>
                 
                 <div style="background:#f8f9fa;border-radius:12px;padding:20px;margin:0 auto 30px;max-width:500px;">
                     <div style="font-family:monospace;font-size:12px;text-align:left;background:white;padding:15px;border-radius:8px;border:1px solid #e9ecef;">
-                        ${generateTreeAscii(config.relatives)}
+${generateTreePreview()}
                     </div>
                 </div>
                 
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:30px;">
-                    <button class="ms-modal-button ms-modal-button-primary" onclick="window.treeBuilder?.viewTree()">
+                    <button class="ms-modal-button ms-modal-button-primary" onclick="viewTree()">
                         👀 Просмотреть
                     </button>
-                    <button class="ms-modal-button ms-modal-button-success" onclick="window.treeBuilder?.exportTree()">
+                    <button class="ms-modal-button ms-modal-button-success" onclick="exportTree()">
                         📥 Экспорт
-                    </button>
-                    <button class="ms-modal-button" onclick="window.treeBuilder?.editTree()" 
-                            style="background:#f39c12;color:white;">
-                        ✏️ Редактировать
-                    </button>
-                    <button class="ms-modal-button" onclick="window.treeBuilder?.saveToAccount()" 
-                            style="background:#9b59b6;color:white;">
-                        💾 Сохранить
                     </button>
                 </div>
                 
                 <div style="color:#999;font-size:14px;border-top:1px solid #eee;padding-top:20px;">
-                    Дерево сохранено в памяти. Вы можете вернуться к редактированию в любое время.
+                    Дерево построено успешно. Вы можете создать новое или экспортировать это.
                 </div>
             </div>
         `;
-
-        window.ModalSystem.createModal('tree-complete', {
-            title: '🎉 Дерево готово!',
+        
+        window.ModalSystem.createModal('tree-result', {
+            title: '🎉 Готово!',
             content: content,
             width: '600px',
+            showSteps: true,
+            currentStep: 3,
+            totalSteps: 3,
             buttons: [
                 {
                     text: 'Закрыть',
-                    type: 'secondary',
-                    onClick: () => {
-                        window.ModalSystem.closeModal('tree-complete');
-                        treeData.relatives = []; // Очистить данные
-                    }
+                    type: 'secondary'
                 },
                 {
                     text: 'Новое дерево',
                     type: 'primary',
                     onClick: () => {
-                        window.ModalSystem.closeModal('tree-complete');
-                        setTimeout(() => startAutoBuilder(), 300);
+                        window.ModalSystem.closeModal('tree-result');
+                        setTimeout(() => window.startTreeBuilder(currentMode), 300);
                     }
                 }
             ]
         });
-
-        // Сохраняем дерево в localStorage для доступа из других функций
-        localStorage.setItem('lastBuiltTree', JSON.stringify(config));
     }
-
-    // Генерация ASCII представления дерева
-    function generateTreeAscii(relatives) {
-        if (relatives.length === 0) return 'Дерево пустое';
-        
-        let ascii = '';
-        const root = relatives.find(r => r.role === 'father' || r.role === 'mother') || relatives[0];
-        
-        ascii += `     ${root.firstName.charAt(0)}.${root.lastName.charAt(0)}\n`;
-        ascii += `       |\n`;
-        ascii += `   ┌───┴───┐\n`;
-        
-        const children = relatives.filter(r => 
-            r.role === 'son' || r.role === 'daughter' || 
-            r.role === 'grandson' || r.role === 'granddaughter'
-        );
-        
-        if (children.length > 0) {
-            children.forEach((child, i) => {
-                ascii += `   ${child.firstName.charAt(0)}.${child.lastName.charAt(0)}   `;
-                if ((i + 1) % 2 === 0) ascii += '\n';
-            });
-        }
-        
-        return ascii;
-    }
-
-    // Обновить предпросмотр дерева
-    function updateTreePreview() {
-        const preview = document.getElementById('tree-preview');
-        if (!preview) return;
-
-        if (treeData.relatives.length === 0) {
-            preview.innerHTML = `
-                <div class="ms-tree-placeholder">
-                    ⏳ Заполните информацию о родственниках
-                </div>
-            `;
-            return;
-        }
-
-        preview.innerHTML = `
-            <div style="font-family:monospace;font-size:11px;line-height:1.4;">
-                ${generateTreeAscii(treeData.relatives)}
-            </div>
-            <div style="margin-top:15px;color:#666;font-size:13px;">
-                <strong>Статистика:</strong><br>
-                👥 Родственников: ${treeData.relatives.length}<br>
-                👨 Линия отца: ${treeData.relatives.filter(r => r.line === 'father').length}<br>
-                👩 Линия матери: ${treeData.relatives.filter(r => r.line === 'mother').length}
-            </div>
-        `;
-
-        // Показываем контейнер предпросмотра
-        const container = document.getElementById('tree-preview-container');
-        if (container) container.style.display = 'block';
-    }
-
-    // Показать уведомление
+    
+    // Вспомогательные функции
     function showNotification(message) {
         const notification = document.createElement('div');
         notification.style.cssText = `
@@ -746,10 +565,10 @@
             setTimeout(() => notification.remove(), 300);
         }, 3000);
     }
-
-    // Добавить стили для анимаций уведомлений
-    const notificationStyles = document.createElement('style');
-    notificationStyles.textContent = `
+    
+    // Добавить стили для анимаций
+    const style = document.createElement('style');
+    style.textContent = `
         @keyframes slideIn {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
@@ -759,29 +578,26 @@
             to { transform: translateX(100%); opacity: 0; }
         }
     `;
-    document.head.appendChild(notificationStyles);
-
-    // Методы для кнопок в финальном окне
-    window.treeBuilder.viewTree = function() {
-        alert('Функция просмотра дерева будет реализована в следующем обновлении!');
+    document.head.appendChild(style);
+    
+    // Глобальные функции для кнопок
+    window.viewTree = function() {
+        window.Modal.alert('Просмотр дерева', 'Эта функция будет реализована в следующем обновлении!');
     };
-
-    window.treeBuilder.exportTree = function() {
-        const treeData = localStorage.getItem('lastBuiltTree');
-        if (treeData) {
-            const data = JSON.parse(treeData);
-            alert(`Экспорт дерева "${data.name}"\n\nВыберите формат:\n• PNG изображение\n• PDF документ\n• JSON данные`);
-        }
+    
+    window.exportTree = function() {
+        const dataStr = JSON.stringify(relatives, null, 2);
+        const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+        
+        const exportFileDefaultName = 'семейное-дерево.json';
+        
+        const linkElement = document.createElement('a');
+        linkElement.setAttribute('href', dataUri);
+        linkElement.setAttribute('download', exportFileDefaultName);
+        linkElement.click();
+        
+        window.Modal.alert('Экспорт', 'Данные экспортированы в JSON файл!');
     };
-
-    window.treeBuilder.editTree = function() {
-        alert('Редактирование дерева - скоро будет доступно!');
-    };
-
-    window.treeBuilder.saveToAccount = function() {
-        alert('Сохранение в аккаунт - требуется авторизация!');
-    };
-
-    // Инициализация при загрузке
-    console.log('✅ Genealogy Tree Builder загружен');
+    
+    console.log('✅ Tree Builder загружен');
 })();
