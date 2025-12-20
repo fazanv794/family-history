@@ -323,84 +323,81 @@
     <!-- Подключаем наши файлы -->
     <script src="supabase.js"></script>
     <script src="app.js"></script>
-    <script src="modal-system.js"></script>
     <script src="tree-builder-simple.js"></script>
-    <script src="tree-builder.js"></script>
     <script src="tree-engine.js"></script>
 
     
 <!-- В конце tree.html, перед закрывающим тегом body -->
 <!-- В конце tree.html, перед закрывающим тегом body -->
 <script>
-    // Удаляем старый вызов и заменяем на простую версию
+    // Обновляем обработчики для использования общей системы
     
-    // Добавляем эту функцию для показа построителя
-    window.showBuilderModal = function(mode = 'auto') {
-        // Используем наш упрощенный построитель
-        if (typeof startTreeBuilder === 'function') {
-            startTreeBuilder(mode);
-        } else {
-            // Если функция не загрузилась, показываем простую версию
-            showSimpleBuilder(mode);
-        }
-    };
-    
-    // Простой построитель на случай если основной не загрузился
-    function showSimpleBuilder(mode) {
-        window.showNotification(`Запуск ${mode === 'auto' ? 'авто' : 'ручного'} построения`, 'info');
-        
-        // Создаем простое модальное окно
-        const modalHtml = `
-            <div class="modal show" id="simple-builder-modal">
-                <div class="modal-content" style="max-width: 500px;">
-                    <div class="modal-header">
-                        <h3>🌳 Построитель дерева</h3>
-                        <button class="modal-close">&times;</button>
-                    </div>
-                    <div class="modal-body">
-                        <div style="text-align: center; padding: 20px;">
-                            <i class="fas fa-tree" style="font-size: 3rem; color: #667eea; margin-bottom: 20px;"></i>
-                            <h4 style="margin-bottom: 15px;">${mode === 'auto' ? 'Авто-построение' : 'Ручное построение'}</h4>
-                            <p style="color: #718096; margin-bottom: 25px;">
-                                Функция построителя дерева загружается. Пожалуйста, подождите...
-                            </p>
-                            <div class="loader" style="width: 40px; height: 40px; border: 4px solid #e2e8f0; border-top: 4px solid #667eea; border-radius: 50%; margin: 0 auto 20px; animation: spin 1s linear infinite;"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        const overlay = document.getElementById('modal-overlay');
-        if (overlay) {
-            overlay.innerHTML = modalHtml;
-            overlay.classList.remove('hidden');
-            
-            // Через 2 секунды закрываем и показываем уведомление
-            setTimeout(() => {
-                overlay.classList.add('hidden');
-                window.showNotification('Построитель дерева готов к использованию', 'success');
-                
-                // Запускаем настоящий построитель
+    document.addEventListener('DOMContentLoaded', function() {
+        // Кнопка "Создать дерево" в шапке
+        const startBuilderBtn = document.getElementById('start-builder-btn');
+        if (startBuilderBtn) {
+            startBuilderBtn.addEventListener('click', function(e) {
+                e.preventDefault();
                 if (typeof window.startTreeBuilder === 'function') {
-                    window.startTreeBuilder(mode);
+                    window.startTreeBuilder('auto');
+                } else {
+                    window.showNotification('Построитель дерева не загружен', 'error');
                 }
-            }, 2000);
+            });
         }
-    }
-    
-    // Также обновляем обработчик кнопки "Создать дерево"
-    document.getElementById('start-builder-btn')?.addEventListener('click', () => {
-        showBuilderModal();
-    });
-    
-    // И обработчики карточек
-    document.querySelectorAll('.action-card')[0]?.addEventListener('click', () => {
-        showBuilderModal('auto');
-    });
-    
-    document.querySelectorAll('.action-card')[1]?.addEventListener('click', () => {
-        showBuilderModal('manual');
+        
+        // Карточки действий
+        const actionCards = document.querySelectorAll('.action-card');
+        if (actionCards.length > 0) {
+            // Авто-построение
+            actionCards[0].addEventListener('click', function(e) {
+                e.preventDefault();
+                if (typeof window.startTreeBuilder === 'function') {
+                    window.startTreeBuilder('auto');
+                } else {
+                    window.showNotification('Построитель дерева не загружен', 'error');
+                }
+            });
+            
+            // Ручное построение
+            if (actionCards[1]) {
+                actionCards[1].addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (typeof window.startTreeBuilder === 'function') {
+                        window.startTreeBuilder('manual');
+                    } else {
+                        window.showNotification('Построитель дерева не загружен', 'error');
+                    }
+                });
+            }
+        }
+        
+        // Кнопка в модальном окне выбора режима
+        const startBuilderModalBtn = document.getElementById('start-builder-modal-btn');
+        if (startBuilderModalBtn) {
+            startBuilderModalBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (typeof window.startTreeBuilder === 'function') {
+                    window.startTreeBuilder(selectedBuilderMode);
+                } else {
+                    window.showNotification('Построитель дерева не загружен', 'error');
+                }
+            });
+        }
+        
+        // Кнопка "Добавить родственника" в панели управления деревом
+        const addPersonBtn = document.getElementById('add-person-to-tree-btn');
+        if (addPersonBtn) {
+            addPersonBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                // Используем общую форму из app.js
+                if (typeof window.showModal === 'function') {
+                    window.showModal('add-person-modal');
+                } else {
+                    window.showNotification('Форма добавления недоступна', 'error');
+                }
+            });
+        }
     });
 </script>
 </body>
