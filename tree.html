@@ -328,234 +328,193 @@
     <script src="tree-engine.js"></script>
     
     <script>
-        // Функции для страницы дерева
-        let selectedBuilderMode = 'auto';
-        
-        function showBuilderModal(mode = 'auto') {
-            selectedBuilderMode = mode;
+        // Простейший построитель прямо в tree.html
+        function startSimpleTreeBuilder(mode = 'auto') {
+            console.log(`Запуск построителя: ${mode}`);
             
-            // Выделяем выбранный режим
-            document.querySelectorAll('.mode-option').forEach(option => {
-                option.style.borderColor = '#e2e8f0';
-                option.style.background = 'white';
-            });
-            
-            const selectedOption = mode === 'auto' ? document.getElementById('auto-mode') : document.getElementById('manual-mode');
-            if (selectedOption) {
-                selectedOption.style.borderColor = '#667eea';
-                selectedOption.style.background = '#f0f4ff';
-            }
-            
-            // Меняем текст кнопки
-            const startBtn = document.getElementById('start-builder-modal-btn');
-            if (startBtn) {
-                startBtn.innerHTML = mode === 'auto' 
-                    ? '<i class="fas fa-bolt"></i> Начать авто-построение' 
-                    : '<i class="fas fa-edit"></i> Начать ручное построение';
-            }
-            
-            window.showModal('builder-modal');
-        }
-        
-        function selectBuilderMode(mode) {
-            selectedBuilderMode = mode;
-            
-            // Обновляем UI выбора режима
-            document.querySelectorAll('.mode-option').forEach(option => {
-                option.style.borderColor = '#e2e8f0';
-                option.style.background = 'white';
-            });
-            
-            const selectedOption = mode === 'auto' ? document.getElementById('auto-mode') : document.getElementById('manual-mode');
-            if (selectedOption) {
-                selectedOption.style.borderColor = '#667eea';
-                selectedOption.style.background = '#f0f4ff';
-            }
-            
-            // Меняем текст кнопки
-            const startBtn = document.getElementById('start-builder-modal-btn');
-            if (startBtn) {
-                startBtn.innerHTML = mode === 'auto' 
-                    ? '<i class="fas fa-bolt"></i> Начать авто-построение' 
-                    : '<i class="fas fa-edit"></i> Начать ручное построение';
-            }
-        }
-        
-        function startTreeBuilder() {
-            if (!window.ModalSystem) {
-                console.error('ModalSystem не загружен');
-                window.showNotification('Ошибка загрузки построителя', 'error');
-                return;
-            }
-            
-            if (typeof window.startTreeBuilder !== 'function') {
-                console.error('startTreeBuilder не найдена');
-                window.showNotification('Ошибка загрузки построителя', 'error');
-                return;
-            }
-            
-            try {
-                window.startTreeBuilder(selectedBuilderMode);
-                window.closeAllModals();
-            } catch (error) {
-                console.error('Ошибка при запуске построителя:', error);
-                window.showNotification('Произошла ошибка при запуске построителя', 'error');
-            }
-        }
-        
-        function updateTreeStats() {
-            // Обновляем статистику
-            const peopleCount = window.people?.length || 0;
-            const treesCount = 1; // По умолчанию одно дерево
-            
-            // Рассчитываем поколения
-            const generations = calculateGenerations();
-            
-            // Рассчитываем годы истории
-            const years = calculateFamilyYears();
-            
-            document.getElementById('stat-relatives').textContent = peopleCount;
-            document.getElementById('stat-trees').textContent = treesCount;
-            document.getElementById('stat-depth').textContent = generations;
-            document.getElementById('stat-years').textContent = years;
-            
-            // Показываем/скрываем элементы в зависимости от наличия данных
-            const emptyState = document.getElementById('tree-empty-state');
-            const controlsPanel = document.getElementById('tree-controls-panel');
-            const treesSection = document.getElementById('recent-trees-section');
-            
-            if (peopleCount > 0) {
-                if (emptyState) emptyState.style.display = 'none';
-                if (controlsPanel) controlsPanel.style.display = 'flex';
-                if (treesSection) treesSection.style.display = 'block';
-            } else {
-                if (emptyState) emptyState.style.display = 'block';
-                if (controlsPanel) controlsPanel.style.display = 'none';
-                if (treesSection) treesSection.style.display = 'none';
-            }
-        }
-        
-        function calculateGenerations() {
-            const people = window.people || [];
-            if (people.length === 0) return 0;
-            
-            const relations = people.map(p => p.relation);
-            let generations = 1; // Текущее поколение
-            
-            if (relations.includes('parent') || relations.includes('grandparent')) generations++;
-            if (relations.includes('grandparent') || relations.includes('great_grandparent')) generations++;
-            if (relations.includes('child') || relations.includes('grandchild')) generations++;
-            if (relations.includes('grandchild') || relations.includes('great_grandchild')) generations++;
-            
-            return Math.min(generations, 5); // Ограничим 5 поколениями
-        }
-        
-        function calculateFamilyYears() {
-            const people = window.people || [];
-            if (people.length === 0) return 0;
-            
-            const birthYears = people
-                .filter(p => p.birth_date)
-                .map(p => new Date(p.birth_date).getFullYear())
-                .filter(year => !isNaN(year));
-            
-            if (birthYears.length === 0) return 0;
-            
-            const minYear = Math.min(...birthYears);
-            const maxYear = Math.max(...birthYears);
-            const currentYear = new Date().getFullYear();
-            
-            return Math.max(currentYear - minYear, maxYear - minYear);
-        }
-        
-        function loadRecentTrees() {
-            const container = document.getElementById('recent-trees-list');
-            if (!container) return;
-            
-            // Заглушка для демонстрации
-            container.innerHTML = `
-                <div style="background: white; border-radius: 8px; padding: 15px; border: 1px solid #e2e8f0; cursor: pointer; transition: all 0.3s;" onclick="openTree(1)">
-                    <div style="display: flex; align-items: center; margin-bottom: 10px;">
-                        <div style="background: #667eea; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 10px;">
-                            <i class="fas fa-tree"></i>
+            // Создаем простое модальное окно
+            const modalHtml = `
+                <div class="modal show" id="tree-builder-simple">
+                    <div class="modal-content" style="max-width: 600px;">
+                        <div class="modal-header">
+                            <h3>🌳 Построитель генеалогического дерева</h3>
+                            <button class="modal-close" onclick="document.getElementById('modal-overlay').classList.add('hidden')">&times;</button>
                         </div>
-                        <div>
-                            <div style="font-weight: bold; color: #2d3748;">Мое семейное дерево</div>
-                            <div style="font-size: 0.85rem; color: #718096;">Основное дерево</div>
+                        <div class="modal-body">
+                            <div style="text-align: center; padding: 20px;">
+                                <i class="fas fa-tree" style="font-size: 4rem; color: #667eea; margin-bottom: 20px;"></i>
+                                <h3 style="margin-bottom: 10px;">${mode === 'auto' ? 'Авто-построение' : 'Ручное построение'}</h3>
+                                <p style="color: #718096; margin-bottom: 30px;">
+                                    ${mode === 'auto' 
+                                        ? 'Система поможет вам поэтапно создать генеалогическое дерево' 
+                                        : 'Вы полностью контролируете процесс построения'}
+                                </p>
+                                
+                                <div style="background: #f7fafc; padding: 20px; border-radius: 10px; margin-bottom: 25px; text-align: left;">
+                                    <h4 style="margin-top: 0; color: #4a5568;">
+                                        <i class="fas fa-info-circle" style="color: #4299e1; margin-right: 8px;"></i>
+                                        Информация
+                                    </h4>
+                                    <p style="margin: 0; color: #718096;">
+                                        Построитель дерева поможет вам создать полное генеалогическое древо вашей семьи. 
+                                        Вы сможете добавлять родственников, фотографии и истории.
+                                    </p>
+                                </div>
+                                
+                                <button class="btn" onclick="startBuilding()" style="padding: 12px 30px; font-size: 1.1rem;">
+                                    <i class="fas fa-play"></i> Начать построение
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #718096;">
-                        <span>${window.people?.length || 0} родственников</span>
-                        <span>${calculateGenerations()} поколений</span>
                     </div>
                 </div>
             `;
+            
+            const overlay = document.getElementById('modal-overlay');
+            if (overlay) {
+                overlay.innerHTML = modalHtml;
+                overlay.classList.remove('hidden');
+            }
         }
         
-        function openTree(treeId) {
-            // В реальном приложении здесь загрузка конкретного дерева
-            window.showNotification('Загружаем дерево...', 'info');
+        function startBuilding() {
+            // Закрываем модальное окно
+            const overlay = document.getElementById('modal-overlay');
+            if (overlay) {
+                overlay.classList.add('hidden');
+            }
+            
+            // Показываем уведомление
+            window.showNotification('Построитель дерева запущен!', 'success');
+            
+            // Обновляем интерфейс дерева
+            updateTreeWithSampleData();
         }
         
-        // Инициализация страницы
-        document.addEventListener('DOMContentLoaded', async () => {
-            console.log('🌳 Страница дерева загружается...');
+        function updateTreeWithSampleData() {
+            const container = document.getElementById('tree-visualization-container');
+            const emptyState = document.getElementById('tree-empty-state');
+            const controlsPanel = document.getElementById('tree-controls-panel');
             
-            // Загружаем данные пользователя
-            await window.loadUserData();
+            if (!container) return;
             
-            // Обновляем статистику дерева
+            // Скрываем пустое состояние
+            if (emptyState) emptyState.style.display = 'none';
+            if (controlsPanel) controlsPanel.style.display = 'flex';
+            
+            // Пример дерева
+            container.innerHTML = `
+                <div style="text-align: center; padding: 30px;">
+                    <h3 style="margin-bottom: 30px; color: #2d3748;">Пример генеалогического дерева</h3>
+                    
+                    <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 25px; margin-bottom: 40px;">
+                        <!-- Поколение 1: Прадеды -->
+                        <div style="text-align: center;">
+                            <div style="font-size: 0.9rem; color: #718096; margin-bottom: 10px;">Прадеды</div>
+                            <div style="display: flex; gap: 15px;">
+                                <div class="tree-person-card" style="background: white; border-radius: 10px; padding: 15px; width: 140px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); border: 2px solid #4299e1;">
+                                    <div style="width: 60px; height: 60px; border-radius: 50%; background: #4299e1; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; margin: 0 auto 10px;">
+                                        ИИ
+                                    </div>
+                                    <div style="font-weight: bold; color: #2d3748;">Иван</div>
+                                    <div style="font-size: 0.9rem; color: #718096;">Иванов</div>
+                                    <div style="font-size: 0.8rem; color: #4299e1; margin-top: 5px;">Прадедушка</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Поколение 2: Деды -->
+                        <div style="text-align: center;">
+                            <div style="font-size: 0.9rem; color: #718096; margin-bottom: 10px;">Деды</div>
+                            <div style="display: flex; gap: 15px;">
+                                <div class="tree-person-card" style="background: white; border-radius: 10px; padding: 15px; width: 140px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); border: 2px solid #4299e1;">
+                                    <div style="width: 60px; height: 60px; border-radius: 50%; background: #4299e1; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; margin: 0 auto 10px;">
+                                        ПИ
+                                    </div>
+                                    <div style="font-weight: bold; color: #2d3748;">Петр</div>
+                                    <div style="font-size: 0.9rem; color: #718096;">Иванов</div>
+                                    <div style="font-size: 0.8rem; color: #4299e1; margin-top: 5px;">Дедушка</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Поколение 3: Родители -->
+                        <div style="text-align: center;">
+                            <div style="font-size: 0.9rem; color: #718096; margin-bottom: 10px;">Родители</div>
+                            <div style="display: flex; gap: 15px;">
+                                <div class="tree-person-card" style="background: white; border-radius: 10px; padding: 15px; width: 140px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); border: 2px solid #4299e1;">
+                                    <div style="width: 60px; height: 60px; border-radius: 50%; background: #4299e1; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; margin: 0 auto 10px;">
+                                        СИ
+                                    </div>
+                                    <div style="font-weight: bold; color: #2d3748;">Сергей</div>
+                                    <div style="font-size: 0.9rem; color: #718096;">Иванов</div>
+                                    <div style="font-size: 0.8rem; color: #4299e1; margin-top: 5px;">Отец</div>
+                                </div>
+                                <div class="tree-person-card" style="background: white; border-radius: 10px; padding: 15px; width: 140px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); border: 2px solid #ed64a6;">
+                                    <div style="width: 60px; height: 60px; border-radius: 50%; background: #ed64a6; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; margin: 0 auto 10px;">
+                                        МП
+                                    </div>
+                                    <div style="font-weight: bold; color: #2d3748;">Мария</div>
+                                    <div style="font-size: 0.9rem; color: #718096;">Петрова</div>
+                                    <div style="font-size: 0.8rem; color: #ed64a6; margin-top: 5px;">Мать</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Поколение 4: Текущее -->
+                        <div style="text-align: center;">
+                            <div style="font-size: 0.9rem; color: #718096; margin-bottom: 10px;">Текущее</div>
+                            <div style="display: flex; gap: 15px;">
+                                <div class="tree-person-card" style="background: #f0fff4; border-radius: 10px; padding: 15px; width: 140px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); border: 3px solid #48bb78;">
+                                    <div style="width: 60px; height: 60px; border-radius: 50%; background: #48bb78; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; margin: 0 auto 10px;">
+                                        ВИ
+                                    </div>
+                                    <div style="font-weight: bold; color: #2d3748;">Вы</div>
+                                    <div style="font-size: 0.9rem; color: #718096;">Иванов</div>
+                                    <div style="font-size: 0.8rem; color: #48bb78; margin-top: 5px;">Центр дерева</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="color: #718096; margin-top: 20px;">
+                        <p>Это пример генеалогического дерева. Добавьте своих родственников!</p>
+                        <button class="btn" onclick="startSimpleTreeBuilder()" style="margin-top: 15px;">
+                            <i class="fas fa-user-plus"></i> Добавить родственника
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            // Обновляем статистику
             updateTreeStats();
-            
-            // Загружаем список деревьев
-            loadRecentTrees();
-            
-            // Обработчики событий
-            document.getElementById('start-builder-btn')?.addEventListener('click', () => {
-                showBuilderModal();
-            });
-            
-            document.getElementById('start-builder-modal-btn')?.addEventListener('click', startTreeBuilder);
-            
-            document.getElementById('add-person-to-tree-btn')?.addEventListener('click', () => {
-                window.showModal('add-person-modal');
-            });
-            
-            // Добавляем hover эффекты для карточек действий
-            document.querySelectorAll('.action-card').forEach(card => {
-                card.addEventListener('mouseenter', function() {
-                    this.style.transform = 'translateY(-5px)';
-                    this.style.boxShadow = '0 5px 15px rgba(0,0,0,0.1)';
-                });
-                
-                card.addEventListener('mouseleave', function() {
-                    this.style.transform = 'translateY(0)';
-                    this.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
-                });
-            });
-            
-            // Добавляем hover эффекты для режимов в модальном окне
-            document.querySelectorAll('.mode-option').forEach(option => {
-                option.addEventListener('mouseenter', function() {
-                    if (!this.style.borderColor || this.style.borderColor === 'rgb(226, 232, 240)') {
-                        this.style.borderColor = '#cbd5e0';
-                    }
-                });
-                
-                option.addEventListener('mouseleave', function() {
-                    if (!this.style.borderColor || this.style.borderColor === 'rgb(226, 232, 240)') {
-                        this.style.borderColor = '#e2e8f0';
-                    }
-                });
-            });
-            
-            console.log('✅ Страница дерева готова');
-        });
+        }
         
-        // Экспортируем функции
-        window.updateTreeStats = updateTreeStats;
-        window.showBuilderModal = showBuilderModal;
-        window.startTreeBuilder = startTreeBuilder;
+        // Обновляем обработчики
+        document.addEventListener('DOMContentLoaded', function() {
+            // Кнопка "Создать дерево"
+            document.getElementById('start-builder-btn')?.addEventListener('click', function() {
+                startSimpleTreeBuilder('auto');
+            });
+            
+            // Карточки действий
+            const actionCards = document.querySelectorAll('.action-card');
+            if (actionCards[0]) {
+                actionCards[0].addEventListener('click', function() {
+                    startSimpleTreeBuilder('auto');
+                });
+            }
+            if (actionCards[1]) {
+                actionCards[1].addEventListener('click', function() {
+                    startSimpleTreeBuilder('manual');
+                });
+            }
+            
+            // Кнопка в модальном окне
+            document.getElementById('start-builder-modal-btn')?.addEventListener('click', function() {
+                startSimpleTreeBuilder(selectedBuilderMode);
+            });
+        });
     </script>
 </body>
 </html>
