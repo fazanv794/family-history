@@ -2,16 +2,19 @@
 
 console.log('🌳 Tree Builder загружается...');
 
-// Данные для построения дерева
-window.treeData = {
-    people: [],
-    currentPerson: null,
-    treeStructure: null
-};
+// Инициализируем данные дерева
+if (!window.treeData) {
+    window.treeData = {
+        people: [],
+        currentPerson: null,
+        treeStructure: null
+    };
+}
 
 // Основная функция пошагового построения
-function startTreeBuilder() {
+window.startTreeBuilder = function() {
     console.log('🚀 Запуск пошагового построения дерева');
+    console.log('Текущий пользователь:', window.currentUser);
     
     // Проверка авторизации
     if (!window.currentUser) {
@@ -28,6 +31,8 @@ function startTreeBuilder() {
 
 // Начальное модальное окно
 function showTreeBuilderStartModal() {
+    console.log('📋 Показываем стартовое окно');
+    
     const modalHtml = `<div class="modal show" id="tree-builder-start-modal">
         <div class="modal-content" style="max-width: 600px;">
             <div class="modal-header">
@@ -51,16 +56,6 @@ function showTreeBuilderStartModal() {
                             <i class="fas fa-users"></i> Начать с другого родственника
                         </button>
                     </div>
-                    
-                    <div style="margin-top: 30px; padding: 20px; background: #f7fafc; border-radius: 8px;">
-                        <h4 style="color: #4a5568; margin-bottom: 10px;"><i class="fas fa-info-circle"></i> Как это работает:</h4>
-                        <ol style="text-align: left; color: #718096; padding-left: 20px;">
-                            <li>Добавляете центральную персону (обычно себя)</li>
-                            <li>Добавляете родственников, указывая связь</li>
-                            <li>Система автоматически строит связи</li>
-                            <li>Когда готово - строится полное дерево</li>
-                        </ol>
-                    </div>
                 </div>
             </div>
         </div>
@@ -68,33 +63,40 @@ function showTreeBuilderStartModal() {
     
     const overlay = document.getElementById('modal-overlay');
     if (overlay) {
+        console.log('✅ Оверлей найден, добавляем HTML');
         overlay.innerHTML = modalHtml;
         overlay.classList.remove('hidden');
         
         // Обработчики
         document.getElementById('start-with-self')?.addEventListener('click', () => {
-            addNewPerson('self');
+            console.log('👤 Начинаем с себя');
             overlay.classList.add('hidden');
+            setTimeout(() => addNewPerson('self'), 100);
         });
         
         document.getElementById('start-with-other')?.addEventListener('click', () => {
-            addNewPerson('other');
+            console.log('👥 Начинаем с другого');
             overlay.classList.add('hidden');
+            setTimeout(() => addNewPerson('other'), 100);
         });
         
         // Закрытие
         document.querySelector('#tree-builder-start-modal .modal-close')?.addEventListener('click', () => {
             overlay.classList.add('hidden');
         });
+    } else {
+        console.error('❌ Оверлей не найден!');
     }
 }
 
 // Добавление нового человека
-function addNewPerson(defaultRelation = 'self') {
+window.addNewPerson = function(defaultRelation = 'self') {
+    console.log('➕ Добавляем нового человека, роль по умолчанию:', defaultRelation);
+    
     const modalHtml = `<div class="modal show" id="add-person-builder-modal">
         <div class="modal-content" style="max-width: 700px;">
             <div class="modal-header">
-                <h3>Добавить родственника</h3>
+                <h3>${defaultRelation === 'self' ? 'Добавьте себя' : 'Добавить родственника'}</h3>
                 <button class="modal-close">&times;</button>
             </div>
             <div class="modal-body">
@@ -112,10 +114,6 @@ function addNewPerson(defaultRelation = 'self') {
                             <div class="form-group">
                                 <label for="builder-last-name">Фамилия *</label>
                                 <input type="text" id="builder-last-name" placeholder="Иванов" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="builder-middle-name">Отчество</label>
-                                <input type="text" id="builder-middle-name" placeholder="Иванович">
                             </div>
                         </div>
                         
@@ -147,16 +145,14 @@ function addNewPerson(defaultRelation = 'self') {
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="builder-relation">Роль в древе *</label>
-                                <select id="builder-relation" required>
+                                <select id="builder-relation" required ${defaultRelation === 'self' ? 'disabled' : ''}>
                                     <option value="">Выберите роль</option>
-                                    <option value="self">Я (центральная персона)</option>
+                                    <option value="self" ${defaultRelation === 'self' ? 'selected' : ''}>Я (центральная персона)</option>
                                     <option value="spouse">Супруг/супруга</option>
                                     <option value="father">Отец</option>
                                     <option value="mother">Мать</option>
                                     <option value="son">Сын</option>
                                     <option value="daughter">Дочь</option>
-                                    <option value="brother">Брат</option>
-                                    <option value="sister">Сестра</option>
                                     <option value="grandfather">Дедушка</option>
                                     <option value="grandmother">Бабушка</option>
                                     <option value="grandson">Внук</option>
@@ -165,12 +161,10 @@ function addNewPerson(defaultRelation = 'self') {
                                     <option value="great_grandmother">Прабабушка</option>
                                     <option value="great_grandson">Правнук</option>
                                     <option value="great_granddaughter">Правнучка</option>
-                                    <option value="uncle">Дядя</option>
-                                    <option value="aunt">Тетя</option>
-                                    <option value="cousin">Двоюродный брат/сестра</option>
-                                    <option value="nephew">Племянник</option>
-                                    <option value="niece">Племянница</option>
+                                    <option value="brother">Брат</option>
+                                    <option value="sister">Сестра</option>
                                 </select>
+                                ${defaultRelation === 'self' ? '<input type="hidden" id="builder-relation-hidden" value="self">' : ''}
                             </div>
                             
                             <div class="form-group">
@@ -182,17 +176,19 @@ function addNewPerson(defaultRelation = 'self') {
                                     <option value="unknown">Неизвестно</option>
                                 </select>
                             </div>
-                            
-                            <div class="form-group">
-                                <label for="builder-related-to">Родственник по отношению к:</label>
-                                <select id="builder-related-to">
-                                    <option value="">Не указано</option>
-                                    ${window.treeData.people.map(person => 
-                                        `<option value="${person.id}">${person.first_name} ${person.last_name}</option>`
-                                    ).join('')}
-                                </select>
-                            </div>
                         </div>
+                        
+                        ${window.treeData.people.length > 0 ? `
+                        <div class="form-group">
+                            <label for="builder-related-to">Родственник по отношению к:</label>
+                            <select id="builder-related-to">
+                                <option value="">Не указано</option>
+                                ${window.treeData.people.map(person => 
+                                    `<option value="${person.id}">${person.first_name} ${person.last_name}</option>`
+                                ).join('')}
+                            </select>
+                        </div>
+                        ` : ''}
                     </div>
                     
                     <div class="form-section" style="margin-top: 25px;">
@@ -206,39 +202,18 @@ function addNewPerson(defaultRelation = 'self') {
                         </div>
                         
                         <div class="form-group">
-                            <label for="builder-notes">Заметки</label>
-                            <textarea id="builder-notes" rows="2" placeholder="Дополнительные заметки..."></textarea>
-                        </div>
-                        
-                        <div class="form-group">
                             <label for="builder-photo-url">Фотография (URL)</label>
-                            <div style="display: flex; gap: 10px; align-items: flex-end;">
-                                <input type="url" id="builder-photo-url" placeholder="https://example.com/photo.jpg" style="flex: 1;">
-                                <button type="button" class="btn btn-small" onclick="showPhotoUpload()">
-                                    <i class="fas fa-upload"></i> Загрузить
-                                </button>
-                            </div>
+                            <input type="url" id="builder-photo-url" placeholder="https://example.com/photo.jpg">
                             <small style="color: #718096;">Или оставьте пустым для автоматического аватара</small>
-                        </div>
-                        
-                        <div id="photo-preview" style="margin-top: 10px; display: none;">
-                            <div style="width: 100px; height: 100px; border-radius: 8px; overflow: hidden; border: 2px solid #e2e8f0;">
-                                <img id="preview-image" src="" alt="Предпросмотр" style="width: 100%; height: 100%; object-fit: cover;">
-                            </div>
                         </div>
                     </div>
                     
                     <div class="modal-footer" style="margin-top: 30px; display: flex; justify-content: space-between;">
-                        <div>
-                            <button type="button" class="btn btn-secondary cancel-btn">
-                                Отмена
-                            </button>
-                            <button type="button" class="btn btn-outline" id="save-and-add">
-                                <i class="fas fa-user-plus"></i> Сохранить и добавить ещё
-                            </button>
-                        </div>
+                        <button type="button" class="btn btn-secondary cancel-btn">
+                            Отмена
+                        </button>
                         <button type="submit" class="btn">
-                            <i class="fas fa-check"></i> Сохранить и продолжить
+                            <i class="fas fa-check"></i> ${defaultRelation === 'self' ? 'Начать построение' : 'Добавить'}
                         </button>
                     </div>
                 </form>
@@ -254,32 +229,12 @@ function addNewPerson(defaultRelation = 'self') {
         // Устанавливаем значение по умолчанию для роли
         if (defaultRelation === 'self') {
             document.getElementById('builder-relation').value = 'self';
-            document.getElementById('builder-relation').disabled = true;
         }
-        
-        // Предпросмотр фото
-        document.getElementById('builder-photo-url')?.addEventListener('input', function() {
-            const url = this.value;
-            const preview = document.getElementById('photo-preview');
-            const img = document.getElementById('preview-image');
-            
-            if (url && url.startsWith('http')) {
-                img.src = url;
-                preview.style.display = 'block';
-            } else {
-                preview.style.display = 'none';
-            }
-        });
         
         // Обработка формы
         document.getElementById('add-person-builder-form')?.addEventListener('submit', function(e) {
             e.preventDefault();
-            savePerson(false); // false - не добавлять ещё
-        });
-        
-        // Кнопка "Сохранить и добавить ещё"
-        document.getElementById('save-and-add')?.addEventListener('click', function() {
-            savePerson(true); // true - добавить ещё
+            savePerson();
         });
         
         // Закрытие
@@ -298,21 +253,23 @@ function addNewPerson(defaultRelation = 'self') {
 }
 
 // Сохранение человека
-function savePerson(addAnother = false) {
+function savePerson() {
+    const relation = document.getElementById('builder-relation-hidden') ? 
+                   'self' : document.getElementById('builder-relation').value;
+    
     const person = {
         id: 'person_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
         first_name: document.getElementById('builder-first-name').value.trim(),
         last_name: document.getElementById('builder-last-name').value.trim(),
-        middle_name: document.getElementById('builder-middle-name').value.trim(),
         birth_date: document.getElementById('builder-birth-date').value || null,
         death_date: document.getElementById('builder-death-date').value || null,
         gender: document.getElementById('builder-gender').value,
-        relation: document.getElementById('builder-relation').value,
+        relation: relation,
         line: document.getElementById('builder-line').value,
-        related_to: document.getElementById('builder-related-to').value || null,
-        biography: document.getElementById('builder-bio').value.trim(),
-        notes: document.getElementById('builder-notes').value.trim(),
-        photo_url: document.getElementById('builder-photo-url').value.trim() || null,
+        related_to: document.getElementById('builder-related-to') ? 
+                   document.getElementById('builder-related-to').value || null : null,
+        biography: document.getElementById('builder-bio')?.value.trim() || '',
+        photo_url: document.getElementById('builder-photo-url')?.value.trim() || null,
         created_at: new Date().toISOString()
     };
     
@@ -330,9 +287,6 @@ function savePerson(addAnother = false) {
         window.treeData.currentPerson = person;
     }
     
-    // Обновляем предпросмотр
-    updateTreePreview();
-    
     // Показываем уведомление
     window.showNotification(`✅ ${person.first_name} ${person.last_name} добавлен в древо`, 'success');
     
@@ -340,16 +294,19 @@ function savePerson(addAnother = false) {
     const overlay = document.getElementById('modal-overlay');
     if (overlay) overlay.classList.add('hidden');
     
-    // Если нужно добавить ещё
-    if (addAnother) {
-        setTimeout(() => addNewPerson(), 300);
-    }
+    // Обновляем предпросмотр
+    setTimeout(() => updateTreePreview(), 100);
 }
 
 // Обновление предпросмотра дерева
-function updateTreePreview() {
+window.updateTreePreview = function() {
+    console.log('🔄 Обновляем предпросмотр, людей:', window.treeData.people.length);
+    
     const container = document.getElementById('tree-visualization-container');
-    if (!container) return;
+    if (!container) {
+        console.error('❌ Контейнер дерева не найден!');
+        return;
+    }
     
     if (window.treeData.people.length === 0) {
         container.innerHTML = `<div class="tree-empty-state">
@@ -363,9 +320,6 @@ function updateTreePreview() {
         return;
     }
     
-    // Сортируем людей по поколениям
-    const peopleByGeneration = organizeByGenerations(window.treeData.people);
-    
     let html = `<div class="tree-preview-container">
         <div class="preview-header">
             <h3>Предпросмотр дерева (${window.treeData.people.length} человек)</h3>
@@ -373,9 +327,11 @@ function updateTreePreview() {
                 <button class="btn btn-small" onclick="addNewPerson()">
                     <i class="fas fa-user-plus"></i> Добавить родственника
                 </button>
-                <button class="btn btn-small btn-success" onclick="buildFinalTree()" ${window.treeData.people.length < 2 ? 'disabled' : ''}>
+                ${window.treeData.people.length >= 2 ? `
+                <button class="btn btn-small btn-success" onclick="buildFinalTree()">
                     <i class="fas fa-tree"></i> Автопостроение дерева
                 </button>
+                ` : ''}
             </div>
         </div>
         
@@ -397,7 +353,6 @@ function updateTreePreview() {
             <div class="person-preview-info">
                 <div class="person-preview-name">
                     <strong>${person.first_name} ${person.last_name}</strong>
-                    ${person.middle_name ? `<br><small>${person.middle_name}</small>` : ''}
                 </div>
                 <div class="person-preview-details">
                     <span class="relation-badge">${relationText}</span>
@@ -408,9 +363,6 @@ function updateTreePreview() {
             <div class="person-preview-actions">
                 <button class="btn-icon" onclick="editPersonInBuilder('${person.id}')" title="Редактировать">
                     <i class="fas fa-edit"></i>
-                </button>
-                <button class="btn-icon btn-danger" onclick="removePerson('${person.id}')" title="Удалить">
-                    <i class="fas fa-trash"></i>
                 </button>
             </div>
         </div>`;
@@ -435,18 +387,19 @@ function updateTreePreview() {
                     </div>
                     <div class="stat-item">
                         <span class="stat-label">Поколений:</span>
-                        <span class="stat-value">${Object.keys(organizeByGenerations(window.treeData.people)).length}</span>
+                        <span class="stat-value">${countGenerations()}</span>
                     </div>
                 </div>
                 
                 <div style="margin-top: 20px; padding: 15px; background: #f7fafc; border-radius: 8px;">
-                    <h5 style="color: #4a5568; margin-bottom: 10px;">Следующие шаги:</h5>
+                    <h5 style="color: #4a5568; margin-bottom: 10px;">${window.treeData.people.length < 2 ? 'Следующие шаги:' : 'Готово к построению!'}</h5>
                     <ul style="color: #718096; padding-left: 20px;">
-                        <li>Добавьте родителей (отца и мать)</li>
-                        <li>Добавьте бабушек и дедушек</li>
-                        <li>Добавьте супруга/супругу</li>
-                        <li>Добавьте детей</li>
-                        <li>Нажмите "Автопостроение" когда готово</li>
+                        ${window.treeData.people.length < 2 ? 
+                            `<li>Добавьте минимум ${2 - window.treeData.people.length} родственника</li>
+                             <li>Нажмите "Добавить родственника"</li>` : 
+                            `<li>Дерево готово к построению</li>
+                             <li>Нажмите "Автопостроение дерева"</li>`
+                        }
                     </ul>
                 </div>
             </div>
@@ -459,39 +412,10 @@ function updateTreePreview() {
     updateTreeStats();
 }
 
-// Организация по поколениям
-function organizeByGenerations(people) {
-    const generations = {};
-    
-    people.forEach(person => {
-        let generation = 0; // Центральное поколение
-        
-        switch(person.relation) {
-            case 'self': generation = 0; break;
-            case 'spouse': generation = 0; break;
-            case 'father': case 'mother': generation = 1; break;
-            case 'grandfather': case 'grandmother': generation = 2; break;
-            case 'great_grandfather': case 'great_grandmother': generation = 3; break;
-            case 'son': case 'daughter': generation = -1; break;
-            case 'grandson': case 'granddaughter': generation = -2; break;
-            case 'great_grandson': case 'great_granddaughter': generation = -3; break;
-            case 'brother': case 'sister': generation = 0; break;
-            case 'uncle': case 'aunt': generation = 1; break;
-            case 'cousin': generation = 0; break;
-            case 'nephew': case 'niece': generation = -1; break;
-        }
-        
-        if (!generations[generation]) {
-            generations[generation] = [];
-        }
-        generations[generation].push(person);
-    });
-    
-    return generations;
-}
-
 // Финальное построение дерева
-function buildFinalTree() {
+window.buildFinalTree = function() {
+    console.log('🌳 Запуск финального построения');
+    
     if (window.treeData.people.length < 2) {
         window.showNotification('Добавьте минимум 2 человека для построения дерева', 'error');
         return;
@@ -500,83 +424,27 @@ function buildFinalTree() {
     window.showLoader('Построение полного генеалогического древа...');
     
     setTimeout(() => {
-        // Строим структуру дерева
-        const structure = buildTreeStructureFromData();
+        // Находим центральную персону
+        const self = window.treeData.people.find(p => p.relation === 'self') || window.treeData.people[0];
         
-        // Рендерим дерево
-        renderFinalTree(structure);
+        // Строим простое дерево для демонстрации
+        const container = document.getElementById('tree-visualization-container');
+        if (!container) return;
+        
+        container.innerHTML = buildTreeVisualization(self);
         
         window.showNotification('✅ Генеалогическое древо успешно построено!', 'success');
         window.hideLoader();
     }, 1500);
 }
 
-// Построение структуры из данных
-function buildTreeStructureFromData() {
-    const structure = {
-        self: null,
-        spouse: null,
-        parents: { father: null, mother: null },
-        grandparents: { paternal: { grandfather: null, grandmother: null }, maternal: { grandfather: null, grandmother: null } },
-        children: [],
-        siblings: [],
-        otherRelatives: []
-    };
+// Построение визуализации дерева
+function buildTreeVisualization(self) {
+    const familyName = self.last_name || '';
     
-    // Находим центральную персону
-    structure.self = window.treeData.people.find(p => p.relation === 'self') || window.treeData.people[0];
-    
-    // Находим супруга
-    structure.spouse = window.treeData.people.find(p => p.relation === 'spouse');
-    
-    // Находим родителей
-    structure.parents.father = window.treeData.people.find(p => p.relation === 'father');
-    structure.parents.mother = window.treeData.people.find(p => p.relation === 'mother');
-    
-    // Находим бабушек и дедушек
-    if (structure.parents.father) {
-        structure.grandparents.paternal.grandfather = window.treeData.people.find(p => 
-            p.relation === 'grandfather' && p.line === 'father');
-        structure.grandparents.paternal.grandmother = window.treeData.people.find(p => 
-            p.relation === 'grandmother' && p.line === 'father');
-    }
-    
-    if (structure.parents.mother) {
-        structure.grandparents.maternal.grandfather = window.treeData.people.find(p => 
-            p.relation === 'grandfather' && p.line === 'mother');
-        structure.grandparents.maternal.grandmother = window.treeData.people.find(p => 
-            p.relation === 'grandmother' && p.line === 'mother');
-    }
-    
-    // Находим детей
-    structure.children = window.treeData.people.filter(p => 
-        p.relation === 'son' || p.relation === 'daughter');
-    
-    // Находим братьев и сестер
-    structure.siblings = window.treeData.people.filter(p => 
-        p.relation === 'brother' || p.relation === 'sister');
-    
-    // Остальные родственники
-    structure.otherRelatives = window.treeData.people.filter(p => 
-        !structure.self || p.id !== structure.self.id &&
-        !structure.spouse || p.id !== structure.spouse.id &&
-        !structure.parents.father || p.id !== structure.parents.father.id &&
-        !structure.parents.mother || p.id !== structure.parents.mother.id &&
-        !structure.children.some(c => c.id === p.id) &&
-        !structure.siblings.some(s => s.id === p.id)
-    );
-    
-    return structure;
-}
-
-// Рендеринг финального дерева
-function renderFinalTree(structure) {
-    const container = document.getElementById('tree-visualization-container');
-    if (!container) return;
-    
-    let html = `<div class="final-tree-container">
+    return `<div class="final-tree-container">
         <div class="tree-header">
-            <h2>Генеалогическое древо семьи ${structure.self?.last_name || ''}</h2>
+            <h2>Генеалогическое древо семьи ${familyName}</h2>
             <div class="tree-actions">
                 <button class="btn btn-small" onclick="saveTreeAsImage()">
                     <i class="fas fa-image"></i> Сохранить
@@ -590,143 +458,92 @@ function renderFinalTree(structure) {
             </div>
         </div>
         
-        <div class="tree-visualization">
-            <!-- Поколение 3: Прабабушки/прадедушки -->
-            ${renderGeneration3(structure)}
+        <div class="tree-visualization" style="text-align: center; padding: 40px 20px;">
+            <h3 style="color: #4a5568; margin-bottom: 40px;">Ваше генеалогическое древо</h3>
             
-            <!-- Поколение 2: Бабушки/дедушки -->
-            ${renderGeneration2(structure)}
-            
-            <!-- Поколение 1: Родители -->
-            ${renderGeneration1(structure)}
-            
-            <!-- Поколение 0: Я и супруг -->
-            ${renderGeneration0(structure)}
-            
-            <!-- Поколение -1: Дети -->
-            ${renderGenerationMinus1(structure)}
-            
-            <!-- Поколение -2: Внуки -->
-            ${renderGenerationMinus2(structure)}
+            <div style="display: inline-block; text-align: center;">
+                <!-- Поколение 3: Прабабушки/прадедушки -->
+                <div style="margin-bottom: 40px;">
+                    <div class="gen-label">Прабабушки/прадедушки</div>
+                    <div class="gen-content">
+                        ${renderGenerationPeople(['great_grandfather', 'great_grandmother'])}
+                    </div>
+                </div>
+                
+                <!-- Поколение 2: Бабушки/дедушки -->
+                <div style="margin-bottom: 40px;">
+                    <div class="gen-label">Бабушки/дедушки</div>
+                    <div class="gen-content">
+                        ${renderGenerationPeople(['grandfather', 'grandmother'])}
+                    </div>
+                </div>
+                
+                <!-- Поколение 1: Родители -->
+                <div style="margin-bottom: 40px;">
+                    <div class="gen-label">Родители</div>
+                    <div class="gen-content">
+                        ${renderGenerationPeople(['father', 'mother'])}
+                    </div>
+                </div>
+                
+                <!-- Поколение 0: Я и супруг -->
+                <div style="margin-bottom: 40px;">
+                    <div class="gen-label current">Текущее поколение</div>
+                    <div class="gen-content" style="display: flex; justify-content: center; gap: 40px;">
+                        ${renderPersonBox(self, 'Я', true)}
+                        ${renderGenerationPeople(['spouse'])}
+                    </div>
+                </div>
+                
+                <!-- Поколение -1: Дети -->
+                <div style="margin-bottom: 40px;">
+                    <div class="gen-label">Дети</div>
+                    <div class="gen-content">
+                        ${renderGenerationPeople(['son', 'daughter'])}
+                    </div>
+                </div>
+                
+                <!-- Поколение -2: Внуки -->
+                <div>
+                    <div class="gen-label">Внуки</div>
+                    <div class="gen-content">
+                        ${renderGenerationPeople(['grandson', 'granddaughter'])}
+                    </div>
+                </div>
+            </div>
         </div>
         
         <div class="tree-info-panel">
             <h3><i class="fas fa-info-circle"></i> Информация о дереве</h3>
             <div class="info-content">
-                <p><strong>Центральная персона:</strong> ${structure.self?.first_name || ''} ${structure.self?.last_name || ''}</p>
+                <p><strong>Центральная персона:</strong> ${self.first_name} ${self.last_name}</p>
                 <p><strong>Всего родственников:</strong> ${window.treeData.people.length}</p>
                 <p><strong>Дата построения:</strong> ${new Date().toLocaleDateString('ru-RU')}</p>
-                <p><strong>Поколений в дереве:</strong> ${calculateGenerationsCount(structure)}</p>
-            </div>
-        </div>
-    </div>`;
-    
-    container.innerHTML = html;
-}
-
-// Вспомогательные функции рендеринга
-function renderGeneration3(structure) {
-    const paternalGF = structure.grandparents.paternal.grandfather;
-    const paternalGM = structure.grandparents.paternal.grandmother;
-    const maternalGF = structure.grandparents.maternal.grandfather;
-    const maternalGM = structure.grandparents.maternal.grandmother;
-    
-    if (!paternalGF && !paternalGM && !maternalGF && !maternalGM) return '';
-    
-    return `<div class="tree-generation gen-3">
-        <div class="gen-label">Прабабушки/прадедушки</div>
-        <div class="gen-content">
-            ${renderPersonBox(paternalGF, 'Прадедушка (по отцу)')}
-            ${renderPersonBox(paternalGM, 'Прабабушка (по отцу)')}
-            ${renderPersonBox(maternalGF, 'Прадедушка (по матери)')}
-            ${renderPersonBox(maternalGM, 'Прабабушка (по матери)')}
-        </div>
-    </div>`;
-}
-
-function renderGeneration2(structure) {
-    // Упрощенная версия для примера
-    let html = '<div class="tree-generation gen-2"><div class="gen-label">Бабушки/дедушки</div><div class="gen-content">';
-    
-    // Поиск бабушек и дедушек по линиям
-    window.treeData.people.forEach(person => {
-        if (person.relation === 'grandfather' || person.relation === 'grandmother') {
-            html += renderPersonBox(person, getRelationText(person.relation) + (person.line ? ` (${getLineText(person.line)})` : ''));
-        }
-    });
-    
-    html += '</div></div>';
-    return html;
-}
-
-function renderGeneration1(structure) {
-    let html = '<div class="tree-generation gen-1"><div class="gen-label">Родители</div><div class="gen-content">';
-    
-    if (structure.parents.father) {
-        html += renderPersonBox(structure.parents.father, 'Отец');
-    }
-    if (structure.parents.mother) {
-        html += renderPersonBox(structure.parents.mother, 'Мать');
-    }
-    
-    // Братья и сестры
-    if (structure.siblings.length > 0) {
-        html += '<div class="siblings-container">';
-        structure.siblings.forEach(sibling => {
-            html += renderPersonBox(sibling, getRelationText(sibling.relation));
-        });
-        html += '</div>';
-    }
-    
-    html += '</div></div>';
-    return html;
-}
-
-function renderGeneration0(structure) {
-    return `<div class="tree-generation gen-0 current">
-        <div class="gen-label">Текущее поколение</div>
-        <div class="gen-content center">
-            <div class="couple-container">
-                ${structure.self ? renderPersonBox(structure.self, 'Я', true) : ''}
-                ${structure.spouse ? `<div class="spouse-connector">⚭</div>${renderPersonBox(structure.spouse, 'Супруг(а)')}` : ''}
+                <p><strong>Поколений в дереве:</strong> ${countGenerations()}</p>
             </div>
         </div>
     </div>`;
 }
 
-function renderGenerationMinus1(structure) {
-    if (structure.children.length === 0) return '';
+// Рендеринг людей по ролям
+function renderGenerationPeople(roles) {
+    const people = window.treeData.people.filter(p => roles.includes(p.relation));
+    if (people.length === 0) return '';
     
-    return `<div class="tree-generation gen--1">
-        <div class="gen-label">Дети</div>
-        <div class="gen-content">
-            ${structure.children.map(child => renderPersonBox(child, getRelationText(child.relation))).join('')}
-        </div>
-    </div>`;
+    return people.map(person => renderPersonBox(person, getRelationText(person.relation))).join('');
 }
 
-function renderGenerationMinus2(structure) {
-    // Поиск внуков
-    const grandchildren = window.treeData.people.filter(p => 
-        p.relation === 'grandson' || p.relation === 'granddaughter');
-    
-    if (grandchildren.length === 0) return '';
-    
-    return `<div class="tree-generation gen--2">
-        <div class="gen-label">Внуки</div>
-        <div class="gen-content">
-            ${grandchildren.map(gc => renderPersonBox(gc, getRelationText(gc.relation))).join('')}
-        </div>
-    </div>`;
-}
-
+// Рендеринг карточки человека
 function renderPersonBox(person, title, isCenter = false) {
     if (!person) return '';
     
-    return `<div class="tree-person-box ${person.gender} ${isCenter ? 'center-person' : ''}" onclick="showPersonDetails('${person.id}')">
+    return `<div class="tree-person-box ${person.gender} ${isCenter ? 'center-person' : ''}" 
+             onclick="showPersonDetails('${person.id}')" 
+             style="display: inline-block; margin: 0 10px;">
         <div class="person-avatar">
             ${person.photo_url ? 
-                `<img src="${person.photo_url}" alt="${person.first_name}" onerror="this.src='https://ui-avatars.com/api/?name=${person.first_name}+${person.last_name}&background=${person.gender === 'female' ? 'ed64a6' : '4299e1'}&color=fff'">` :
+                `<img src="${person.photo_url}" alt="${person.first_name}" 
+                     onerror="this.src='https://ui-avatars.com/api/?name=${person.first_name}+${person.last_name}&background=${person.gender === 'female' ? 'ed64a6' : '4299e1'}&color=fff'">` :
                 `<div class="avatar-initials">${person.first_name[0]}${person.last_name[0] || ''}</div>`
             }
         </div>
@@ -756,12 +573,7 @@ function getRelationText(relation) {
         'great_grandfather': 'Прадедушка',
         'great_grandmother': 'Прабабушка',
         'great_grandson': 'Правнук',
-        'great_granddaughter': 'Правнучка',
-        'uncle': 'Дядя',
-        'aunt': 'Тетя',
-        'cousin': 'Двоюродный брат/сестра',
-        'nephew': 'Племянник',
-        'niece': 'Племянница'
+        'great_granddaughter': 'Правнучка'
     };
     return relations[relation] || relation;
 }
@@ -778,52 +590,34 @@ function getLineText(line) {
 
 function formatDate(dateString) {
     if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('ru-RU');
+    try {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('ru-RU');
+    } catch (e) {
+        return dateString;
+    }
 }
 
-function calculateGenerationsCount(structure) {
-    let count = 1; // Центральное поколение
-    
-    if (structure.parents.father || structure.parents.mother) count++;
-    if (structure.grandparents.paternal.grandfather || structure.grandparents.paternal.grandmother || 
-        structure.grandparents.maternal.grandfather || structure.grandparents.maternal.grandmother) count++;
-    if (structure.children.length > 0) count++;
-    
-    return count;
+function countGenerations() {
+    const gens = new Set();
+    window.treeData.people.forEach(person => {
+        let gen = 0;
+        switch(person.relation) {
+            case 'great_grandfather': case 'great_grandmother': gen = 3; break;
+            case 'grandfather': case 'grandmother': gen = 2; break;
+            case 'father': case 'mother': gen = 1; break;
+            case 'self': case 'spouse': case 'brother': case 'sister': gen = 0; break;
+            case 'son': case 'daughter': gen = -1; break;
+            case 'grandson': case 'granddaughter': gen = -2; break;
+            case 'great_grandson': case 'great_granddaughter': gen = -3; break;
+        }
+        gens.add(gen);
+    });
+    return gens.size;
 }
 
-// Редактирование человека в билдере
 function editPersonInBuilder(personId) {
-    const person = window.treeData.people.find(p => p.id === personId);
-    if (!person) return;
-    
-    // Заполняем форму редактирования
-    showEditPersonModal(person);
-}
-
-function showEditPersonModal(person) {
-    // Похоже на addNewPerson, но с заполненными данными
-    // Для экономии времени пока просто удаляем и добавляем заново
-    if (confirm(`Редактировать ${person.first_name} ${person.last_name}?`)) {
-        // Удаляем старого
-        window.treeData.people = window.treeData.people.filter(p => p.id !== person.id);
-        // Обновляем предпросмотр
-        updateTreePreview();
-        // Открываем форму добавления с данными (упрощенно)
-        addNewPerson();
-    }
-}
-
-function removePerson(personId) {
-    const person = window.treeData.people.find(p => p.id === personId);
-    if (!person) return;
-    
-    if (confirm(`Удалить ${person.first_name} ${person.last_name} из дерева?`)) {
-        window.treeData.people = window.treeData.people.filter(p => p.id !== personId);
-        updateTreePreview();
-        window.showNotification('Родственник удален из дерева', 'info');
-    }
+    window.showNotification('Редактирование в разработке', 'info');
 }
 
 function showPersonDetails(personId) {
@@ -877,13 +671,6 @@ function showPersonDetails(personId) {
                         <p style="color: #718096; line-height: 1.6;">${person.biography}</p>
                     </div>
                 ` : ''}
-                
-                ${person.notes ? `
-                    <div>
-                        <h4 style="margin-bottom: 10px; color: #4a5568;">Заметки:</h4>
-                        <p style="color: #718096; line-height: 1.6;">${person.notes}</p>
-                    </div>
-                ` : ''}
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary cancel-btn">
@@ -909,10 +696,24 @@ function showPersonDetails(personId) {
     }
 }
 
-// Экспортируем функции
-window.startTreeBuilder = startTreeBuilder;
-window.addNewPerson = addNewPerson;
-window.buildFinalTree = buildFinalTree;
-window.updateTreePreview = updateTreePreview;
+// Обновление статистики
+function updateTreeStats() {
+    const peopleCount = window.treeData?.people?.length || 0;
+    const photosCount = window.treeData?.people?.filter(p => p.photo_url).length || 0;
+    const generations = countGenerations();
+    
+    if (document.getElementById('tree-people-count')) {
+        document.getElementById('tree-people-count').textContent = peopleCount;
+    }
+    if (document.getElementById('tree-photos-count')) {
+        document.getElementById('tree-photos-count').textContent = photosCount;
+    }
+    if (document.getElementById('tree-generations')) {
+        document.getElementById('tree-generations').textContent = generations;
+    }
+    if (document.getElementById('tree-connections')) {
+        document.getElementById('tree-connections').textContent = Math.max(0, peopleCount - 1);
+    }
+}
 
-console.log('✅ Tree Builder загружен');
+console.log('✅ Tree Builder загружен и готов к работе');

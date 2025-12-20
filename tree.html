@@ -58,61 +58,8 @@
                     </button>
                 </div>
                 
-                <div class="tree-auto-options">
-                    <div class="form-group">
-                        <label for="auto-generations">Поколения</label>
-                        <select id="auto-generations">
-                            <option value="2">2 поколения</option>
-                            <option value="3" selected>3 поколения</option>
-                            <option value="4">4 поколения</option>
-                            <option value="5">5 поколений</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="person-relation">Родство *</label>
-                        <select id="person-relation" class="relation-select" required>
-                            <option value="">Выберите родство</option>
-                            <option value="self">Я (центральная персона)</option>
-                            <option value="spouse">Супруг/супруга</option>
-                            <option value="parent">Родитель</option>
-                            <option value="child">Ребенок</option>
-                            <option value="sibling">Брат/сестра</option>
-                            <option value="grandparent">Дедушка/бабушка</option>
-                            <option value="grandchild">Внук/внучка</option>
-                            <option value="great_grandparent">Прадедушка/прабабушка</option>
-                            <option value="great_grandchild">Правнук/правнучка</option>
-                            <option value="aunt_uncle">Тетя/дядя</option>
-                            <option value="cousin">Двоюродный брат/сестра</option>
-                            <option value="nephew_niece">Племянник/племянница</option>
-                            <option value="uncle_aunt">Дядя/тетя</option>
-                            <option value="other">Другой родственник</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="auto-center-person">Центр древа</label>
-                        <select id="auto-center-person">
-                            <option value="self" selected>Я</option>
-                            <option value="oldest">Самый старший</option>
-                            <option value="founder">Основатель рода</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group checkbox-group">
-                        <input type="checkbox" id="auto-show-photos" checked>
-                        <label for="auto-show-photos">Показывать фото</label>
-                    </div>
-                    
-                    <div class="form-group checkbox-group">
-                        <input type="checkbox" id="auto-show-dates" checked>
-                        <label for="auto-show-dates">Показывать даты</label>
-                    </div>
-                    
-                    <div class="form-group checkbox-group">
-                        <input type="checkbox" id="auto-show-lines" checked>
-                        <label for="auto-show-lines">Показывать линии связи</label>
-                    </div>
+                <div class="tree-auto-options" style="display: none;">
+                    <!-- Скрываем старые опции -->
                 </div>
                 
                 <div class="tree-visualization-container" id="tree-visualization-container">
@@ -164,87 +111,6 @@
     <!-- Модальные окна -->
     <div class="modal-overlay hidden" id="modal-overlay"></div>
     
-    <!-- Модальное окно добавления человека -->
-    <div id="add-person-modal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Добавить человека в древо</h3>
-                <button class="modal-close">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="add-person-form-modal">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="person-first-name">Имя *</label>
-                            <input type="text" id="person-first-name" placeholder="Имя" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="person-last-name">Фамилия *</label>
-                            <input type="text" id="person-last-name" placeholder="Фамилия" required>
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="person-birth-date">Дата рождения</label>
-                            <input type="date" id="person-birth-date">
-                        </div>
-                        <div class="form-group">
-                            <label for="person-death-date">Дата смерти</label>
-                            <input type="date" id="person-death-date">
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="person-gender">Пол</label>
-                        <select id="person-gender" required>
-                            <option value="">Выберите пол</option>
-                            <option value="male">Мужской</option>
-                            <option value="female">Женский</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="person-relation">Родство *</label>
-                        <select id="person-relation" required>
-                            <option value="">Выберите родство</option>
-                            <option value="self">Я</option>
-                            <option value="spouse">Супруг/а</option>
-                            <option value="parent">Родитель</option>
-                            <option value="child">Ребенок</option>
-                            <option value="sibling">Брат/сестра</option>
-                            <option value="grandparent">Дедушка/бабушка</option>
-                            <option value="grandchild">Внук/внучка</option>
-                            <option value="aunt_uncle">Тетя/дядя</option>
-                            <option value="cousin">Двоюродный брат/сестра</option>
-                            <option value="other">Другой родственник</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="person-photo-url">Фото (URL)</label>
-                        <input type="url" id="person-photo-url" placeholder="https://example.com/photo.jpg">
-                        <small style="color: #718096;">Или загрузите после создания</small>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="person-bio">Биография</label>
-                        <textarea id="person-bio" rows="4" placeholder="Расскажите историю этого человека..."></textarea>
-                    </div>
-                    
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary cancel-btn">
-                            Отмена
-                        </button>
-                        <button type="submit" class="btn">
-                            Добавить в древо
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
     <!-- Уведомления -->
     <div id="notification" class="notification">
         <div class="notification-content">
@@ -262,11 +128,12 @@
     <!-- Подключаем библиотеки -->
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-
-<script src="supabase.js"></script>
-<script src="app.js"></script>
-<script src="tree-builder.js"></script>
-<script src="tree-engine.js"></script>
+    
+    <!-- Подключаем наши файлы в правильном порядке -->
+    <script src="supabase.js"></script>
+    <script src="app.js"></script>
+    <script src="tree-builder.js"></script>
+    <script src="tree-engine.js"></script>
     
     <script>
         // Инициализация страницы
@@ -302,6 +169,7 @@
                 
                 // Обработчики кнопок
                 document.getElementById('auto-build-btn')?.addEventListener('click', () => {
+                    console.log('🎯 Кнопка авто-построения нажата');
                     if (!window.currentUser) {
                         window.showNotification('Для построения дерева необходимо войти в систему', 'error');
                         setTimeout(() => {
@@ -311,11 +179,14 @@
                     }
                     // Запускаем пошаговое построение
                     if (window.startTreeBuilder) {
-                        startTreeBuilder();
+                        window.startTreeBuilder();
+                    } else {
+                        console.error('❌ startTreeBuilder не найден!');
                     }
                 });
                 
                 document.getElementById('auto-build-btn-2')?.addEventListener('click', () => {
+                    console.log('🎯 Кнопка авто-построения 2 нажата');
                     if (!window.currentUser) {
                         window.showNotification('Для построения дерева необходимо войти в систему', 'error');
                         setTimeout(() => {
@@ -325,11 +196,14 @@
                     }
                     // Запускаем пошаговое построение
                     if (window.startTreeBuilder) {
-                        startTreeBuilder();
+                        window.startTreeBuilder();
+                    } else {
+                        console.error('❌ startTreeBuilder не найден!');
                     }
                 });
                 
                 document.getElementById('manual-add-btn')?.addEventListener('click', () => {
+                    console.log('🎯 Кнопка ручного добавления нажата');
                     if (!window.currentUser) {
                         window.showNotification('Для добавления человека необходимо войти в систему', 'error');
                         setTimeout(() => {
@@ -339,7 +213,9 @@
                     }
                     // Запускаем добавление человека
                     if (window.addNewPerson) {
-                        addNewPerson();
+                        window.addNewPerson('other');
+                    } else {
+                        console.error('❌ addNewPerson не найден!');
                     }
                 });
                 
@@ -351,7 +227,7 @@
                         }, 1500);
                         return;
                     }
-                    if (window.saveTreeAsImage) saveTreeAsImage();
+                    if (window.saveTreeAsImage) window.saveTreeAsImage();
                 });
                 
                 document.getElementById('print-tree-btn')?.addEventListener('click', () => {
@@ -362,15 +238,21 @@
                         }, 1500);
                         return;
                     }
-                    if (window.printTree) printTree();
+                    if (window.printTree) window.printTree();
                 });
                 
                 // Обновляем предпросмотр если есть данные
-                if (window.updateTreePreview && window.treeData.people.length > 0) {
-                    updateTreePreview();
+                if (window.updateTreePreview && window.treeData && window.treeData.people.length > 0) {
+                    window.updateTreePreview();
                 }
                 
                 console.log('✅ Страница дерева инициализирована');
+                console.log('Доступные функции:', {
+                    startTreeBuilder: typeof window.startTreeBuilder,
+                    addNewPerson: typeof window.addNewPerson,
+                    updateTreePreview: typeof window.updateTreePreview,
+                    buildFinalTree: typeof window.buildFinalTree
+                });
             }, 300);
         });
     </script>
