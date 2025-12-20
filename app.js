@@ -677,13 +677,12 @@ async function handleEditProfile(e) {
     
     // Проверка авторизации
     if (!window.currentUser) {
-        window.showNotification('Для редактирования профиля необходимо войти в систему', 'error');
-        closeAllModals();
+        window.showNotification('Для доступа к этой странице необходимо войти в систему', 'error');
         setTimeout(() => {
-            window.location.href = 'auth.html';
+          window.location.href = 'auth.html';
         }, 1500);
         return;
-    }
+      }
     
     const name = document.getElementById('edit-profile-name').value;
     const lastName = document.getElementById('edit-profile-last-name').value;
