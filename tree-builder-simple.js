@@ -14,7 +14,13 @@ window.startTreeBuilder = function(mode = 'auto') {
     currentMode = mode;
     currentStep = 1;
     stepRelatives = [];
-    currentTreeName = 'Мое семейное дерево';
+    
+    // Используем существующее название дерева или создаем новое
+    if (window.treeData && window.treeData.name) {
+        currentTreeName = window.treeData.name;
+    } else {
+        currentTreeName = 'Мое семейное дерево';
+    }
     
     // Показываем начальное модальное окно
     showBuilderIntroModal(mode);
@@ -432,7 +438,7 @@ function addPersonInStep(step) {
     }
     
     const newPerson = {
-        id: Date.now(),
+        id: Date.now() + Math.random(),
         firstName,
         lastName,
         birthDate,
@@ -502,24 +508,58 @@ function finishBuilding() {
     // Сбрасываем данные
     currentStep = 1;
     stepRelatives = [];
+    
+    // Сохраняем в localStorage
+    if (typeof window.saveToLocalStorage === 'function') {
+        window.saveToLocalStorage();
+    }
 }
 
 // Сохранить дерево в базу данных
 function saveTreeToDatabase(treeName, relatives) {
     console.log('Сохранение дерева:', { treeName, relatives });
     
-    // В реальном приложении здесь сохранение в Supabase
-    // Пока просто сохраняем в localStorage для демонстрации
-    localStorage.setItem('family_tree_data', JSON.stringify({
-        treeName,
-        relatives,
+    // Сохраняем в глобальные переменные
+    window.treeData = {
+        name: treeName,
+        relatives: relatives,
         created: new Date().toISOString()
-    }));
+    };
+    
+    // Сохраняем в localStorage
+    localStorage.setItem('family_tree_data', JSON.stringify(window.treeData));
+    
+    // Также добавляем людей в общий массив людей
+    relatives.forEach(person => {
+        // Проверяем, нет ли уже такого человека
+        const existingPerson = window.people.find(p => 
+            p.firstName === person.firstName && 
+            p.lastName === person.lastName && 
+            p.relation === person.relation
+        );
+        
+        if (!existingPerson) {
+            const newPerson = {
+                id: person.id,
+                first_name: person.firstName,
+                last_name: person.lastName,
+                birth_date: person.birthDate,
+                gender: person.gender,
+                relation: person.relation,
+                created_at: new Date().toISOString()
+            };
+            
+            window.people.push(newPerson);
+        }
+    });
     
     // Обновляем статистику
     if (window.updateTreeStats) {
         window.updateTreeStats();
     }
+    
+    // Событие об изменении данных дерева
+    window.dispatchEvent(new CustomEvent('treeDataChanged'));
 }
 
 // Обновить интерфейс дерева
@@ -547,22 +587,70 @@ function updateTreeInterface(relatives, treeName) {
             <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 20px;">
     `;
     
-    relatives.forEach(person => {
-        const bgColor = person.gender === 'male' ? '#4299e1' : '#ed64a6';
-        const relationText = getRelationText(person.relation);
-        
-        html += `
-            <div class="person-card ${person.gender} ${person.relation === 'self' ? 'self' : ''}">
-                <div class="person-avatar ${person.gender} ${person.relation === 'self' ? 'self' : ''}">
-                    ${person.firstName.charAt(0)}${person.lastName.charAt(0)}
-                </div>
-                <div style="font-weight: bold; margin-bottom: 5px; color: #2d3748;">${person.firstName}</div>
-                <div style="font-size: 0.9rem; color: #718096; margin-bottom: 5px;">${person.lastName}</div>
-                <div style="font-size: 0.8rem; color: ${bgColor}; font-weight: 500;">${relationText}</div>
-                ${person.birthDate ? `<div style="font-size: 0.8rem; color: #a0aec0; margin-top: 5px;">📅 ${person.birthDate}</div>` : ''}
-            </div>
-        `;
-    });
+    // Группируем родственников по типам
+    const selfPerson = relatives.find(p => p.relation === 'self');
+    const parents = relatives.filter(p => p.relation === 'father' || p.relation === 'mother');
+    const spouse = relatives.find(p => p.relation === 'spouse' || p.relation === 'partner');
+    const children = relatives.filter(p => p.relation === 'son' || p.relation === 'daughter');
+    const siblings = relatives.filter(p => p.relation === 'brother' || p.relation === 'sister');
+    
+    // Отображаем дерево с иерархией
+    html += '<div style="width: 100%;">';
+    
+    // Поколение родителей
+    if (parents.length > 0) {
+        html += '<div style="margin-bottom: 40px;">';
+        html += '<h4 style="color: #718096; margin-bottom: 20px;">Родители</h4>';
+        html += '<div style="display: flex; justify-content: center; gap: 20px;">';
+        parents.forEach(parent => {
+            html += createPersonCard(parent);
+        });
+        html += '</div>';
+        html += '</div>';
+    }
+    
+    // Центральное поколение
+    html += '<div style="margin-bottom: 40px;">';
+    html += '<h4 style="color: #718096; margin-bottom: 20px;">Центральное поколение</h4>';
+    html += '<div style="display: flex; justify-content: center; align-items: center; gap: 30px;">';
+    
+    if (selfPerson) {
+        html += createPersonCard(selfPerson, true);
+    }
+    
+    if (spouse) {
+        html += '<div style="font-size: 2rem; color: #ed64a6;">♥</div>';
+        html += createPersonCard(spouse);
+    }
+    
+    html += '</div>';
+    html += '</div>';
+    
+    // Поколение детей
+    if (children.length > 0) {
+        html += '<div style="margin-bottom: 40px;">';
+        html += '<h4 style="color: #718096; margin-bottom: 20px;">Дети</h4>';
+        html += '<div style="display: flex; justify-content: center; gap: 20px;">';
+        children.forEach(child => {
+            html += createPersonCard(child);
+        });
+        html += '</div>';
+        html += '</div>';
+    }
+    
+    // Братья и сестры
+    if (siblings.length > 0) {
+        html += '<div>';
+        html += '<h4 style="color: #718096; margin-bottom: 20px;">Братья и сестры</h4>';
+        html += '<div style="display: flex; justify-content: center; gap: 20px;">';
+        siblings.forEach(sibling => {
+            html += createPersonCard(sibling);
+        });
+        html += '</div>';
+        html += '</div>';
+    }
+    
+    html += '</div>';
     
     html += `
             </div>
@@ -576,6 +664,86 @@ function updateTreeInterface(relatives, treeName) {
     `;
     
     container.innerHTML = html;
+    
+    // Обновляем статистику
+    if (typeof window.updateTreeStats === 'function') {
+        window.updateTreeStats();
+    }
+}
+
+// Создать карточку человека
+function createPersonCard(person, isSelf = false) {
+    const bgColor = person.gender === 'male' ? '#4299e1' : '#ed64a6';
+    const relationText = getRelationText(person.relation);
+    const selfClass = isSelf ? 'self' : '';
+    
+    return `
+        <div class="person-card ${person.gender} ${selfClass}" style="position: relative;">
+            <div class="person-avatar ${person.gender} ${selfClass}" style="background: ${bgColor};">
+                ${person.firstName.charAt(0)}${person.lastName.charAt(0)}
+            </div>
+            <div style="font-weight: bold; margin-bottom: 5px; color: #2d3748;">${person.firstName}</div>
+            <div style="font-size: 0.9rem; color: #718096; margin-bottom: 5px;">${person.lastName}</div>
+            <div style="font-size: 0.8rem; color: ${bgColor}; font-weight: 500;">${relationText}</div>
+            ${person.birthDate ? `<div style="font-size: 0.8rem; color: #a0aec0; margin-top: 5px;">📅 ${person.birthDate}</div>` : ''}
+        </div>
+    `;
+}
+
+// Функция для обновления статистики дерева
+window.updateTreeStats = function() {
+    const treeRelatives = window.treeData?.relatives || [];
+    const peopleCount = treeRelatives.length;
+    
+    // Обновляем статистику на странице дерева
+    const statRelatives = document.getElementById('stat-relatives');
+    const statTrees = document.getElementById('stat-trees');
+    const statDepth = document.getElementById('stat-depth');
+    const statYears = document.getElementById('stat-years');
+    
+    if (statRelatives) statRelatives.textContent = peopleCount;
+    if (statTrees) statTrees.textContent = window.treeData?.name ? '1' : '0';
+    if (statDepth) statDepth.textContent = calculateTreeGenerations();
+    if (statYears) statYears.textContent = calculateTreeYears();
+    
+    // Показываем/скрываем раздел с недавними деревьями
+    const recentTreesSection = document.getElementById('recent-trees-section');
+    if (recentTreesSection) {
+        recentTreesSection.style.display = window.treeData?.name ? 'block' : 'none';
+    }
+};
+
+// Рассчитать количество поколений в дереве
+function calculateTreeGenerations() {
+    const treeRelatives = window.treeData?.relatives || [];
+    if (treeRelatives.length === 0) return 0;
+    
+    const relations = treeRelatives.map(p => p.relation);
+    let generations = 1; // Текущее поколение
+    
+    if (relations.includes('grandparent')) generations++;
+    if (relations.includes('grandchild')) generations++;
+    if (relations.includes('greatgrandparent')) generations++;
+    if (relations.includes('greatgrandchild')) generations++;
+    
+    return generations;
+}
+
+// Рассчитать охват лет в дереве
+function calculateTreeYears() {
+    const treeRelatives = window.treeData?.relatives || [];
+    if (treeRelatives.length === 0) return 0;
+    
+    const dates = treeRelatives
+        .filter(p => p.birthDate)
+        .map(p => new Date(p.birthDate).getFullYear());
+    
+    if (dates.length < 2) return 0;
+    
+    const minYear = Math.min(...dates);
+    const maxYear = Math.max(...dates);
+    
+    return maxYear - minYear;
 }
 
 console.log('✅ Tree Builder Simple готов к использованию');
