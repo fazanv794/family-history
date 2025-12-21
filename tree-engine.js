@@ -472,6 +472,143 @@ function addExportJsonButton() {
     }
 }
 
+// Функция для создания интерактивного SVG-дерева
+function createInteractiveTree(relatives, containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    // Очищаем контейнер
+    container.innerHTML = '';
+    
+    // Создаем SVG элемент
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("width", "100%");
+    svg.setAttribute("height", "600");
+    svg.setAttribute("viewBox", "0 0 800 600");
+    svg.style.cursor = "grab";
+    
+    // Создаем группу для масштабирования/перемещения
+    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.setAttribute("id", "tree-group");
+    svg.appendChild(g);
+    
+    // Добавляем фон
+    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    rect.setAttribute("width", "800");
+    rect.setAttribute("height", "600");
+    rect.setAttribute("fill", "#f8fafc");
+    g.appendChild(rect);
+    
+    // Группируем родственников по поколениям
+    const generations = groupByGenerations(relatives);
+    
+    // Позиционируем узлы
+    const nodePositions = calculateNodePositions(generations);
+    
+    // Рисуем соединительные линии
+    drawConnections(nodePositions, g);
+    
+    // Рисуем узлы
+    drawNodes(nodePositions, g);
+    
+    // Добавляем интерактивность
+    addTreeInteractivity(svg, g);
+    
+    container.appendChild(svg);
+    
+    // Добавляем контролы для дерева
+    addTreeControls(container);
+}
+
+// Группировка по поколениям
+function groupByGenerations(relatives) {
+    const generations = {
+        'grandparents': [],
+        'parents': [],
+        'current': [],
+        'children': [],
+        'grandchildren': []
+    };
+    
+    relatives.forEach(person => {
+        switch(person.relation) {
+            case 'grandparent':
+            case 'grandfather':
+            case 'grandmother':
+                generations.grandparents.push(person);
+                break;
+            case 'parent':
+            case 'father':
+            case 'mother':
+                generations.parents.push(person);
+                break;
+            case 'self':
+            case 'spouse':
+            case 'sibling':
+                generations.current.push(person);
+                break;
+            case 'child':
+            case 'son':
+            case 'daughter':
+                generations.children.push(person);
+                break;
+            case 'grandchild':
+                generations.grandchildren.push(person);
+                break;
+        }
+    });
+    
+    return generations;
+}
+
+// Функция для добавления интерактивности
+function addTreeInteractivity(svg, g) {
+    let isPanning = false;
+    let startPoint = { x: 0, y: 0 };
+    let transform = { x: 0, y: 0, scale: 1 };
+    
+    // Масштабирование колесиком мыши
+    svg.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const zoomIntensity = 0.1;
+        const delta = e.deltaY > 0 ? -zoomIntensity : zoomIntensity;
+        
+        transform.scale = Math.max(0.1, Math.min(5, transform.scale + delta));
+        updateTransform();
+    });
+    
+    // Перемещение
+    svg.addEventListener('mousedown', (e) => {
+        isPanning = true;
+        startPoint = { x: e.clientX - transform.x, y: e.clientY - transform.y };
+        svg.style.cursor = 'grabbing';
+    });
+    
+    svg.addEventListener('mousemove', (e) => {
+        if (!isPanning) return;
+        
+        transform.x = e.clientX - startPoint.x;
+        transform.y = e.clientY - startPoint.y;
+        updateTransform();
+    });
+    
+    svg.addEventListener('mouseup', () => {
+        isPanning = false;
+        svg.style.cursor = 'grab';
+    });
+    
+    svg.addEventListener('mouseleave', () => {
+        isPanning = false;
+        svg.style.cursor = 'grab';
+    });
+    
+    function updateTransform() {
+        g.setAttribute('transform', 
+            `translate(${transform.x}, ${transform.y}) scale(${transform.scale})`
+        );
+    }
+}
+
 function exportTreeAsJson() {
     if (!window.treeData || !window.treeData.relatives || window.treeData.relatives.length === 0) {
         window.showNotification('Сначала постройте дерево', 'error');

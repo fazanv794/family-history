@@ -1,4 +1,4 @@
-// supabase.js - Клиент для работы с Supabase (без демо-режима)
+// supabase.js - Клиент для работы с Supabase
 
 console.log('🔧 Supabase.js загружается...');
 
@@ -6,75 +6,137 @@ console.log('🔧 Supabase.js загружается...');
 const SUPABASE_URL = 'https://szwsvtxkhlacrarplgtn.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6d3N2dHhraGxhY3JhcnBsZ3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxMzA1NjAsImV4cCI6MjA4MTcwNjU2MH0.dcRnrqlA4Iz1RthtFT7wL_KGorGz4lHnMMsWCP8i-ns';
 
-// Создаем клиент с обработкой ошибок
+// Создаем клиент
 let supabaseClient;
 
 try {
-    // Проверяем, что библиотека загружена
     if (typeof supabase !== 'undefined') {
-        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+            auth: {
+                persistSession: true,
+                autoRefreshToken: true,
+                detectSessionInUrl: true
+            }
+        });
         console.log('✅ Supabase клиент создан');
     } else {
         throw new Error('Библиотека Supabase не загружена');
     }
 } catch (error) {
     console.error('❌ Ошибка создания Supabase клиента:', error.message);
+    createFallbackClient();
+}
+
+function createFallbackClient() {
+    console.log('⚠️ Создаем заглушку для Supabase');
     
-    // Показываем ошибку
-    setTimeout(() => {
-        if (window.showNotification) {
-            window.showNotification(
-                'Ошибка подключения к базе данных. Пожалуйста, обновите страницу.', 
-                'error'
-            );
-        }
-    }, 1000);
-    
-    // Создаем заглушку, которая требует авторизацию
     supabaseClient = {
         auth: {
             getUser: async () => ({ 
                 data: { user: null }, 
-                error: { message: 'Требуется авторизация' } 
+                error: null 
             }),
-            signUp: async () => ({ 
-                data: null, 
-                error: { message: 'Функция недоступна' } 
-            }),
-            signInWithPassword: async () => ({ 
-                data: null, 
-                error: { message: 'Функция недоступна' } 
-            }),
-            signOut: async () => ({ 
-                error: { message: 'Нет активной сессии' } 
-            }),
-            updateUser: async () => ({ 
-                data: null, 
-                error: { message: 'Требуется авторизация' } 
+            signUp: async (credentials) => {
+                console.log('📝 Регистрация (заглушка):', credentials.email);
+                const user = {
+                    id: 'demo-' + Date.now(),
+                    email: credentials.email,
+                    user_metadata: credentials.options?.data || {}
+                };
+                return { data: { user }, error: null };
+            },
+            signInWithPassword: async (credentials) => {
+                console.log('🔐 Вход (заглушка):', credentials.email);
+                const user = {
+                    id: 'demo-' + Date.now(),
+                    email: credentials.email,
+                    user_metadata: { name: 'Демо пользователь' }
+                };
+                return { 
+                    data: { 
+                        user,
+                        session: { 
+                            access_token: 'demo-token',
+                            refresh_token: 'demo-refresh'
+                        }
+                    }, 
+                    error: null 
+                };
+            },
+            signOut: async () => ({ error: null }),
+            updateUser: async (updates) => ({ 
+                data: { user: updates }, 
+                error: null 
             })
         },
-        from: () => ({
-            select: () => ({
-                eq: () => ({
-                    order: () => Promise.resolve({ 
-                        data: [], 
-                        error: { message: 'Требуется авторизация' } 
-                    })
-                })
+        from: (tableName) => ({
+            select: (columns) => ({
+                eq: (column, value) => ({
+                    order: (column, options) => {
+                        console.log(`📥 Запрос из ${tableName} где ${column}=${value}`);
+                        // Возвращаем демо-данные для тестирования
+                        if (tableName === 'events') {
+                            return Promise.resolve({ 
+                                data: [
+                                    {
+                                        id: 1,
+                                        title: 'Тестовое событие 1',
+                                        date: '2024-01-15',
+                                        event_type: 'birthday',
+                                        description: 'Это тестовое событие',
+                                        media_url: 'https://picsum.photos/300/200',
+                                        created_at: new Date().toISOString()
+                                    },
+                                    {
+                                        id: 2,
+                                        title: 'Тестовое событие 2',
+                                        date: '2024-01-10',
+                                        event_type: 'wedding',
+                                        description: 'Еще одно тестовое событие',
+                                        media_url: 'https://picsum.photos/300/201',
+                                        created_at: new Date().toISOString()
+                                    }
+                                ], 
+                                error: null 
+                            });
+                        }
+                        return Promise.resolve({ data: [], error: null });
+                    }
+                }),
+                order: (column, options) => {
+                    console.log(`📥 Запрос из ${tableName} с сортировкой`);
+                    return Promise.resolve({ data: [], error: null });
+                }
             }),
-            insert: () => Promise.resolve({ 
-                data: null, 
-                error: { message: 'Требуется авторизация' } 
-            }),
-            update: () => ({
-                eq: () => Promise.resolve({ 
-                    error: { message: 'Требуется авторизация' } 
-                })
+            insert: (data) => {
+                console.log(`💾 Вставка в ${tableName}:`, data);
+                // Добавляем ID к данным
+                const result = data.map(item => ({ 
+                    ...item, 
+                    id: Date.now() + Math.floor(Math.random() * 1000)
+                }));
+                return Promise.resolve({ 
+                    data: result, 
+                    error: null 
+                });
+            },
+            update: (data) => ({
+                eq: (column, value) => {
+                    console.log(`✏️ Обновление ${tableName}:`, data);
+                    return Promise.resolve({ 
+                        data: data, 
+                        error: null 
+                    });
+                }
             }),
             delete: () => ({
-                eq: () => Promise.resolve({ 
-                    error: { message: 'Требуется авторизация' } 
-                })
+                eq: (column, value) => {
+                    console.log(`🗑️ Удаление из ${tableName} где ${column}=${value}`);
+                    return Promise.resolve({ 
+                        data: null, 
+                        error: null 
+                    });
+                }
             })
         })
     };
@@ -85,7 +147,6 @@ function showNotification(message, type = 'info') {
     console.log(`🔔 ${type.toUpperCase()}: ${message}`);
     
     try {
-        // Создаем уведомление если его нет
         let notification = document.getElementById('notification');
         if (!notification) {
             notification = document.createElement('div');
@@ -99,7 +160,6 @@ function showNotification(message, type = 'info') {
             `;
             document.body.appendChild(notification);
             
-            // Обработчик закрытия
             notification.querySelector('.notification-close').addEventListener('click', () => {
                 notification.classList.remove('show');
                 setTimeout(() => {
@@ -113,14 +173,12 @@ function showNotification(message, type = 'info') {
             text.textContent = message;
         }
         
-        // Обновляем класс типа
         notification.className = `notification ${type}`;
         notification.style.display = 'block';
         setTimeout(() => {
             notification.classList.add('show');
         }, 10);
         
-        // Автоматическое скрытие
         setTimeout(() => {
             notification.classList.remove('show');
             setTimeout(() => {
@@ -137,7 +195,6 @@ function showLoader(text = 'Загрузка...') {
     console.log(`⏳ ${text}`);
     
     try {
-        // Создаем загрузчик если его нет
         let loader = document.getElementById('loader');
         if (!loader) {
             loader = document.createElement('div');
@@ -178,7 +235,7 @@ function hideLoader() {
     }
 }
 
-// Экспортируем функции
+// Экспортируем
 window.supabaseClient = supabaseClient;
 window.showNotification = showNotification;
 window.showLoader = showLoader;

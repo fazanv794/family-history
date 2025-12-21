@@ -268,7 +268,6 @@
     <script src="tree-engine.js"></script>
 
     <script>
-        // Инициализация страницы дерева
         document.addEventListener('DOMContentLoaded', async function() {
             console.log('🌳 Страница дерева загружается...');
             
@@ -281,8 +280,11 @@
             if (window.treeData && window.treeData.relatives && window.treeData.relatives.length > 0) {
                 console.log('✅ Найдено сохраненное дерево:', window.treeData.name);
                 
-                // Обновляем интерфейс дерева
-                if (typeof window.updateTreeInterface === 'function') {
+                // Создаем интерактивное дерево
+                if (typeof window.createInteractiveTree === 'function') {
+                    window.createInteractiveTree(window.treeData.relatives, 'tree-visualization-container');
+                } else if (typeof window.updateTreeInterface === 'function') {
+                    // Используем старую версию для совместимости
                     window.updateTreeInterface(window.treeData.relatives, window.treeData.name);
                 }
                 
@@ -290,6 +292,9 @@
                 if (typeof window.updateTreeStats === 'function') {
                     window.updateTreeStats();
                 }
+                
+                // Показываем контролы
+                document.getElementById('tree-controls-panel').style.display = 'flex';
             }
             
             // Обработчики кнопок
@@ -304,37 +309,19 @@
             
             document.getElementById('add-person-to-tree-btn')?.addEventListener('click', function(e) {
                 e.preventDefault();
-                if (typeof window.showModal === 'function') {
-                    window.showModal('add-person-modal');
-                } else {
-                    window.showNotification('Форма добавления недоступна', 'error');
-                }
+                window.showModal('add-person-modal');
             });
             
             // Карточки действий
             const actionCards = document.querySelectorAll('.action-card');
             actionCards.forEach(card => {
                 card.addEventListener('click', function(e) {
-                    if (this.getAttribute('onclick')) return; // Если уже есть обработчик
+                    if (this.getAttribute('onclick')) return;
                 });
             });
             
             console.log('✅ Страница дерева инициализирована');
         });
-        
-        // Функция для выбора режима построения (если нужно)
-        window.selectBuilderMode = function(mode) {
-            if (typeof window.startTreeBuilder === 'function') {
-                window.startTreeBuilder(mode);
-            }
-        };
-        
-        // Функция для показа модального окна построителя (для обратной совместимости)
-        window.showBuilderModal = function(mode = 'auto') {
-            if (typeof window.startTreeBuilder === 'function') {
-                window.startTreeBuilder(mode);
-            }
-        };
     </script>
 </body>
 </html>
