@@ -41,55 +41,62 @@
         <!-- Страница профиля -->
         <section id="profile-page" class="page">
             <div class="container">
-                <div class="profile-container">
-                    <div class="profile-avatar">
-                        <div class="avatar large" id="profile-avatar">П</div>
-                        <h2 id="profile-name">Имя Фамилия</h2>
-                        <p id="profile-email">email@example.com</p>
-                        <button class="btn btn-small" id="change-avatar-btn" style="margin-top: 15px;">
-                            <i class="fas fa-camera"></i> Сменить фото
-                        </button>
-                    </div>
-                    
-                    <div class="profile-info">
-                        <h3>Информация об аккаунте</h3>
-                        <div class="info-grid">
-                            <div class="info-item">
-                                <i class="fas fa-envelope"></i>
-                                <span>Email: <span id="info-email"></span></span>
-                            </div>
-                            <div class="info-item">
-                                <i class="fas fa-user"></i>
-                                <span>ID пользователя: <span id="info-user-id"></span></span>
-                            </div>
-                            <div class="info-item">
-                                <i class="fas fa-calendar"></i>
-                                <span>Регистрация: <span id="info-reg-date"></span></span>
-                            </div>
-                            <div class="info-item">
-                                <i class="fas fa-tree"></i>
-                                <span>Людей в древе: <span id="info-people-count">0</span></span>
-                            </div>
-                        </div>
-                        
-                        <h3>Настройки</h3>
-                        <button class="btn full-width" id="edit-profile-btn">
-                            <i class="fas fa-edit"></i> Редактировать профиль
-                        </button>
-                        <button class="btn btn-secondary full-width" id="invite-btn">
-                            <i class="fas fa-user-plus"></i> Пригласить родственника
-                        </button>
-                        <button class="btn btn-secondary full-width" id="notifications-settings-btn">
-                            <i class="fas fa-bell"></i> Настройки уведомлений
-                        </button>
-                        <button class="btn btn-outline full-width" id="export-data-btn">
-                            <i class="fas fa-download"></i> Экспорт данных
-                        </button>
-                        <button class="btn btn-danger full-width" id="logout-profile-btn">
-                            <i class="fas fa-sign-out-alt"></i> Выйти из аккаунта
-                        </button>
-                    </div>
-                </div>
+                <!-- Обновим контент профиля -->
+<div class="profile-container">
+    <div class="profile-avatar">
+        <div class="avatar large" id="profile-avatar">П</div>
+        <h2 id="profile-name">Загрузка...</h2>
+        <p id="profile-email">Загрузка...</p>
+        <button class="btn btn-small" id="change-avatar-btn" style="margin-top: 15px;">
+            <i class="fas fa-camera"></i> Сменить фото
+        </button>
+    </div>
+    
+    <div class="profile-info">
+        <h3>Информация об аккаунте</h3>
+        <div class="info-grid">
+            <div class="info-item">
+                <i class="fas fa-envelope"></i>
+                <span>Email: <span id="info-email">Загрузка...</span></span>
+            </div>
+            <div class="info-item">
+                <i class="fas fa-user"></i>
+                <span>ID пользователя: <span id="info-user-id">Загрузка...</span></span>
+            </div>
+            <div class="info-item">
+                <i class="fas fa-calendar"></i>
+                <span>Регистрация: <span id="info-reg-date">Загрузка...</span></span>
+            </div>
+            <div class="info-item">
+                <i class="fas fa-tree"></i>
+                <span>Людей в древе: <span id="info-people-count">0</span></span>
+            </div>
+        </div>
+        
+        <!-- Добавим секцию для дерева -->
+        <h3 style="margin-top: 25px;">Мое дерево</h3>
+        <div id="tree-info-section" style="margin-bottom: 20px;">
+            <!-- Информация о дереве будет здесь -->
+        </div>
+        
+        <h3>Настройки</h3>
+        <button class="btn full-width" id="edit-profile-btn">
+            <i class="fas fa-edit"></i> Редактировать профиль
+        </button>
+        <button class="btn btn-secondary full-width" id="invite-btn">
+            <i class="fas fa-user-plus"></i> Пригласить родственника
+        </button>
+        <button class="btn btn-secondary full-width" id="notifications-settings-btn">
+            <i class="fas fa-bell"></i> Настройки уведомлений
+        </button>
+        <button class="btn btn-outline full-width" id="export-data-btn">
+            <i class="fas fa-download"></i> Экспорт данных
+        </button>
+        <button class="btn btn-danger full-width" id="logout-profile-btn">
+            <i class="fas fa-sign-out-alt"></i> Выйти из аккаунта
+        </button>
+    </div>
+</div>
             </div>
         </section>
     </main>
@@ -211,91 +218,50 @@
     <!-- Подключаем наши файлы -->
     <script src="supabase.js"></script>
     <script src="app.js"></script>
+    <script src="profile.js"></script>
     
-    <script>
-        // Функции для страницы профиля
-        function updateProfileStats() {
-            // Обновляем количество людей в древе
-            const peopleCount = window.people ? window.people.length : 0;
-            document.getElementById('info-people-count').textContent = peopleCount;
-        }
+<!-- В конце profile.html, перед закрывающим тегом body -->
+<script>
+    // Инициализация профиля
+    document.addEventListener('DOMContentLoaded', async () => {
+        console.log('👤 Инициализация страницы профиля...');
         
-        function exportUserData() {
-            window.showLoader('Подготовка данных...');
-            
-            try {
-                const userData = {
-                    user: {
-                        email: window.currentUser?.email,
-                        name: window.currentUser?.user_metadata?.name,
-                        registered: window.currentUser?.created_at
-                    },
-                    people: window.people || [],
-                    events: window.events || [],
-                    media: window.media || [],
-                    export_date: new Date().toISOString()
-                };
-                
-                // Создаем JSON файл для скачивания
-                const dataStr = JSON.stringify(userData, null, 2);
-                const dataBlob = new Blob([dataStr], { type: 'application/json' });
-                const url = URL.createObjectURL(dataBlob);
-                
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `family-history-${new Date().toISOString().split('T')[0]}.json`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(url);
-                
-                window.showNotification('✅ Данные экспортированы!', 'success');
-                
-            } catch (error) {
-                console.error('Ошибка экспорта данных:', error);
-                window.showNotification('Ошибка экспорта данных', 'error');
-            } finally {
-                window.hideLoader();
-            }
-        }
-        
-        // Инициализация страницы
-        document.addEventListener('DOMContentLoaded', async () => {
-            // Загружаем данные
+        // Ждем загрузки основных скриптов
+        if (typeof window.loadUserData === 'function') {
             await window.loadUserData();
-            
-            // Обновляем статистику профиля
-            updateProfileStats();
-            
-            // Обработчики кнопок профиля
-            document.getElementById('change-avatar-btn')?.addEventListener('click', () => {
-                window.showNotification('Функция смены аватара в разработке', 'info');
-            });
-            
-            document.getElementById('edit-profile-btn')?.addEventListener('click', () => {
-                window.showModal('edit-profile-modal');
-            });
-            
-            document.getElementById('invite-btn')?.addEventListener('click', () => {
-                window.showModal('invite-modal');
-            });
-            
-            document.getElementById('notifications-settings-btn')?.addEventListener('click', () => {
-                window.showNotification('Настройки уведомлений в разработке', 'info');
-            });
-            
-            document.getElementById('export-data-btn')?.addEventListener('click', exportUserData);
-            
-            // Кнопка выхода в профиле
-            const logoutProfileBtn = document.getElementById('logout-profile-btn');
-            if (logoutProfileBtn) {
-                logoutProfileBtn.addEventListener('click', window.handleLogout);
-            }
-        });
+        }
         
-        // Экспортируем функции
-        window.updateProfileStats = updateProfileStats;
-        window.exportUserData = exportUserData;
-    </script>
+        // Инициализируем профиль
+        if (typeof window.initProfilePage === 'function') {
+            window.initProfilePage();
+        } else {
+            // Запасной вариант
+            setTimeout(() => {
+                if (window.currentUser) {
+                    updateProfileUI();
+                }
+            }, 1000);
+        }
+        
+        // Функция для обновления UI (запасная)
+        function updateProfileUI() {
+            if (!window.currentUser) return;
+            
+            const name = window.currentUser.user_metadata?.name || 
+                        window.currentUser.email?.split('@')[0] || 
+                        'Пользователь';
+            const email = window.currentUser.email || 'Не указан';
+            const initials = window.getUserInitials ? window.getUserInitials(name) : name.substring(0, 2);
+            
+            // Обновляем элементы
+            document.getElementById('profile-name')?.textContent = name;
+            document.getElementById('profile-email')?.textContent = email;
+            document.getElementById('profile-avatar')?.textContent = initials;
+            document.getElementById('info-email')?.textContent = email;
+            document.getElementById('info-user-id')?.textContent = 
+                window.currentUser.id ? window.currentUser.id.substring(0, 8) + '...' : 'Не указан';
+        }
+    });
+</script>
 </body>
 </html>
