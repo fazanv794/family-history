@@ -84,17 +84,56 @@
         </div>
     </footer>
 
-    <!-- Оверлей для модальных окон (ДОЛЖЕН БЫТЬ ЗДЕСЬ!) -->
-    <div class="modal-overlay hidden" id="modal-overlay"></div>
+    <!-- Оверлей для модалок (центрирует и затемняет экран) -->
+    <div id="modal-overlay" class="modal-overlay hidden" style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.65);
+        z-index: 9999;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(4px);
+    "></div>
 
-    <!-- Модальное окно создания чата -->
-    <div id="create-chat-modal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Создать новый чат</h3>
-                <button class="modal-close">&times;</button>
+    <!-- Модальное окно создания чата (центрировано по экрану) -->
+    <div id="create-chat-modal" class="modal hidden" style="
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        border-radius: 16px;
+        width: 90%;
+        max-width: 540px;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 25px 70px rgba(0,0,0,0.45);
+        z-index: 10000;
+        opacity: 0;
+        transition: opacity 0.3s ease, transform 0.3s ease;
+    ">
+        <div class="modal-content" style="padding: 0;">
+            <div class="modal-header" style="
+                padding: 20px 25px;
+                border-bottom: 1px solid #e2e8f0;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            ">
+                <h3 style="margin: 0;">Создать новый чат</h3>
+                <button class="modal-close" style="
+                    background: none;
+                    border: none;
+                    font-size: 28px;
+                    cursor: pointer;
+                    color: #718096;
+                ">×</button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body" style="padding: 25px;">
                 <form id="create-chat-form">
                     <div class="form-group">
                         <label for="chat-type">Тип чата *</label>
@@ -112,7 +151,7 @@
                     
                     <div class="form-group">
                         <label>Найти пользователей</label>
-                        <input type="text" id="user-search" placeholder="Поиск по имени или email..." style="margin-bottom: 15px;">
+                        <input type="text" id="user-search" placeholder="Поиск по имени или email..." style="margin-bottom: 15px; width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px;">
                         <div id="user-search-results" style="max-height: 200px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px;">
                             <!-- Результаты поиска -->
                         </div>
@@ -125,7 +164,13 @@
                         </div>
                     </div>
                     
-                    <div class="modal-footer">
+                    <div class="modal-footer" style="
+                        padding: 20px 25px;
+                        border-top: 1px solid #e2e8f0;
+                        display: flex;
+                        justify-content: flex-end;
+                        gap: 15px;
+                    ">
                         <button type="button" class="btn btn-secondary cancel-btn">
                             Отмена
                         </button>
@@ -160,58 +205,56 @@
     <script src="app.js"></script>
     <script src="chats.js"></script>
 
-    <!-- Локальный скрипт для правильного открытия модалки -->
+    <!-- Локальный скрипт для управления модалкой -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Chats.html → DOM загружен, инициализация модалки');
+            console.log('Chats.html: DOM загружен — модалка готова');
 
             const createBtn = document.getElementById('create-chat-btn');
             const modal = document.getElementById('create-chat-modal');
             const overlay = document.getElementById('modal-overlay');
 
-            // Проверяем наличие элементов сразу при загрузке
+            // Проверка элементов
             if (!createBtn) console.error('Кнопка #create-chat-btn НЕ НАЙДЕНА');
-            if (!modal)     console.error('Модальное окно #create-chat-modal НЕ НАЙДЕНО');
+            if (!modal)     console.error('Модалка #create-chat-modal НЕ НАЙДЕНА');
             if (!overlay)   console.error('Оверлей #modal-overlay НЕ НАЙДЕН');
 
             if (createBtn) {
                 createBtn.addEventListener('click', function() {
-                    console.log('Кнопка "Новый чат" нажата');
-
-                    if (!modal || !overlay) {
-                        console.error('Модалка или оверлей НЕ НАЙДЕНЫ');
-                        alert('Ошибка: модальное окно или фон не найдены в HTML');
-                        return;
+                    console.log('Открываем модалку');
+                    if (modal && overlay) {
+                        overlay.style.display = 'flex';
+                        modal.classList.remove('hidden');
+                        modal.style.opacity = '1';
+                        modal.style.transform = 'translate(-50%, -50%) scale(1)';
                     }
-
-                    // Открываем
-                    modal.classList.remove('hidden');
-                    overlay.classList.remove('hidden');
-
-                    // Сброс формы
-                    if (document.getElementById('chat-type')) document.getElementById('chat-type').value = '';
-                    if (document.getElementById('group-name-group')) document.getElementById('group-name-group').classList.add('hidden');
-                    if (document.getElementById('user-search')) document.getElementById('user-search').value = '';
-                    if (document.getElementById('user-search-results')) document.getElementById('user-search-results').innerHTML = '';
-                    if (document.getElementById('selected-users')) document.getElementById('selected-users').innerHTML = '';
                 });
             }
 
-            // Закрытие модалки (крестик и кнопка Отмена)
-            document.querySelectorAll('#create-chat-modal .modal-close, #create-chat-modal .cancel-btn').forEach(btn => {
+            // Закрытие модалки
+            const closeBtns = document.querySelectorAll('#create-chat-modal .modal-close, #create-chat-modal .cancel-btn');
+            closeBtns.forEach(btn => {
                 btn.addEventListener('click', function() {
-                    if (modal) modal.classList.add('hidden');
-                    if (overlay) overlay.classList.add('hidden');
-                    console.log('Модалка закрыта');
+                    if (modal && overlay) {
+                        modal.classList.add('hidden');
+                        overlay.style.display = 'none';
+                    }
                 });
             });
 
-            // Запуск основной логики чатов из chats.js
+            // Закрытие по клику на фон
+            if (overlay) {
+                overlay.addEventListener('click', function(e) {
+                    if (e.target === overlay) {
+                        modal.classList.add('hidden');
+                        overlay.style.display = 'none';
+                    }
+                });
+            }
+
+            // Запуск основной логики чатов
             if (typeof initChatsPage === 'function') {
-                console.log('Запускаем initChatsPage() из chats.js');
                 initChatsPage();
-            } else {
-                console.warn('Функция initChatsPage() не найдена в chats.js');
             }
         });
     </script>
