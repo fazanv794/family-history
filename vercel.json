@@ -1,23 +1,22 @@
 {
   "rewrites": [
-      { 
-          "source": "/auth-callback.html", 
-          "destination": "/auth-callback.html" 
-      },
-      { 
-          "source": "/(.*)", 
-          "destination": "/index.html" 
-      }
+    { "source": "/auth-callback.html", "destination": "/auth-callback.html" },
+    { "source": "/chats.js",          "destination": "/chats.js" },
+    { "source": "/tree-builder-simple.js", "destination": "/tree-builder-simple.js" },
+    { "source": "/tree-engine.js",    "destination": "/tree-engine.js" },
+    { "source": "/profile.js",        "destination": "/profile.js" },
+    { "source": "/supabase.js",       "destination": "/supabase.js" },
+    { "source": "/(.*)",              "destination": "/index.html" }
   ],
   "headers": [
-      {
-          "source": "/(.*)",
-          "headers": [
-              {
-                  "key": "Content-Security-Policy",
-                  "value": "default-src 'self' https: 'unsafe-inline' 'unsafe-eval'; img-src 'self' https: data: blob:;"
-              }
-          ]
-      }
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self' https: 'unsafe-inline' 'unsafe-eval'; connect-src 'self' https: wss:; img-src 'self' https: data: blob:; style-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:;"
+        }
+      ]
+    }
   ]
 }

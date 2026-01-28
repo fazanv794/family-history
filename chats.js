@@ -184,7 +184,9 @@ function setupRealtimeSubscriptions() {
 function setupChatEventListeners() {
     // Кнопка создания чата
     document.getElementById('create-chat-btn')?.addEventListener('click', () => {
-        window.showModal('create-chat-modal');
+        document.getElementById('create-chat-modal').classList.remove('hidden');
+document.getElementById('modal-overlay')?.classList?.remove('hidden') || 
+document.body.insertAdjacentHTML('beforeend', '<div id="modal-overlay" class="modal-overlay"></div>');
         document.getElementById('user-search-results').innerHTML = '';
         document.getElementById('selected-users').innerHTML = '';
         document.getElementById('group-name-group').classList.add('hidden');
