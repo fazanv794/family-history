@@ -39,7 +39,6 @@
 
     <!-- Главный контент приложения -->
     <main id="app-content">
-        <!-- Страница чатов -->
         <section id="chats-page" class="page">
             <div class="container">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
@@ -84,14 +83,11 @@
         </div>
     </footer>
 
-    <!-- Оверлей для модалок (центрирует и затемняет экран) -->
-    <div id="modal-overlay" class="modal-overlay hidden" style="
+    <!-- Оверлей для модального окна -->
+    <div id="modal-overlay" style="
         position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.65);
+        inset: 0;
+        background: rgba(0,0,0,0.65);
         z-index: 9999;
         display: none;
         align-items: center;
@@ -99,41 +95,44 @@
         backdrop-filter: blur(4px);
     "></div>
 
-    <!-- Модальное окно создания чата (центрировано по экрану) -->
-    <div id="create-chat-modal" class="modal hidden" style="
+    <!-- Модальное окно создания чата -->
+    <div id="create-chat-modal" style="
         position: fixed;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
+        width: 90%;
+        max-width: 560px;
+        max-height: 90vh;
         background: white;
         border-radius: 16px;
-        width: 90%;
-        max-width: 540px;
-        max-height: 90vh;
-        overflow-y: auto;
         box-shadow: 0 25px 70px rgba(0,0,0,0.45);
+        overflow-y: auto;
         z-index: 10000;
         opacity: 0;
         transition: opacity 0.3s ease, transform 0.3s ease;
     ">
         <div class="modal-content" style="padding: 0;">
             <div class="modal-header" style="
-                padding: 20px 25px;
-                border-bottom: 1px solid #e2e8f0;
+                padding: 20px 24px;
+                background: linear-gradient(135deg, #667eea, #764ba2);
+                color: white;
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
+                border-top-left-radius: 16px;
+                border-top-right-radius: 16px;
             ">
-                <h3 style="margin: 0;">Создать новый чат</h3>
+                <h3 style="margin: 0; font-size: 1.4rem;">Создать новый чат</h3>
                 <button class="modal-close" style="
                     background: none;
                     border: none;
-                    font-size: 28px;
+                    font-size: 32px;
+                    color: white;
                     cursor: pointer;
-                    color: #718096;
                 ">×</button>
             </div>
-            <div class="modal-body" style="padding: 25px;">
+            <div class="modal-body" style="padding: 24px;">
                 <form id="create-chat-form">
                     <div class="form-group">
                         <label for="chat-type">Тип чата *</label>
@@ -151,32 +150,22 @@
                     
                     <div class="form-group">
                         <label>Найти пользователей</label>
-                        <input type="text" id="user-search" placeholder="Поиск по имени или email..." style="margin-bottom: 15px; width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px;">
-                        <div id="user-search-results" style="max-height: 200px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px;">
+                        <input type="text" id="user-search" placeholder="Поиск по имени или email..." style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; margin-bottom: 12px;">
+                        <div id="user-search-results" style="max-height: 200px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; background: #fafafa;">
                             <!-- Результаты поиска -->
                         </div>
                     </div>
                     
                     <div class="form-group">
                         <label>Выбранные участники</label>
-                        <div id="selected-users" style="display: flex; flex-wrap: wrap; gap: 10px; min-height: 40px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px;">
+                        <div id="selected-users" style="display: flex; flex-wrap: wrap; gap: 10px; min-height: 40px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; background: #fafafa;">
                             <!-- Выбранные пользователи -->
                         </div>
                     </div>
                     
-                    <div class="modal-footer" style="
-                        padding: 20px 25px;
-                        border-top: 1px solid #e2e8f0;
-                        display: flex;
-                        justify-content: flex-end;
-                        gap: 15px;
-                    ">
-                        <button type="button" class="btn btn-secondary cancel-btn">
-                            Отмена
-                        </button>
-                        <button type="submit" class="btn">
-                            Создать чат
-                        </button>
+                    <div class="modal-footer" style="margin-top: 24px; display: flex; justify-content: flex-end; gap: 16px;">
+                        <button type="button" class="btn btn-secondary cancel-btn">Отмена</button>
+                        <button type="submit" class="btn">Создать чат</button>
                     </div>
                 </form>
             </div>
@@ -187,7 +176,7 @@
     <div id="notification" class="notification">
         <div class="notification-content">
             <span id="notification-text"></span>
-            <button class="notification-close">&times;</button>
+            <button class="notification-close">×</button>
         </div>
     </div>
 
@@ -197,65 +186,48 @@
         <div class="loader-text" id="loader-text">Загрузка...</div>
     </div>
 
-    <!-- Подключаем библиотеки -->
+    <!-- Скрипты -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    
-    <!-- Подключаем наши файлы -->
     <script src="supabase.js"></script>
     <script src="app.js"></script>
     <script src="chats.js"></script>
 
-    <!-- Локальный скрипт для управления модалкой -->
+    <!-- Локальный скрипт управления модалкой -->
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('Chats.html: DOM загружен — модалка готова');
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Chats.html → модалка инициализирована');
 
-            const createBtn = document.getElementById('create-chat-btn');
+            const btn = document.getElementById('create-chat-btn');
             const modal = document.getElementById('create-chat-modal');
             const overlay = document.getElementById('modal-overlay');
 
-            // Проверка элементов
-            if (!createBtn) console.error('Кнопка #create-chat-btn НЕ НАЙДЕНА');
-            if (!modal)     console.error('Модалка #create-chat-modal НЕ НАЙДЕНА');
-            if (!overlay)   console.error('Оверлей #modal-overlay НЕ НАЙДЕН');
-
-            if (createBtn) {
-                createBtn.addEventListener('click', function() {
-                    console.log('Открываем модалку');
-                    if (modal && overlay) {
-                        overlay.style.display = 'flex';
-                        modal.classList.remove('hidden');
-                        modal.style.opacity = '1';
-                        modal.style.transform = 'translate(-50%, -50%) scale(1)';
-                    }
+            if (btn) {
+                btn.addEventListener('click', () => {
+                    console.log('Открытие модалки');
+                    overlay.style.display = 'flex';
+                    modal.style.opacity = '1';
+                    modal.style.transform = 'translate(-50%, -50%) scale(1)';
                 });
             }
 
-            // Закрытие модалки
-            const closeBtns = document.querySelectorAll('#create-chat-modal .modal-close, #create-chat-modal .cancel-btn');
-            closeBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    if (modal && overlay) {
-                        modal.classList.add('hidden');
-                        overlay.style.display = 'none';
-                    }
+            // Закрытие
+            document.querySelectorAll('#create-chat-modal .modal-close, #create-chat-modal .cancel-btn').forEach(el => {
+                el.addEventListener('click', () => {
+                    modal.style.opacity = '0';
+                    overlay.style.display = 'none';
                 });
             });
 
-            // Закрытие по клику на фон
-            if (overlay) {
-                overlay.addEventListener('click', function(e) {
-                    if (e.target === overlay) {
-                        modal.classList.add('hidden');
-                        overlay.style.display = 'none';
-                    }
-                });
-            }
+            // Клик по фону → закрыть
+            overlay.addEventListener('click', e => {
+                if (e.target === overlay) {
+                    modal.style.opacity = '0';
+                    overlay.style.display = 'none';
+                }
+            });
 
             // Запуск основной логики чатов
-            if (typeof initChatsPage === 'function') {
-                initChatsPage();
-            }
+            if (typeof initChatsPage === 'function') initChatsPage();
         });
     </script>
 </body>
