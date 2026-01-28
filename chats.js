@@ -32,33 +32,39 @@ async function loadConversations() {
     window.showLoader('Загрузка чатов...');
     
     try {
-        const { data: conversations, error } = await window.supabaseClient
+        // 1. Получаем все чаты пользователя (conversation + базовые поля)
+        const { data: convs, error: convErr } = await window.supabaseClient
             .from('conversations')
-            .select(`
-                *,
-                conversation_participants!inner (
-                    profiles (
-                        id,
-                        full_name,
-                        avatar_url
-                    )
-                )
-            `)
+            .select('*')
             .order('created_at', { ascending: false });
         
-        if (error) throw error;
+        if (convErr) throw convErr;
         
         const chatsList = document.getElementById('chats-list');
         chatsList.innerHTML = '';
         
-        conversations.forEach(conv => {
-            const participants = conv.conversation_participants
-                .map(p => p.profiles.full_name)
-                .filter(name => name !== window.currentUser.user_metadata?.name);  // Исключаем себя
+        for (const conv of convs) {
+            // 2. Получаем участников этого чата
+            const { data: participants, error: partErr } = await window.supabaseClient
+                .from('conversation_participants')
+                .select('user_id, profiles!inner(id, full_name, avatar_url)')
+                .eq('conversation_id', conv.id);
+            
+            if (partErr) {
+                console.warn('Ошибка участников для чата', conv.id, partErr);
+                continue;
+            }
+            
+            // Формируем имена участников (исключаем себя)
+            const otherNames = participants
+                .filter(p => p.user_id !== window.currentUser.id)
+                .map(p => p.profiles?.full_name || p.profiles?.email?.split('@')[0] || 'Пользователь');
             
             const chatName = conv.is_group 
-                ? conv.name || 'Группа'
-                : participants[0] || 'Приватный чат';
+                ? conv.name || `Группа (${otherNames.length} чел.)`
+                : otherNames[0] || 'Приватный чат';
+            
+            const participantCount = participants.length;
             
             const chatItem = document.createElement('div');
             chatItem.className = 'chat-item';
@@ -71,22 +77,22 @@ async function loadConversations() {
                     <div>
                         <h4 style="margin: 0; color: #2d3748;">${chatName}</h4>
                         <p style="margin: 0; color: #718096; font-size: 0.9rem;">
-                            Участников: ${conv.conversation_participants.length}
+                            Участников: ${participantCount}
                         </p>
                     </div>
                 </div>
             `;
             chatItem.onclick = () => openConversation(conv.id, chatName);
             chatsList.appendChild(chatItem);
-        });
+        }
         
-        if (conversations.length === 0) {
-            chatsList.innerHTML = '<p style="text-align: center; color: #718096;">Нет чатов. Создайте новый!</p>';
+        if (convs.length === 0) {
+            chatsList.innerHTML = '<p style="text-align: center; color: #718096; padding: 20px;">Нет чатов. Создайте новый!</p>';
         }
         
     } catch (error) {
         console.error('Ошибка загрузки чатов:', error);
-        window.showNotification('Ошибка загрузки чатов', 'error');
+        window.showNotification('Ошибка загрузки чатов: ' + (error.message || 'проверьте консоль'), 'error');
     } finally {
         window.hideLoader();
     }
