@@ -339,22 +339,28 @@ async function loadUserChats() {
     }
 }
 
-// Загрузка всех пользователей
 async function loadAllUsers() {
     console.log('👥 Загрузка пользователей...');
     
     if (!window.supabaseClient || !window.currentUser) return;
     
     try {
-        const { data: users, error } = await window.supabaseClient
-            .from('profiles')
-            .select('id, email, full_name')
-            .neq('id', window.currentUser.id) // Исключаем текущего пользователя
-            .order('full_name', { ascending: true });
+        const { data: { users }, error } = await window.supabaseClient.auth.admin.listUsers();
         
         if (!error && users) {
-            window.chatUsers = users;
-            console.log('✅ Загружено пользователей:', window.chatUsers.length);
+            window.chatUsers = users
+                .filter(user => user.id !== window.currentUser.id)
+                .map(user => ({
+                    id: user.id,
+                    email: user.email,
+                    full_name: user.user_metadata?.full_name || 
+                              user.user_metadata?.name || 
+                              user.email?.split('@')[0] || 
+                              'Пользователь'
+                }))
+                .sort((a, b) => a.full_name.localeCompare(b.full_name));
+            
+            console.log('✅ Загружено пользователей из auth.users:', window.chatUsers.length);
         }
     } catch (error) {
         console.error('❌ Ошибка загрузки пользователей:', error);

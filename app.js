@@ -146,10 +146,12 @@ function updateUserUI() {
         return;
     }
     
-    const displayName = window.currentUser.user_metadata?.name || 
-                       window.currentUser.user_metadata?.full_name || 
+      const displayName = window.currentUser.user_metadata?.full_name || 
+                       window.currentUser.user_metadata?.name || 
                        window.currentUser.email?.split('@')[0] || 
                        'Пользователь';
+
+    const email = window.currentUser.email;
     
     const usernameElements = document.querySelectorAll('#username, .profile-name');
     usernameElements.forEach(el => {
@@ -737,129 +739,314 @@ function getMediaTypeFromUrl(url) {
 }
 
 // Показать выбранные файлы
+// Функция для отображения выбранных файлов в форме загрузки
 function showSelectedFiles() {
+    // Получаем элементы DOM
     const filesInput = document.getElementById('upload-files');
-    const fileList = document.getElementById('file-list');
-    const listContainer = document.getElementById('selected-files-list');
+    const fileListContainer = document.getElementById('file-list');
+    const listItemsContainer = document.getElementById('selected-files-list');
     
-    if (!filesInput || !fileList || !listContainer) return;
-    
-    const files = filesInput.files;
-    
-    if (!files || files.length === 0) {
-        fileList.style.display = 'none';
+    // Проверяем, что все необходимые элементы существуют
+    if (!filesInput || !fileListContainer || !listItemsContainer) {
+        console.warn('Элементы для отображения файлов не найдены');
         return;
     }
     
-    listContainer.innerHTML = '';
+    // Получаем выбранные файлы
+    const selectedFiles = filesInput.files;
     
-    Array.from(files).forEach((file, index) => {
-        const li = document.createElement('li');
-        li.textContent = `${index + 1}. ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
-        listContainer.appendChild(li);
+    // Если файлы не выбраны, скрываем список
+    if (!selectedFiles || selectedFiles.length === 0) {
+        fileListContainer.style.display = 'none';
+        return;
+    }
+    
+    // Очищаем предыдущий список
+    listItemsContainer.innerHTML = '';
+    
+    // Создаем элементы списка для каждого файла
+    Array.from(selectedFiles).forEach((file, index) => {
+        // Создаем элемент списка
+        const listItem = document.createElement('li');
+        listItem.className = 'selected-file-item';
+        
+        // Форматируем размер файла
+        const fileSize = formatFileSize(file.size);
+        
+        // Добавляем иконку в зависимости от типа файла
+        const fileIcon = getFileIcon(file.type);
+        
+        // Заполняем содержимое
+        listItem.innerHTML = `
+            <div class="file-info">
+                <span class="file-icon">${fileIcon}</span>
+                <div class="file-details">
+                    <span class="file-name">${file.name}</span>
+                    <span class="file-size">${fileSize}</span>
+                </div>
+            </div>
+            <span class="file-number">${index + 1}</span>
+        `;
+        
+        // Добавляем в контейнер
+        listItemsContainer.appendChild(listItem);
     });
     
-    fileList.style.display = 'block';
+    // Показываем список файлов
+    fileListContainer.style.display = 'block';
+    
+    // Обновляем заголовок с количеством файлов
+    const fileListTitle = fileListContainer.querySelector('h4');
+    if (fileListTitle) {
+        fileListTitle.textContent = `Выбрано файлов: ${selectedFiles.length}`;
+    }
 }
 
-// Загрузка данных пользователя
+// Вспомогательная функция для форматирования размера файла
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Вспомогательная функция для получения иконки файла
+function getFileIcon(fileType) {
+    if (fileType.startsWith('image/')) {
+        return '<i class="fas fa-image"></i>';
+    } else if (fileType.startsWith('video/')) {
+        return '<i class="fas fa-video"></i>';
+    } else if (fileType.startsWith('audio/')) {
+        return '<i class="fas fa-music"></i>';
+    } else if (fileType.includes('pdf')) {
+        return '<i class="fas fa-file-pdf"></i>';
+    } else if (fileType.includes('word') || fileType.includes('document')) {
+        return '<i class="fas fa-file-word"></i>';
+    } else {
+        return '<i class="fas fa-file"></i>';
+    }
+}
+
+// Функция для загрузки данных пользователя
 async function loadUserData() {
     try {
+        console.log('🔄 Начало загрузки данных пользователя...');
+        
+        // Шаг 1: Проверяем наличие текущего пользователя
         if (!window.currentUser) {
+            console.log('👤 Пользователь не найден, проверяем localStorage...');
+            
+            // Пробуем загрузить из localStorage
             const savedUser = localStorage.getItem('family_tree_user');
             if (savedUser) {
                 try {
                     window.currentUser = JSON.parse(savedUser);
-                } catch (e) {
-                    console.error('❌ Ошибка парсинга пользователя:', e);
+                    console.log('✅ Пользователь загружен из localStorage');
+                } catch (parseError) {
+                    console.error('❌ Ошибка парсинга пользователя из localStorage:', parseError);
+                    showNotification('Ошибка загрузки данных пользователя', 'error');
+                    return;
                 }
             }
             
+            // Если пользователь все еще не найден
             if (!window.currentUser) {
+                console.log('⚠️ Пользователь не авторизован, прерываем загрузку данных');
                 return;
             }
         }
         
-        showLoader('Загрузка данных...');
+        // Шаг 2: Показываем индикатор загрузки
+        window.showLoader('Загрузка ваших данных...');
         
+        // Шаг 3: Проверяем и добавляем запись "Я" в список людей
         if (window.people.length === 0) {
+            console.log('➕ Добавляем запись текущего пользователя в список людей');
+            
+            const userNameParts = (window.currentUser.user_metadata?.name || 'Я').split(' ');
             const selfPerson = {
-                id: Date.now(),
-                first_name: window.currentUser.user_metadata?.name?.split(' ')[0] || 'Я',
-                last_name: window.currentUser.user_metadata?.name?.split(' ')[1] || '',
+                id: window.currentUser.id || `user-${Date.now()}`,
+                first_name: userNameParts[0] || 'Я',
+                last_name: userNameParts.slice(1).join(' ') || '',
+                email: window.currentUser.email || '',
                 relation: 'self',
-                gender: 'male',
-                created_at: new Date().toISOString()
+                gender: window.currentUser.user_metadata?.gender || 'male',
+                birth_date: window.currentUser.user_metadata?.birth_date || null,
+                biography: window.currentUser.user_metadata?.bio || '',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
             };
             
             window.people.push(selfPerson);
+            console.log('✅ Запись "Я" добавлена в список людей');
+        } else {
+            console.log(`📋 В списке уже есть ${window.people.length} человек`);
         }
         
-        console.log('✅ Данные загружены');
-        
-        if (typeof window.updateStats === 'function') {
-            window.updateStats();
+        // Шаг 4: Загружаем дополнительные данные если нужно
+        if (window.supabaseClient && window.currentUser) {
+            await loadDataFromSupabase();
         }
         
-        if (typeof window.updateRecentEvents === 'function') {
-            window.updateRecentEvents();
-        }
+        // Шаг 5: Обновляем UI
+        updateAllUIComponents();
         
-        if (typeof window.updateTimeline === 'function') {
-            window.updateTimeline();
-        }
-        
-        if (typeof window.updateMediaGrid === 'function') {
-            window.updateMediaGrid();
-        }
-        
-        if (typeof window.updateTreeStats === 'function') {
-            window.updateTreeStats();
-        }
-        
-        if (typeof window.updateTreeInterface === 'function' && window.treeData.relatives.length > 0) {
-            window.updateTreeInterface(window.treeData.relatives, window.treeData.name);
-        }
+        console.log('✅ Все данные пользователя успешно загружены');
         
     } catch (error) {
-        console.error('❌ Ошибка загрузки данных:', error);
-        showNotification('Ошибка загрузки данных', 'error');
+        console.error('❌ Критическая ошибка при загрузке данных пользователя:', error);
         
-        if (window.people.length === 0) {
-            window.people = JSON.parse(localStorage.getItem('family_tree_people') || '[]');
-        }
-        if (window.events.length === 0) {
-            window.events = JSON.parse(localStorage.getItem('family_tree_events') || '[]');
-        }
-        if (window.media.length === 0) {
-            window.media = JSON.parse(localStorage.getItem('family_tree_media') || '[]');
+        // Показываем понятное сообщение об ошибке
+        showNotification('Не удалось загрузить ваши данные. Проверьте подключение к интернету.', 'error');
+        
+        // Пробуем загрузить резервные данные из localStorage
+        loadFallbackData();
+        
+    } finally {
+        // Всегда скрываем индикатор загрузки
+        window.hideLoader();
+    }
+}
+
+// Вспомогательная функция для загрузки данных из Supabase
+async function loadDataFromSupabase() {
+    console.log('☁️ Загрузка данных из Supabase...');
+    
+    try {
+        // Загружаем людей из Supabase
+        const { data: peopleData, error: peopleError } = await window.supabaseClient
+            .from('people')
+            .select('*')
+            .eq('user_id', window.currentUser.id)
+            .order('created_at', { ascending: false });
+        
+        if (!peopleError && peopleData && peopleData.length > 0) {
+            // Объединяем с локальными данными, избегая дубликатов
+            peopleData.forEach(supabasePerson => {
+                const exists = window.people.some(localPerson => 
+                    localPerson.id === supabasePerson.id || 
+                    (localPerson.first_name === supabasePerson.first_name && 
+                     localPerson.last_name === supabasePerson.last_name)
+                );
+                
+                if (!exists) {
+                    window.people.push(supabasePerson);
+                }
+            });
+            console.log(`✅ Загружено ${peopleData.length} записей людей из Supabase`);
         }
         
+        // Загружаем события из Supabase
+        const { data: eventsData, error: eventsError } = await window.supabaseClient
+            .from('events')
+            .select('*')
+            .eq('user_id', window.currentUser.id)
+            .order('date', { ascending: false })
+            .limit(50);
+        
+        if (!eventsError && eventsData) {
+            window.events = eventsData;
+            console.log(`✅ Загружено ${eventsData.length} событий из Supabase`);
+        }
+        
+        // Загружаем медиа из Supabase
+        const { data: mediaData, error: mediaError } = await window.supabaseClient
+            .from('media')
+            .select('*')
+            .eq('user_id', window.currentUser.id)
+            .order('created_at', { ascending: false })
+            .limit(100);
+        
+        if (!mediaError && mediaData) {
+            window.media = mediaData;
+            console.log(`✅ Загружено ${mediaData.length} медиафайлов из Supabase`);
+        }
+        
+    } catch (supabaseError) {
+        console.warn('⚠️ Не удалось загрузить данные из Supabase, используем локальные данные:', supabaseError);
+    }
+}
+
+// Функция для обновления всех компонентов UI
+function updateAllUIComponents() {
+    console.log('🎨 Обновление всех компонентов интерфейса...');
+    
+    // Список функций для обновления UI (если они определены)
+    const uiUpdateFunctions = [
+        { name: 'updateStats', func: window.updateStats },
+        { name: 'updateRecentEvents', func: window.updateRecentEvents },
+        { name: 'updateTimeline', func: window.updateTimeline },
+        { name: 'updateMediaGrid', func: window.updateMediaGrid },
+        { name: 'updateTreeStats', func: window.updateTreeStats },
+        { name: 'updateUserUI', func: window.updateUserUI }
+    ];
+    
+    // Вызываем все доступные функции обновления UI
+    uiUpdateFunctions.forEach(({ name, func }) => {
+        if (typeof func === 'function') {
+            try {
+                func();
+                console.log(`✅ Функция ${name} выполнена успешно`);
+            } catch (funcError) {
+                console.warn(`⚠️ Ошибка в функции ${name}:`, funcError);
+            }
+        }
+    });
+    
+    // Обновляем дерево если есть данные и функция
+    if (typeof window.updateTreeInterface === 'function' && 
+        window.treeData && 
+        window.treeData.relatives && 
+        window.treeData.relatives.length > 0) {
+        
+        try {
+            window.updateTreeInterface(window.treeData.relatives, window.treeData.name);
+            console.log('✅ Дерево успешно обновлено');
+        } catch (treeError) {
+            console.warn('⚠️ Ошибка при обновлении дерева:', treeError);
+        }
+    }
+    
+    console.log('🎉 Все компоненты интерфейса обновлены');
+}
+
+// Функция для загрузки резервных данных из localStorage
+function loadFallbackData() {
+    console.log('📦 Загрузка резервных данных из localStorage...');
+    
+    try {
+        // Загружаем людей
+        const savedPeople = localStorage.getItem('family_tree_people');
+        if (savedPeople) {
+            window.people = JSON.parse(savedPeople);
+            console.log(`✅ Загружено ${window.people.length} человек из localStorage`);
+        }
+        
+        // Загружаем события
+        const savedEvents = localStorage.getItem('family_tree_events');
+        if (savedEvents) {
+            window.events = JSON.parse(savedEvents);
+            console.log(`✅ Загружено ${window.events.length} событий из localStorage`);
+        }
+        
+        // Загружаем медиа
+        const savedMedia = localStorage.getItem('family_tree_media');
+        if (savedMedia) {
+            window.media = JSON.parse(savedMedia);
+            console.log(`✅ Загружено ${window.media.length} медиафайлов из localStorage`);
+        }
+        
+        // Обновляем статистику
         if (typeof window.updateStats === 'function') {
             window.updateStats();
         }
         
-        if (typeof window.updateRecentEvents === 'function') {
-            window.updateRecentEvents();
-        }
-        
-        if (typeof window.updateTimeline === 'function') {
-            window.updateTimeline();
-        }
-        
-        if (typeof window.updateMediaGrid === 'function') {
-            window.updateMediaGrid();
-        }
-        
-        if (typeof window.updateTreeStats === 'function') {
-            window.updateTreeStats();
-        }
-        
-        if (typeof window.updateTreeInterface === 'function' && window.treeData.relatives.length > 0) {
-            window.updateTreeInterface(window.treeData.relatives, window.treeData.name);
-        }
-    } finally {
-        hideLoader();
+    } catch (localStorageError) {
+        console.error('❌ Ошибка загрузки данных из localStorage:', localStorageError);
+        showNotification('Не удалось загрузить сохраненные данные', 'error');
     }
 }
 
@@ -1060,5 +1247,8 @@ window.loadFromLocalStorage = loadFromLocalStorage;
 window.getMediaTypeFromUrl = getMediaTypeFromUrl;
 window.readFileAsDataURL = readFileAsDataURL;
 window.showSelectedFiles = showSelectedFiles;
+window.formatFileSize = formatFileSize;
+window.getFileIcon = getFileIcon;
+window.updateAllUIComponents = updateAllUIComponents;
 
 console.log('✅ App.js загружен');

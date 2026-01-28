@@ -28,7 +28,7 @@ async function initChatsPage() {
     }
 }
 
-// Загрузка всех пользователей
+\
 async function loadAllUsers() {
     console.log('👥 Загрузка всех пользователей...');
     
@@ -38,26 +38,34 @@ async function loadAllUsers() {
     }
     
     try {
-        const { data, error } = await window.supabaseClient
-            .from('profiles')
-            .select('id, email, full_name')
-            .neq('id', window.currentUser.id)
-            .order('full_name', { ascending: true })
-            .limit(50);
+        // Используем auth.getUsers() вместо запроса к profiles
+        const { data: { users }, error } = await window.supabaseClient.auth.admin.listUsers();
         
         if (error) throw error;
         
-        availableUsers = data || [];
-        console.log(`✅ Загружено пользователей: ${availableUsers.length}`);
+        // Фильтруем текущего пользователя и преобразуем формат
+        availableUsers = (users || [])
+            .filter(user => user.id !== window.currentUser.id)
+            .map(user => ({
+                id: user.id,
+                email: user.email,
+                full_name: user.user_metadata?.full_name || 
+                          user.user_metadata?.name || 
+                          user.email?.split('@')[0] || 
+                          'Пользователь'
+            }))
+            .sort((a, b) => a.full_name.localeCompare(b.full_name));
+        
+        console.log(`✅ Загружено пользователей из auth.users: ${availableUsers.length}`);
         
     } catch (error) {
         console.error('❌ Ошибка загрузки пользователей:', error);
-        // Демо-пользователи для отладки
+        
+        // Fallback: демо-пользователи
         availableUsers = [
             { id: 'user1', email: 'user1@example.com', full_name: 'Александр Иванов' },
             { id: 'user2', email: 'user2@example.com', full_name: 'Мария Петрова' },
-            { id: 'user3', email: 'user3@example.com', full_name: 'Дмитрий Сидоров' },
-            { id: 'user4', email: 'user4@example.com', full_name: 'Елена Козлова' }
+            { id: 'user3', email: 'user3@example.com', full_name: 'Дмитрий Сидоров' }
         ];
     }
 }

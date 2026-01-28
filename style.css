@@ -3818,3 +3818,80 @@ select {
         height: 500px;
     }
 }
+
+/* Стили для отображения выбранных файлов */
+.selected-file-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    margin-bottom: 8px;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.selected-file-item:hover {
+    background-color: #edf2f7;
+    border-color: #cbd5e0;
+}
+
+.file-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.file-icon {
+    font-size: 1.2rem;
+    color: #667eea;
+    width: 24px;
+    text-align: center;
+}
+
+.file-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.file-name {
+    font-weight: 500;
+    color: #2d3748;
+    font-size: 0.95rem;
+    margin-bottom: 2px;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.file-size {
+    font-size: 0.8rem;
+    color: #718096;
+}
+
+.file-number {
+    background-color: #667eea;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+#file-list h4 {
+    margin-bottom: 10px;
+    color: #4a5568;
+    font-size: 1rem;
+}
+
+#selected-files-list {
+    max-height: 200px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
