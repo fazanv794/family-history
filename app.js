@@ -26,11 +26,26 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Настраиваем общие обработчики событий
         setupCommonEventListeners();
         // Инициализация чата
-if (window.currentUser && typeof window.initChatSystem === 'function') {
-    setTimeout(() => {
-        window.initChatSystem();
-    }, 2000);
-}
+i    // Автоматическая инициализация чата
+    console.log('🔧 Настройка автоматического запуска чата...');
+    
+    const initChat = () => {
+        if (window.currentUser && typeof window.initChatSystem === 'function') {
+            console.log('👤 Пользователь авторизован, запускаем чат...');
+            window.initChatSystem();
+        } else if (typeof window.initChatSystem === 'function') {
+            // Пробуем через 2 секунды
+            setTimeout(() => {
+                if (typeof window.initChatSystem === 'function') {
+                    window.initChatSystem();
+                }
+            }, 2000);
+        }
+    };
+    
+    // Запускаем сразу и через 3 секунды
+    initChat();
+    setTimeout(initChat, 3000);
         // Обновляем UI пользователя
         updateUserUI();
         
