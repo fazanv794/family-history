@@ -32,7 +32,6 @@ async function loadConversations() {
     window.showLoader('Загрузка чатов...');
     
     try {
-        // Получаем все чаты пользователя
         const { data: convs, error: convErr } = await window.supabaseClient
             .from('conversations')
             .select('*')
@@ -47,7 +46,7 @@ async function loadConversations() {
             // Получаем участников
             const { data: participants, error: partErr } = await window.supabaseClient
                 .from('conversation_participants')
-                .select('user_id, profiles (id, full_name, email, avatar_url)')
+                .select('user_id')
                 .eq('conversation_id', conv.id);
             
             if (partErr) {
@@ -55,10 +54,26 @@ async function loadConversations() {
                 continue;
             }
             
-            // Формируем имена (исключаем себя)
+            // Получаем профили отдельно (без join'а, чтобы избежать 400)
+            const userIds = participants.map(p => p.user_id);
+            const { data: profilesData, error: profErr } = await window.supabaseClient
+                .from('profiles')
+                .select('id, full_name, email')
+                .in('id', userIds);
+            
+            if (profErr) {
+                console.warn('Ошибка профилей', profErr);
+                continue;
+            }
+            
+            const profileMap = new Map(profilesData.map(p => [p.id, p]));
+            
             const otherNames = participants
                 .filter(p => p.user_id !== window.currentUser.id)
-                .map(p => p.profiles?.full_name || p.profiles?.email?.split('@')[0] || 'Пользователь');
+                .map(p => {
+                    const prof = profileMap.get(p.user_id);
+                    return prof?.full_name || prof?.email?.split('@')[0] || 'Пользователь';
+                });
             
             const chatName = conv.is_group 
                 ? conv.name || `Группа (${otherNames.length} чел.)`
@@ -111,14 +126,17 @@ async function openConversation(convId, chatName) {
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
 
-// Загрузка сообщений
+// Загрузка сообщений (исправленный join)
 async function loadMessages(convId) {
     window.showLoader('Загрузка сообщений...');
     
     try {
         const { data: messages, error } = await window.supabaseClient
             .from('messages')
-            .select('*, sender:sender_id (full_name)')
+            .select(`
+                *,
+                sender_id!inner(full_name)
+            `)
             .eq('conversation_id', convId)
             .order('created_at', { ascending: true });
         
@@ -129,17 +147,19 @@ async function loadMessages(convId) {
         
         messages.forEach(msg => {
             const isOwn = msg.sender_id === window.currentUser.id;
+            const senderName = msg.sender_id?.full_name || 'Аноним';
+            
             const messageItem = document.createElement('div');
             messageItem.style = `
                 margin-bottom: 15px;
                 padding: 12px 15px;
                 border-radius: 8px;
                 max-width: 70%;
-                ${isOwn ? 'background: #667eea; color: white; align-self: flex-end;' : 'background: #f1f5f9; color: #2d3748; align-self: flex-start;'}
+                ${isOwn ? 'background: #667eea; color: white; align-self: flex-end; margin-left: auto;' : 'background: #f1f5f9; color: #2d3748; align-self: flex-start;'}
             `;
             messageItem.innerHTML = `
                 <p style="margin: 0 0 5px 0; font-size: 0.85rem; opacity: 0.8;">
-                    ${msg.sender?.full_name || 'Аноним'}
+                    ${senderName}
                 </p>
                 <p style="margin: 0;">${msg.content}</p>
                 <p style="margin: 5px 0 0 0; font-size: 0.75rem; opacity: 0.6; text-align: right;">
@@ -151,13 +171,13 @@ async function loadMessages(convId) {
         
     } catch (error) {
         console.error('Ошибка загрузки сообщений:', error);
-        window.showNotification('Ошибка загрузки сообщений', 'error');
+        window.showNotification('Ошибка загрузки сообщений: ' + (error.message || 'проверьте консоль'), 'error');
     } finally {
         window.hideLoader();
     }
 }
 
-// Настройка realtime
+// Настройка realtime подписок
 function setupRealtimeSubscriptions() {
     const convSub = window.supabaseClient
         .channel('conversations')
@@ -199,22 +219,13 @@ function setupChatEventListeners() {
     });
 }
 
-// Поиск пользователей (с debounce)
-let searchTimeout;
-document.addEventListener('input', (e) => {
-    if (e.target.id === 'user-search') {
-        clearTimeout(searchTimeout);
-        const query = e.target.value.trim();
-        searchTimeout = setTimeout(() => searchUsers(query), 400);
-    }
-}, true);  // true = capture phase, чтобы ловить даже в модалке
-
+// Поиск пользователей
 async function searchUsers(query) {
     console.log('[searchUsers] Запрос:', query);
 
     const container = document.getElementById('user-search-results');
     if (!container) {
-        console.error('[searchUsers] Контейнер не найден');
+        console.error('[searchUsers] Контейнер #user-search-results не найден');
         return;
     }
 
@@ -223,7 +234,7 @@ async function searchUsers(query) {
         return;
     }
 
-    container.innerHTML = '<p style="text-align:center; color:#718096;">Поиск...</p>';
+    container.innerHTML = '<p style="text-align:center; color:#718096; padding:12px;">Поиск...</p>';
 
     try {
         const { data: users, error } = await window.supabaseClient
@@ -233,7 +244,7 @@ async function searchUsers(query) {
             .neq('id', window.currentUser?.id || '')
             .limit(8);
 
-        console.log('[searchUsers] Ответ Supabase:', users, error);
+        console.log('[searchUsers] Ответ Supabase:', { users, error });
 
         if (error) throw error;
 
@@ -246,7 +257,7 @@ async function searchUsers(query) {
 
         users.forEach(user => {
             const div = document.createElement('div');
-            div.style.cssText = 'padding:10px 12px; border-bottom:1px solid #eee; cursor:pointer; display:flex; align-items:center; gap:12px;';
+            div.style.cssText = 'padding:10px 12px; border-bottom:1px solid #eee; cursor:pointer; display:flex; align-items:center; gap:12px; transition:background 0.2s;';
             div.innerHTML = `
                 <div style="width:40px;height:40px;background:#667eea;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;">
                     ${(user.full_name || user.email)[0].toUpperCase()}
@@ -260,11 +271,13 @@ async function searchUsers(query) {
                 console.log('Выбран:', user);
                 addSelectedUser(user);
             };
+            div.onmouseover = () => div.style.background = '#f0f4f8';
+            div.onmouseout = () => div.style.background = '';
             container.appendChild(div);
         });
     } catch (err) {
         console.error('[searchUsers] Ошибка:', err);
-        container.innerHTML = '<p style="color:red; text-align:center;">Ошибка поиска</p>';
+        container.innerHTML = '<p style="color:red; text-align:center; padding:12px;">Ошибка поиска</p>';
     }
 }
 
@@ -302,6 +315,18 @@ async function createChatFromForm(e) {
         if (selectedUsers.length === 0) throw new Error('Выберите хотя бы одного пользователя');
         if (type === 'private' && selectedUsers.length !== 1) throw new Error('Для приватного чата выберите одного пользователя');
         
+        // Для приватного чата проверяем существование
+        if (type === 'private') {
+            const partnerId = selectedUsers[0];
+            const { data: existing } = await window.supabaseClient
+                .from('conversations')
+                .select('id')
+                .eq('is_group', false)
+                .limit(1);
+            
+            // Более точная проверка требует join'а — пока пропускаем
+        }
+        
         const { data: conv, error: convError } = await window.supabaseClient
             .from('conversations')
             .insert({
@@ -332,7 +357,7 @@ async function createChatFromForm(e) {
         
     } catch (error) {
         console.error('Ошибка создания чата:', error);
-        window.showNotification('Ошибка: ' + error.message, 'error');
+        window.showNotification('Ошибка: ' + (error.message || 'проверьте консоль'), 'error');
     } finally {
         window.hideLoader();
     }
@@ -359,13 +384,14 @@ async function sendMessage(e) {
         if (error) throw error;
         
         input.value = '';
+        // Realtime сам обновит
     } catch (error) {
         console.error('Ошибка отправки:', error);
-        window.showNotification('Ошибка отправки', 'error');
+        window.showNotification('Ошибка отправки: ' + (error.message || 'проверьте консоль'), 'error');
     }
 }
 
-// Закрытие realtime
+// Закрытие подписок
 window.addEventListener('beforeunload', () => {
     realtimeSubscriptions.forEach(sub => sub.unsubscribe());
 });
