@@ -156,5 +156,52 @@
     <script src="supabase.js"></script>
     <script src="app.js"></script>
     <script src="chats.js"></script>
+
+<script>
+    // chats.html — локальный скрипт для инициализации модалки
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('Chats.html: локальная инициализация модалки');
+
+        const createBtn = document.getElementById('create-chat-btn');
+        if (createBtn) {
+            createBtn.addEventListener('click', () => {
+                console.log('Кнопка "Новый чат" нажата');
+                
+                const modal = document.getElementById('create-chat-modal');
+                const overlay = document.getElementById('modal-overlay');
+                
+                if (!modal || !overlay) {
+                    console.error('Модалка или оверлей НЕ НАЙДЕНЫ в DOM');
+                    alert('Ошибка: модальное окно не найдено. Проверь HTML.');
+                    return;
+                }
+
+                modal.classList.remove('hidden');
+                overlay.classList.remove('hidden');
+
+                // Сброс формы
+                document.getElementById('user-search').value = '';
+                document.getElementById('user-search-results').innerHTML = '';
+                document.getElementById('selected-users').innerHTML = '';
+                document.getElementById('group-name-group').classList.add('hidden');
+                document.getElementById('chat-type').value = '';
+            });
+        }
+
+        // Закрытие модалки
+        document.querySelector('#create-chat-modal .modal-close')?.addEventListener('click', closeCreateModal);
+        document.querySelector('#create-chat-modal .cancel-btn')?.addEventListener('click', closeCreateModal);
+
+        function closeCreateModal() {
+            document.getElementById('create-chat-modal')?.classList.add('hidden');
+            document.getElementById('modal-overlay')?.classList.add('hidden');
+        }
+
+        // Запуск основной инициализации из chats.js
+        if (typeof initChatsPage === 'function') {
+            initChatsPage();
+        }
+    });
+</script>
 </body>
 </html>

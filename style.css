@@ -2447,3 +2447,51 @@ select {
         max-height: 200px;
     }
 }
+
+/* Оверлей для модалок */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+}
+
+.modal-overlay:not(.hidden) {
+    display: flex;
+}
+
+/* Модальное окно */
+.modal {
+    background: white;
+    border-radius: 16px;
+    max-width: 520px;
+    width: 92%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    transform: scale(0.95);
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.modal:not(.hidden) {
+    transform: scale(1);
+    opacity: 1;
+}
+
+.modal.hidden {
+    display: none !important;
+}
+
+/* Для плавного появления */
+.modal.show {
+    animation: modalFadeIn 0.3s ease forwards;
+}
+
+@keyframes modalFadeIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to   { opacity: 1; transform: scale(1); }
+}

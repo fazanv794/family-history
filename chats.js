@@ -188,14 +188,9 @@ function setupRealtimeSubscriptions() {
 
 // Обработчики событий
 function setupChatEventListeners() {
-    // Кнопка создания чата
-    document.getElementById('create-chat-btn')?.addEventListener('click', () => {
-        document.getElementById('create-chat-modal').classList.remove('hidden');
-document.getElementById('modal-overlay')?.classList?.remove('hidden') || 
-document.body.insertAdjacentHTML('beforeend', '<div id="modal-overlay" class="modal-overlay"></div>');
-        document.getElementById('user-search-results').innerHTML = '';
-        document.getElementById('selected-users').innerHTML = '';
-        document.getElementById('group-name-group').classList.add('hidden');
+document.getElementById('create-chat-btn')?.addEventListener('click', () => {
+    console.log('chats.js: попытка открыть модалку — но открытие перенесено в chats.html');
+});
     });
     
     // Выбор типа чата
