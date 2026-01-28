@@ -1,4 +1,4 @@
-// app.js - Общие функции для всех страниц
+// app.js - Основные функции приложения
 console.log('📱 App.js загружается...');
 
 // Глобальные переменные
@@ -17,44 +17,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 Инициализация страницы...');
     
     try {
-        // Загружаем данные из localStorage перед проверкой авторизации
         loadFromLocalStorage();
-        
-        // Проверяем авторизацию для защищенных страниц
         await checkAuthForProtectedPages();
-        
-        // Настраиваем общие обработчики событий
         setupCommonEventListeners();
-        // Инициализация чата
-i    // Автоматическая инициализация чата
-    console.log('🔧 Настройка автоматического запуска чата...');
-    
-    const initChat = () => {
-        if (window.currentUser && typeof window.initChatSystem === 'function') {
-            console.log('👤 Пользователь авторизован, запускаем чат...');
-            window.initChatSystem();
-        } else if (typeof window.initChatSystem === 'function') {
-            // Пробуем через 2 секунды
-            setTimeout(() => {
-                if (typeof window.initChatSystem === 'function') {
-                    window.initChatSystem();
-                }
-            }, 2000);
-        }
-    };
-    
-    // Запускаем сразу и через 3 секунды
-    initChat();
-    setTimeout(initChat, 3000);
-        // Обновляем UI пользователя
         updateUserUI();
         
-        // Загружаем данные если пользователь авторизован
         if (window.currentUser) {
             await loadUserData();
         }
         
-        // Сохраняем данные в localStorage после загрузки
         saveToLocalStorage();
         
         console.log('✅ Страница инициализирована');
@@ -66,38 +37,30 @@ i    // Автоматическая инициализация чата
 // Загрузить данные из localStorage
 function loadFromLocalStorage() {
     try {
-        // Загружаем данные дерева
         const savedTreeData = localStorage.getItem('family_tree_data');
         if (savedTreeData) {
-            const parsedData = JSON.parse(savedTreeData);
-            window.treeData = parsedData;
-            console.log('🌳 Дерево загружено из localStorage:', window.treeData);
+            window.treeData = JSON.parse(savedTreeData);
         }
         
-        // Загружаем данные пользователя (для демо-режима)
         const savedUser = localStorage.getItem('family_tree_user');
         if (savedUser) {
             try {
                 window.currentUser = JSON.parse(savedUser);
-                console.log('👤 Пользователь загружен из localStorage:', window.currentUser.email);
             } catch (e) {
-                console.log('❌ Ошибка парсинга пользователя из localStorage');
+                console.log('❌ Ошибка парсинга пользователя');
             }
         }
         
-        // Загружаем людей
         const savedPeople = localStorage.getItem('family_tree_people');
         if (savedPeople) {
             window.people = JSON.parse(savedPeople) || [];
         }
         
-        // Загружаем события
         const savedEvents = localStorage.getItem('family_tree_events');
         if (savedEvents) {
             window.events = JSON.parse(savedEvents) || [];
         }
         
-        // Загружаем медиа
         const savedMedia = localStorage.getItem('family_tree_media');
         if (savedMedia) {
             window.media = JSON.parse(savedMedia) || [];
@@ -111,21 +74,14 @@ function loadFromLocalStorage() {
 // Сохранить данные в localStorage
 function saveToLocalStorage() {
     try {
-        // Сохраняем дерево
         localStorage.setItem('family_tree_data', JSON.stringify(window.treeData));
         
-        // Сохраняем пользователя (для демо-режима)
         if (window.currentUser) {
             localStorage.setItem('family_tree_user', JSON.stringify(window.currentUser));
         }
         
-        // Сохраняем людей
         localStorage.setItem('family_tree_people', JSON.stringify(window.people));
-        
-        // Сохраняем события
         localStorage.setItem('family_tree_events', JSON.stringify(window.events));
-        
-        // Сохраняем медиа
         localStorage.setItem('family_tree_media', JSON.stringify(window.media));
         
         console.log('💾 Данные сохранены в localStorage');
@@ -134,55 +90,44 @@ function saveToLocalStorage() {
     }
 }
 
-// Проверка авторизации для защищенных страниц
+// Проверка авторизации
 async function checkAuthForProtectedPages() {
-    const protectedPages = ['app.html', 'tree.html', 'timeline.html', 'media.html', 'profile.html'];
+    const protectedPages = ['app.html', 'tree.html', 'timeline.html', 'media.html', 'profile.html', 'chats.html'];
     const currentPage = window.location.pathname.split('/').pop() || 'index.html';
     
     if (protectedPages.includes(currentPage)) {
-        console.log('🔒 Проверка авторизации для защищенной страницы:', currentPage);
-        
         try {
             const { data: { user }, error } = await window.supabaseClient?.auth.getUser();
             
             if (error || !user) {
-                // Демо-режим: используем данные из localStorage
                 if (!window.currentUser) {
-                    console.log('Пользователь не авторизован, перенаправляем...');
-                    showNotification('Для доступа к этой странице необходимо войти в систему', 'error');
+                    showNotification('Для доступа необходимо войти в систему', 'error');
                     setTimeout(() => {
                         window.location.href = 'auth.html';
                     }, 1500);
                     return;
                 }
-                
-                console.log('👤 Используем демо-режим с данными из localStorage');
+                console.log('👤 Используем демо-режим');
             } else {
                 window.currentUser = user;
-                console.log('✅ Пользователь авторизован:', user.email);
             }
             
         } catch (error) {
             console.error('Ошибка проверки авторизации:', error);
             
-            // Демо-режим при ошибке
             if (!window.currentUser) {
-                showNotification('Ошибка проверки авторизации. Пожалуйста, войдите заново.', 'error');
+                showNotification('Ошибка проверки авторизации', 'error');
                 setTimeout(() => {
                     window.location.href = 'auth.html';
                 }, 1500);
                 return;
             }
-            
-            console.log('👤 Продолжаем в демо-режиме');
         }
     }
 }
 
 // Обновление UI пользователя
 function updateUserUI() {
-    console.log('🔄 Обновление UI пользователя...');
-    
     if (!window.currentUser) {
         const usernameElements = document.querySelectorAll('#username, .profile-name');
         usernameElements.forEach(el => {
@@ -206,8 +151,6 @@ function updateUserUI() {
                        window.currentUser.email?.split('@')[0] || 
                        'Пользователь';
     
-    console.log('👤 Отображаем имя:', displayName);
-    
     const usernameElements = document.querySelectorAll('#username, .profile-name');
     usernameElements.forEach(el => {
         if (el.id === 'username' || el.classList.contains('profile-name')) {
@@ -223,7 +166,7 @@ function updateUserUI() {
     });
 }
 
-// Получение инициалов пользователя
+// Получение инициалов
 function getUserInitials(name) {
     const parts = name.split(' ');
     let initials = '';
@@ -237,17 +180,13 @@ function getUserInitials(name) {
     return initials || 'П';
 }
 
-// Настройка общих обработчиков событий
+// Настройка обработчиков
 function setupCommonEventListeners() {
-    console.log('🔄 Настройка обработчиков событий...');
-    
-    // Мобильное меню
     const mobileMenuBtn = document.getElementById('mobile-menu-btn');
     if (mobileMenuBtn) {
         mobileMenuBtn.addEventListener('click', toggleMobileMenu);
     }
     
-    // Кнопка выхода
     const logoutBtns = document.querySelectorAll('#logout-btn, #logout-profile-btn, .logout-btn');
     logoutBtns.forEach(btn => {
         if (btn) {
@@ -255,68 +194,41 @@ function setupCommonEventListeners() {
         }
     });
     
-    // Закрытие модальных окон
     setupModalCloseHandlers();
-    
-    // Формы
     setupFormHandlers();
     
-    // Сохраняем данные при закрытии страницы
     window.addEventListener('beforeunload', () => {
         saveToLocalStorage();
     });
-    
-    // Сохраняем данные при изменении
-    window.addEventListener('treeDataChanged', () => {
-        saveToLocalStorage();
-    });
-    
-    // Сохраняем данные при изменении событий
-    window.addEventListener('eventsChanged', () => {
-        saveToLocalStorage();
-    });
-    
-    // Сохраняем данные при изменении медиа
-    window.addEventListener('mediaChanged', () => {
-        saveToLocalStorage();
-    });
-    
-    console.log('✅ Обработчики событий настроены');
 }
 
 // Мобильное меню
 function toggleMobileMenu() {
-    console.log('📱 Переключение мобильного меню');
     const navLinks = document.getElementById('nav-links');
     if (navLinks) {
         navLinks.classList.toggle('active');
     }
 }
 
-// Настройка обработчиков модальных окон
+// Обработчики модальных окон
 function setupModalCloseHandlers() {
-    // Делегирование событий для закрытия модальных окон
     document.addEventListener('click', (e) => {
-        // Закрытие по клику на крестик
         if (e.target.classList.contains('modal-close') || 
             e.target.closest('.modal-close')) {
             closeAllModals();
         }
         
-        // Закрытие по клику на кнопку отмены
         if (e.target.classList.contains('cancel-btn') ||
             e.target.closest('.cancel-btn')) {
             closeAllModals();
         }
         
-        // Закрытие по клику на overlay (только если кликнули именно на overlay)
         const overlay = document.getElementById('modal-overlay');
         if (overlay && e.target === overlay && overlay.classList.contains('active')) {
             closeAllModals();
         }
     });
     
-    // Закрытие по ESC
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             closeAllModals();
@@ -326,29 +238,20 @@ function setupModalCloseHandlers() {
 
 // Настройка обработчиков форм
 function setupFormHandlers() {
-    console.log('📝 Настройка обработчиков форм...');
-    
-    // Форма добавления человека
     const addPersonForm = document.getElementById('add-person-form-modal');
     if (addPersonForm) {
-        console.log('✅ Найдена форма добавления человека');
         addPersonForm.addEventListener('submit', handleAddPerson);
     }
     
-    // Форма добавления события
     const addEventForm = document.getElementById('add-event-form-modal');
     if (addEventForm) {
-        console.log('✅ Найдена форма добавления события');
         addEventForm.addEventListener('submit', handleAddEvent);
     }
     
-    // Форма загрузки медиа
     const uploadForm = document.getElementById('upload-form-modal');
     if (uploadForm) {
-        console.log('✅ Найдена форма загрузки медиа');
         uploadForm.addEventListener('submit', handleUploadMedia);
         
-        // Кнопка выбора файлов
         const browseBtn = document.getElementById('browse-files-btn');
         const fileInput = document.getElementById('upload-files');
         
@@ -358,43 +261,33 @@ function setupFormHandlers() {
         }
     }
     
-    // Форма приглашения
     const inviteForm = document.getElementById('invite-form-modal');
     if (inviteForm) {
-        console.log('✅ Найдена форма приглашения');
         inviteForm.addEventListener('submit', handleInvite);
     }
     
-    // Форма редактирования профиля
     const editProfileForm = document.getElementById('edit-profile-form-modal');
     if (editProfileForm) {
-        console.log('✅ Найдена форма редактирования профиля');
         editProfileForm.addEventListener('submit', handleEditProfile);
     }
 }
 
-// Показать модальное окно - ПРОСТАЯ РАБОЧАЯ ВЕРСИЯ
+// Показать модальное окно
 window.showModal = function(modalId) {
-    console.log('📂 Показать модальное окно:', modalId);
-    
     const modal = document.getElementById(modalId);
     const overlay = document.getElementById('modal-overlay');
     
     if (!modal || !overlay) {
-        console.error('Модальное окно или оверлей не найдены');
         return;
     }
     
-    // Клонируем модальное окно и добавляем в overlay
     const modalClone = modal.cloneNode(true);
     modalClone.id = modalId + '-clone';
     modalClone.classList.remove('hidden');
     
-    // Очищаем overlay и добавляем клон
     overlay.innerHTML = '';
     overlay.appendChild(modalClone);
     
-    // Показываем overlay и модальное окно
     overlay.classList.remove('hidden');
     setTimeout(() => {
         overlay.classList.add('active');
@@ -403,7 +296,6 @@ window.showModal = function(modalId) {
     
     document.body.style.overflow = 'hidden';
     
-    // Добавляем обработчики для кнопок закрытия внутри этого модального окна
     const closeBtn = modalClone.querySelector('.modal-close');
     if (closeBtn) {
         closeBtn.addEventListener('click', closeAllModals);
@@ -414,7 +306,6 @@ window.showModal = function(modalId) {
         btn.addEventListener('click', closeAllModals);
     });
     
-    // Заполняем данные если нужно
     if (modalId === 'edit-profile-modal' && window.currentUser) {
         const nameParts = (window.currentUser.user_metadata?.name || '').split(' ');
         const nameInput = modalClone.querySelector('#edit-profile-name');
@@ -431,8 +322,6 @@ window.showModal = function(modalId) {
 
 // Закрыть все модальные окна
 window.closeAllModals = function() {
-    console.log('❌ Закрыть все модальные окна');
-    
     const overlay = document.getElementById('modal-overlay');
     if (overlay) {
         overlay.classList.remove('active');
@@ -444,14 +333,12 @@ window.closeAllModals = function() {
     
     document.body.style.overflow = '';
     
-    // Сбрасываем основные формы (но не формы шагов)
     document.querySelectorAll('form').forEach(form => {
         if (form.id && !form.id.includes('step') && !form.id.includes('add-person-step')) {
             form.reset();
         }
     });
     
-    // Очищаем список файлов
     const fileList = document.getElementById('file-list');
     if (fileList) fileList.style.display = 'none';
     
@@ -461,15 +348,11 @@ window.closeAllModals = function() {
 
 // Выход из системы
 async function handleLogout() {
-    console.log('🚪 Выход из системы');
-    
     try {
         if (window.supabaseClient?.auth?.signOut) {
-            const { error } = await window.supabaseClient.auth.signOut();
-            if (error) console.log('Ошибка выхода из Supabase:', error);
+            await window.supabaseClient.auth.signOut();
         }
         
-        // Очищаем localStorage
         localStorage.removeItem('family_tree_user');
         localStorage.removeItem('family_tree_email');
         localStorage.removeItem('family_tree_password');
@@ -478,7 +361,6 @@ async function handleLogout() {
         localStorage.removeItem('family_tree_events');
         localStorage.removeItem('family_tree_media');
         
-        // Сбрасываем глобальные переменные
         window.currentUser = null;
         window.people = [];
         window.events = [];
@@ -502,19 +384,14 @@ async function handleLogout() {
 
 // Добавление человека
 async function handleAddPerson(e) {
-    console.log('👤 Добавление человека');
     e.preventDefault();
     
     const firstName = document.getElementById('person-first-name').value;
     const lastName = document.getElementById('person-last-name').value;
     const birthDate = document.getElementById('person-birth-date').value;
-    const deathDate = document.getElementById('person-death-date').value;
     const gender = document.getElementById('person-gender').value;
     const relation = document.getElementById('person-relation').value;
-    const photoUrl = document.getElementById('person-photo-url').value;
     const biography = document.getElementById('person-bio').value;
-    
-    console.log('Данные:', { firstName, lastName, gender, relation });
     
     if (!firstName || !lastName || !gender || !relation) {
         showNotification('Заполните обязательные поля', 'error');
@@ -529,15 +406,12 @@ async function handleAddPerson(e) {
             first_name: firstName,
             last_name: lastName,
             birth_date: birthDate || null,
-            death_date: deathDate || null,
             gender: gender,
             relation: relation,
-            photo_url: photoUrl || null,
             biography: biography || null,
             created_at: new Date().toISOString()
         };
         
-        // Если пользователь авторизован, сохраняем в Supabase
         if (window.currentUser && window.supabaseClient) {
             try {
                 newPerson.user_id = window.currentUser.id;
@@ -548,17 +422,14 @@ async function handleAddPerson(e) {
                 
                 if (!error && data && data[0]) {
                     newPerson.id = data[0].id;
-                    console.log('✅ Человек сохранен в Supabase');
                 }
             } catch (supabaseError) {
-                console.warn('Не удалось сохранить в Supabase, сохраняем локально:', supabaseError);
+                console.warn('Не удалось сохранить в Supabase');
             }
         }
         
-        // Сохраняем локально
         window.people.push(newPerson);
         
-        // Если это добавление в дерево (не из построителя шагов)
         if (window.treeData && window.treeData.relatives) {
             const treePerson = {
                 id: newPerson.id,
@@ -569,21 +440,12 @@ async function handleAddPerson(e) {
                 relation: relation
             };
             
-            // Проверяем, нет ли уже такой записи в дереве
             const existingIndex = window.treeData.relatives.findIndex(p => 
                 p.firstName === firstName && p.lastName === lastName && p.relation === relation
             );
             
             if (existingIndex === -1) {
                 window.treeData.relatives.push(treePerson);
-                console.log('✅ Человек добавлен в дерево');
-                
-                // Обновляем интерфейс дерева если мы на странице дерева
-                if (typeof window.updateTreeInterface === 'function') {
-                    window.updateTreeInterface(window.treeData.relatives, window.treeData.name);
-                }
-                
-                // Событие об изменении данных дерева
                 window.dispatchEvent(new CustomEvent('treeDataChanged'));
             }
         }
@@ -591,18 +453,7 @@ async function handleAddPerson(e) {
         showNotification('✅ Человек успешно добавлен!', 'success');
         closeAllModals();
         
-        // Сохраняем в localStorage
         saveToLocalStorage();
-        
-        // Обновляем статистику на главной странице
-        if (typeof window.updateStats === 'function') {
-            window.updateStats();
-        }
-        
-        // Обновляем дерево если мы на странице дерева
-        if (typeof window.updateTreeStats === 'function') {
-            window.updateTreeStats();
-        }
         
     } catch (error) {
         console.error('Ошибка добавления человека:', error);
@@ -614,7 +465,6 @@ async function handleAddPerson(e) {
 
 // Добавление события
 async function handleAddEvent(e) {
-    console.log('📅 Добавление события');
     e.preventDefault();
     
     const title = document.getElementById('event-title').value;
@@ -641,7 +491,6 @@ async function handleAddEvent(e) {
             created_at: new Date().toISOString()
         };
         
-        // Если пользователь авторизован, сохраняем в Supabase
         if (window.currentUser && window.supabaseClient) {
             try {
                 newEvent.user_id = window.currentUser.id;
@@ -652,81 +501,18 @@ async function handleAddEvent(e) {
                 
                 if (!error && data && data[0]) {
                     newEvent.id = data[0].id;
-                    console.log('✅ Событие сохранено в Supabase');
                 }
             } catch (supabaseError) {
-                console.warn('Не удалось сохранить в Supabase, сохраняем локально:', supabaseError);
+                console.warn('Не удалось сохранить в Supabase');
             }
         }
         
         window.events.unshift(newEvent);
         
-        // Если есть ссылка на медиа, автоматически добавляем ее в медиатеку
-        if (mediaUrl && mediaUrl.trim() !== '') {
-            const mediaExists = window.media.some(m => m.file_url === mediaUrl);
-            if (!mediaExists) {
-                const mediaItem = {
-                    id: Date.now() + Math.random(),
-                    file_url: mediaUrl,
-                    file_type: getMediaTypeFromUrl(mediaUrl),
-                    description: description || `Медиа для события: ${title}`,
-                    created_at: new Date().toISOString(),
-                    is_external: true
-                };
-                
-                window.media.unshift(mediaItem);
-                console.log('✅ Медиа добавлено в медиатеку из события');
-                
-                // Сохраняем медиа в Supabase если пользователь авторизован
-                if (window.currentUser && window.supabaseClient) {
-                    try {
-                        mediaItem.user_id = window.currentUser.id;
-                        const { data, error } = await window.supabaseClient
-                            .from('media')
-                            .insert([mediaItem])
-                            .select();
-                        
-                        if (!error && data && data[0]) {
-                            mediaItem.id = data[0].id;
-                        }
-                    } catch (supabaseError) {
-                        console.warn('Не удалось сохранить медиа в Supabase:', supabaseError);
-                    }
-                }
-                
-                // Событие об изменении данных медиа
-                window.dispatchEvent(new CustomEvent('mediaChanged'));
-            }
-        }
-        
         showNotification('✅ Событие успешно добавлено!', 'success');
         closeAllModals();
         
-        // Сохраняем в localStorage
         saveToLocalStorage();
-        
-        // Событие об изменении данных событий
-        window.dispatchEvent(new CustomEvent('eventsChanged'));
-        
-        // Обновляем ленту событий если мы на странице событий
-        if (typeof window.updateTimeline === 'function') {
-            window.updateTimeline();
-        }
-        
-        // Обновляем главную страницу если мы на ней
-        if (typeof window.updateRecentEvents === 'function') {
-            window.updateRecentEvents();
-        }
-        
-        // Обновляем статистику
-        if (typeof window.updateStats === 'function') {
-            window.updateStats();
-        }
-        
-        // Обновляем медиатеку если есть медиа
-        if (mediaUrl && typeof window.updateMediaGrid === 'function') {
-            window.updateMediaGrid();
-        }
         
     } catch (error) {
         console.error('Ошибка добавления события:', error);
@@ -738,14 +524,12 @@ async function handleAddEvent(e) {
 
 // Загрузка медиа
 async function handleUploadMedia(e) {
-    console.log('📁 Загрузка медиа');
     e.preventDefault();
     
     const filesInput = document.getElementById('upload-files');
     const description = document.getElementById('upload-description').value;
     const mediaUrl = document.getElementById('upload-url')?.value || '';
     
-    // Проверяем, что есть либо файлы, либо URL
     if ((!filesInput.files || filesInput.files.length === 0) && !mediaUrl) {
         showNotification('Выберите файлы или укажите ссылку на медиа', 'error');
         return;
@@ -756,7 +540,6 @@ async function handleUploadMedia(e) {
     try {
         const newMediaItems = [];
         
-        // Если есть URL, добавляем его как медиа
         if (mediaUrl) {
             const mediaItem = {
                 id: Date.now() + Math.random(),
@@ -767,7 +550,6 @@ async function handleUploadMedia(e) {
                 is_external: true
             };
             
-            // Если пользователь авторизован, сохраняем в Supabase
             if (window.currentUser && window.supabaseClient) {
                 try {
                     mediaItem.user_id = window.currentUser.id;
@@ -778,23 +560,19 @@ async function handleUploadMedia(e) {
                     
                     if (!error && data && data[0]) {
                         mediaItem.id = data[0].id;
-                        console.log('✅ Медиа (URL) сохранено в Supabase');
                     }
                 } catch (supabaseError) {
-                    console.warn('Не удалось сохранить в Supabase, сохраняем локально:', supabaseError);
+                    console.warn('Не удалось сохранить в Supabase');
                 }
             }
             
             newMediaItems.push(mediaItem);
         }
         
-        // Если есть файлы, обрабатываем их
         if (filesInput.files && filesInput.files.length > 0) {
             const files = Array.from(filesInput.files);
             
             for (const file of files) {
-                // В реальном приложении здесь загрузка в Supabase Storage
-                // Для демо-режима используем Data URL
                 const fileUrl = await readFileAsDataURL(file);
                 
                 const mediaItem = {
@@ -810,7 +588,6 @@ async function handleUploadMedia(e) {
                     is_external: false
                 };
                 
-                // Если пользователь авторизован, сохраняем в Supabase
                 if (window.currentUser && window.supabaseClient) {
                     try {
                         mediaItem.user_id = window.currentUser.id;
@@ -821,10 +598,9 @@ async function handleUploadMedia(e) {
                         
                         if (!error && data && data[0]) {
                             mediaItem.id = data[0].id;
-                            console.log('✅ Медиа (файл) сохранено в Supabase');
                         }
                     } catch (supabaseError) {
-                        console.warn('Не удалось сохранить в Supabase, сохраняем локально:', supabaseError);
+                        console.warn('Не удалось сохранить в Supabase');
                     }
                 }
                 
@@ -837,25 +613,96 @@ async function handleUploadMedia(e) {
         showNotification(`✅ Добавлено ${newMediaItems.length} медиафайлов!`, 'success');
         closeAllModals();
         
-        // Сохраняем в localStorage
         saveToLocalStorage();
-        
-        // Событие об изменении данных медиа
-        window.dispatchEvent(new CustomEvent('mediaChanged'));
-        
-        // Обновляем медиатеку если мы на странице медиа
-        if (typeof window.updateMediaGrid === 'function') {
-            window.updateMediaGrid();
-        }
-        
-        // Обновляем статистику
-        if (typeof window.updateStats === 'function') {
-            window.updateStats();
-        }
         
     } catch (error) {
         console.error('Ошибка загрузки медиа:', error);
         showNotification('Ошибка загрузки медиа', 'error');
+    } finally {
+        hideLoader();
+    }
+}
+
+// Приглашение родственника
+async function handleInvite(e) {
+    e.preventDefault();
+    
+    const email = document.getElementById('invite-email').value;
+    
+    if (!email) {
+        showNotification('Введите email', 'error');
+        return;
+    }
+    
+    showLoader('Отправка приглашения...');
+    
+    try {
+        showNotification('✅ Приглашение отправлено на ' + email, 'success');
+        closeAllModals();
+        
+    } catch (error) {
+        console.error('Ошибка отправки приглашения:', error);
+        showNotification('Ошибка отправки приглашения', 'error');
+    } finally {
+        hideLoader();
+    }
+}
+
+// Редактирование профиля
+async function handleEditProfile(e) {
+    e.preventDefault();
+    
+    const name = document.getElementById('edit-profile-name').value;
+    const lastName = document.getElementById('edit-profile-last-name').value;
+    const email = document.getElementById('edit-profile-email').value;
+    const bio = document.getElementById('edit-profile-bio').value;
+    
+    if (!name || !email) {
+        showNotification('Заполните обязательные поля', 'error');
+        return;
+    }
+    
+    showLoader('Сохранение профиля...');
+    
+    try {
+        if (window.currentUser) {
+            window.currentUser.user_metadata = {
+                ...window.currentUser.user_metadata,
+                name: name,
+                full_name: lastName ? `${name} ${lastName}` : name
+            };
+            window.currentUser.email = email;
+            
+            localStorage.setItem('family_tree_user', JSON.stringify(window.currentUser));
+        }
+        
+        if (window.currentUser && window.supabaseClient?.auth?.updateUser) {
+            try {
+                const { data, error } = await window.supabaseClient.auth.updateUser({
+                    email: email,
+                    data: {
+                        name: name,
+                        full_name: lastName ? `${name} ${lastName}` : name
+                    }
+                });
+                
+                if (!error && data.user) {
+                    window.currentUser = data.user;
+                }
+            } catch (supabaseError) {
+                console.warn('Не удалось обновить в Supabase');
+            }
+        }
+        
+        showNotification('✅ Профиль успешно обновлен!', 'success');
+        
+        updateUserUI();
+        
+        closeAllModals();
+        
+    } catch (error) {
+        console.error('Ошибка обновления профиля:', error);
+        showNotification('Ошибка обновления профиля', 'error');
     } finally {
         hideLoader();
     }
@@ -884,110 +731,8 @@ function getMediaTypeFromUrl(url) {
                lowerUrl.includes('video/') || 
                lowerUrl.startsWith('data:video/')) {
         return 'video';
-    } else if (lowerUrl.match(/\.(mp3|wav|ogg|flac|aac)$/) || 
-               lowerUrl.includes('audio/') || 
-               lowerUrl.startsWith('data:audio/')) {
-        return 'audio';
-    } else if (lowerUrl.match(/\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt)$/)) {
-        return 'document';
     } else {
         return 'link';
-    }
-}
-
-// Приглашение родственника
-async function handleInvite(e) {
-    console.log('📨 Приглашение родственника');
-    e.preventDefault();
-    
-    const email = document.getElementById('invite-email').value;
-    const name = document.getElementById('invite-name').value;
-    const message = document.getElementById('invite-message').value;
-    const allowEdit = document.getElementById('invite-editor').checked;
-    
-    if (!email) {
-        showNotification('Введите email', 'error');
-        return;
-    }
-    
-    showLoader('Отправка приглашения...');
-    
-    try {
-        // Реальный режим
-        showNotification('✅ Приглашение отправлено на ' + email, 'success');
-        closeAllModals();
-        
-    } catch (error) {
-        console.error('Ошибка отправки приглашения:', error);
-        showNotification('Ошибка отправки приглашения', 'error');
-    } finally {
-        hideLoader();
-    }
-}
-
-// Редактирование профиля
-async function handleEditProfile(e) {
-    console.log('✏️ Редактирование профиля');
-    e.preventDefault();
-    
-    const name = document.getElementById('edit-profile-name').value;
-    const lastName = document.getElementById('edit-profile-last-name').value;
-    const email = document.getElementById('edit-profile-email').value;
-    const bio = document.getElementById('edit-profile-bio').value;
-    
-    if (!name || !email) {
-        showNotification('Заполните обязательные поля', 'error');
-        return;
-    }
-    
-    showLoader('Сохранение профиля...');
-    
-    try {
-        // Обновляем локально
-        if (window.currentUser) {
-            window.currentUser.user_metadata = {
-                ...window.currentUser.user_metadata,
-                name: name,
-                full_name: lastName ? `${name} ${lastName}` : name
-            };
-            window.currentUser.email = email;
-            
-            // Сохраняем в localStorage
-            localStorage.setItem('family_tree_user', JSON.stringify(window.currentUser));
-        }
-        
-        // Если пользователь авторизован, обновляем в Supabase
-        if (window.currentUser && window.supabaseClient?.auth?.updateUser) {
-            try {
-                const { data, error } = await window.supabaseClient.auth.updateUser({
-                    email: email,
-                    data: {
-                        name: name,
-                        full_name: lastName ? `${name} ${lastName}` : name
-                    }
-                });
-                
-                if (!error && data.user) {
-                    window.currentUser = data.user;
-                    console.log('✅ Профиль обновлен в Supabase');
-                }
-            } catch (supabaseError) {
-                console.warn('Не удалось обновить в Supabase:', supabaseError);
-            }
-        }
-        
-        showNotification('✅ Профиль успешно обновлен!', 'success');
-        
-        // Обновляем UI
-        updateUserUI();
-        
-        closeAllModals();
-        
-    } catch (error) {
-        console.error('Ошибка обновления профиля:', error);
-        showNotification('Ошибка обновления профиля', 'error');
-    } finally {
-        hideLoader();
     }
 }
 
@@ -1019,59 +764,24 @@ function showSelectedFiles() {
 
 // Загрузка данных пользователя
 async function loadUserData() {
-    console.log('📦 Загрузка данных пользователя...');
-    
     try {
         if (!window.currentUser) {
-            console.log('👤 Пользователь не авторизован');
-            // Проверяем демо-режим
             const savedUser = localStorage.getItem('family_tree_user');
             if (savedUser) {
                 try {
                     window.currentUser = JSON.parse(savedUser);
-                    console.log('✅ Пользователь загружен из localStorage для чата');
                 } catch (e) {
                     console.error('❌ Ошибка парсинга пользователя:', e);
                 }
             }
             
-            // Если все равно нет пользователя, выходим
             if (!window.currentUser) {
-                console.log('❌ Нет пользователя для загрузки данных');
                 return;
             }
         }
         
         showLoader('Загрузка данных...');
         
-        const userId = window.currentUser.id;
-        
-        // Загрузка данных из Supabase
-        console.log('📦 Загрузка данных из Supabase...');
-        // ... остальной код остается без изменений ...
-        
-        // Загрузка людей
-        if (window.supabaseClient) {
-            try {
-                const { data: peopleData, error: peopleError } = await window.supabaseClient
-                    .from('people')
-                    .select('*')
-                    .eq('user_id', userId)
-                    .order('created_at', { ascending: true });
-                
-                if (!peopleError && peopleData) {
-                    window.people = peopleData || [];
-                    console.log('✅ Люди загружены из Supabase:', window.people.length);
-                    
-                    // Сохраняем в localStorage
-                    localStorage.setItem('family_tree_people', JSON.stringify(window.people));
-                }
-            } catch (error) {
-                console.warn('Ошибка загрузки людей из Supabase:', error);
-            }
-        }
-        
-        // Если нет людей, создаем запись для самого пользователя
         if (window.people.length === 0) {
             const selfPerson = {
                 id: Date.now(),
@@ -1082,59 +792,11 @@ async function loadUserData() {
                 created_at: new Date().toISOString()
             };
             
-            console.log('👤 Создаем запись пользователя...');
             window.people.push(selfPerson);
         }
         
-        // Загрузка событий из Supabase
-        if (window.supabaseClient) {
-            try {
-                const { data: eventsData, error: eventsError } = await window.supabaseClient
-                    .from('events')
-                    .select('*')
-                    .eq('user_id', userId)
-                    .order('date', { ascending: false });
-                
-                if (!eventsError && eventsData) {
-                    window.events = eventsData || [];
-                    console.log('✅ События загружены из Supabase:', window.events.length);
-                    
-                    // Сохраняем в localStorage
-                    localStorage.setItem('family_tree_events', JSON.stringify(window.events));
-                }
-            } catch (error) {
-                console.warn('Ошибка загрузки событий из Supabase:', error);
-            }
-        }
+        console.log('✅ Данные загружены');
         
-        // Загрузка медиа из Supabase
-        if (window.supabaseClient) {
-            try {
-                const { data: mediaData, error: mediaError } = await window.supabaseClient
-                    .from('media')
-                    .select('*')
-                    .eq('user_id', userId)
-                    .order('created_at', { ascending: false });
-                
-                if (!mediaError && mediaData) {
-                    window.media = mediaData || [];
-                    console.log('✅ Медиа загружены из Supabase:', window.media.length);
-                    
-                    // Сохраняем в localStorage
-                    localStorage.setItem('family_tree_media', JSON.stringify(window.media));
-                }
-            } catch (error) {
-                console.warn('Ошибка загрузки медиа из Supabase:', error);
-            }
-        }
-        
-        console.log('✅ Данные загружены:', {
-            people: window.people.length,
-            events: window.events.length,
-            media: window.media.length
-        });
-        
-        // Вызываем функции обновления UI для конкретных страниц
         if (typeof window.updateStats === 'function') {
             window.updateStats();
         }
@@ -1159,35 +821,10 @@ async function loadUserData() {
             window.updateTreeInterface(window.treeData.relatives, window.treeData.name);
         }
         
-        // АВТОМАТИЧЕСКАЯ ИНИЦИАЛИЗАЦИЯ ЧАТА ПРИ ЗАГРУЗКЕ ПОЛЬЗОВАТЕЛЯ
-        console.log('🔧 Проверка инициализации чата...');
-        if (typeof window.initChatSystem === 'function') {
-            console.log('✅ Функция initChatSystem найдена, запускаем через 2 секунды...');
-            // Даем время на загрузку остального интерфейса
-            setTimeout(() => {
-                console.log('🚀 Запуск инициализации чата...');
-                window.initChatSystem();
-            }, 2000);
-        } else {
-            console.log('⚠️ Функция initChatSystem не найдена, пробуем через 3 секунды...');
-            setTimeout(() => {
-                if (typeof window.initChatSystem === 'function') {
-                    window.initChatSystem();
-                } else {
-                    console.error('❌ Функция initChatSystem все еще не найдена');
-                    // Показываем кнопку чата вручную как запасной вариант
-                    createFallbackChatButton();
-                }
-            }, 3000);
-        }
-        
-        showNotification('✅ Данные загружены', 'success');
-        
     } catch (error) {
         console.error('❌ Ошибка загрузки данных:', error);
         showNotification('Ошибка загрузки данных', 'error');
         
-        // Используем данные из localStorage
         if (window.people.length === 0) {
             window.people = JSON.parse(localStorage.getItem('family_tree_people') || '[]');
         }
@@ -1198,155 +835,6 @@ async function loadUserData() {
             window.media = JSON.parse(localStorage.getItem('family_tree_media') || '[]');
         }
         
-        // Вызываем функции обновления UI для конкретных страниц
-        if (typeof window.updateStats === 'function') {
-            window.updateStats();
-        }
-        
-        if (typeof window.updateRecentEvents === 'function') {
-            window.updateRecentEvents();
-        }
-        
-        if (typeof window.updateTimeline === 'function') {
-            window.updateTimeline();
-        }
-        
-        if (typeof window.updateMediaGrid === 'function') {
-            window.updateMediaGrid();
-        }
-        
-        if (typeof window.updateTreeStats === 'function') {
-            window.updateTreeStats();
-        }
-        
-        if (typeof window.updateTreeInterface === 'function' && window.treeData.relatives.length > 0) {
-            window.updateTreeInterface(window.treeData.relatives, window.treeData.name);
-        }
-        
-        // Пробуем инициализировать чат даже при ошибке
-        setTimeout(() => {
-            if (typeof window.initChatSystem === 'function') {
-                window.initChatSystem();
-            }
-        }, 2000);
-    } finally {
-        hideLoader();
-    }
-}
-
-// Функция запасной кнопки чата (если основной скрипт не загрузился)
-function createFallbackChatButton() {
-    console.log('🔄 Создание запасной кнопки чата...');
-    
-    // Проверяем, не создана ли уже кнопка
-    if (document.getElementById('chat-toggle-btn')) {
-        return;
-    }
-    
-    const chatButtonHTML = `
-        <div id="chat-toggle-btn" style="
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            width: 70px;
-            height: 70px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 1.8rem;
-            cursor: pointer;
-            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.5);
-            z-index: 9999;
-            transition: all 0.3s;
-        ">
-            <i class="fas fa-comments"></i>
-        </div>
-        
-        <div id="chat-simple-modal" style="
-            display: none;
-            position: fixed;
-            bottom: 110px;
-            right: 30px;
-            width: 400px;
-            height: 500px;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            z-index: 9998;
-            flex-direction: column;
-        ">
-            <div style="
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                padding: 20px;
-                border-radius: 15px 15px 0 0;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            ">
-                <h3 style="margin: 0; font-size: 1.2rem;">Чат</h3>
-                <button id="close-simple-chat" style="
-                    background: rgba(255,255,255,0.2);
-                    border: none;
-                    color: white;
-                    width: 36px;
-                    height: 36px;
-                    border-radius: 50%;
-                    cursor: pointer;
-                ">&times;</button>
-            </div>
-            <div style="padding: 20px; text-align: center; flex: 1; display: flex; flex-direction: column; justify-content: center;">
-                <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #f6ad55; margin-bottom: 20px;"></i>
-                <h4 style="color: #4a5568; margin-bottom: 10px;">Чат временно недоступен</h4>
-                <p style="color: #718096;">Для использования чата необходимо обновить страницу</p>
-                <button onclick="location.reload()" class="btn" style="margin-top: 20px;">
-                    <i class="fas fa-sync-alt"></i> Обновить страницу
-                </button>
-            </div>
-        </div>
-    `;
-    
-    document.body.insertAdjacentHTML('beforeend', chatButtonHTML);
-    
-    // Добавляем обработчики
-    document.getElementById('chat-toggle-btn')?.addEventListener('click', () => {
-        const modal = document.getElementById('chat-simple-modal');
-        if (modal) {
-            modal.style.display = 'flex';
-        }
-    });
-    
-    document.getElementById('close-simple-chat')?.addEventListener('click', () => {
-        const modal = document.getElementById('chat-simple-modal');
-        if (modal) {
-            modal.style.display = 'none';
-        }
-    });
-    
-    console.log('✅ Запасная кнопка чата создана');
-}
-        
-        showNotification('✅ Данные загружены', 'success');
-        
-    } catch (error) {
-        console.error('❌ Ошибка загрузки данных:', error);
-        showNotification('Ошибка загрузки данных', 'error');
-        
-        // Используем данные из localStorage
-        if (window.people.length === 0) {
-            window.people = JSON.parse(localStorage.getItem('family_tree_people') || '[]');
-        }
-        if (window.events.length === 0) {
-            window.events = JSON.parse(localStorage.getItem('family_tree_events') || '[]');
-        }
-        if (window.media.length === 0) {
-            window.media = JSON.parse(localStorage.getItem('family_tree_media') || '[]');
-        }
-        
-        // Вызываем функции обновления UI для конкретных страниц
         if (typeof window.updateStats === 'function') {
             window.updateStats();
         }
@@ -1375,15 +863,11 @@ function createFallbackChatButton() {
     }
 }
 
-// Функции для обновления статистики (для главной страницы)
+// Функции для обновления статистики
 function updateStats() {
-    console.log('📊 Обновление статистики');
-    
     const peopleCount = window.people?.length || 0;
     const eventsCount = window.events?.length || 0;
     const mediaCount = window.media?.length || 0;
-    
-    console.log('Статистика:', { peopleCount, eventsCount, mediaCount });
     
     const statPeople = document.getElementById('stat-people');
     const statEvents = document.getElementById('stat-events');
@@ -1402,42 +886,33 @@ function calculateGenerations() {
         const people = window.people || [];
         if (people.length === 0) return 0;
         
-        // Простой расчет поколений из всех людей
         const hasGrandparents = people.some(p => p.relation === 'grandparent');
         const hasGrandchildren = people.some(p => p.relation === 'grandchild');
         
-        let generations = 1; // Текущее поколение
+        let generations = 1;
         if (hasGrandparents) generations++;
         if (hasGrandchildren) generations++;
         
         return generations;
     }
     
-    // Расчет поколений из дерева
     const relations = treeRelatives.map(p => p.relation);
-    let generations = 1; // Текущее поколение
+    let generations = 1;
     
     if (relations.includes('grandparent')) generations++;
     if (relations.includes('grandchild')) generations++;
-    if (relations.includes('greatgrandparent')) generations++;
-    if (relations.includes('greatgrandchild')) generations++;
     
     return generations;
 }
 
 function updateRecentEvents() {
-    console.log('📅 Обновление последних событий');
-    
     const container = document.getElementById('recent-events-list');
     if (!container) {
-        console.log('❌ Контейнер для событий не найден');
         return;
     }
     
     const events = window.events || [];
     const recentEvents = events.slice(0, 5);
-    
-    console.log('Событий:', recentEvents.length);
     
     if (recentEvents.length === 0) {
         container.innerHTML = '<p style="text-align: center; color: #718096; padding: 20px;">Событий пока нет</p>';
@@ -1449,10 +924,6 @@ function updateRecentEvents() {
         const date = new Date(event.date).toLocaleDateString('ru-RU');
         const icon = getEventIcon(event.event_type);
         
-        // Проверяем есть ли медиа
-        const hasMedia = event.media_url && event.media_url.trim() !== '';
-        const mediaType = hasMedia ? getMediaTypeFromUrl(event.media_url) : null;
-        
         html += `
             <div class="timeline-event" style="display: flex; gap: 15px; margin-bottom: 15px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
                 <div class="event-icon" style="background: #667eea; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
@@ -1462,33 +933,12 @@ function updateRecentEvents() {
                     <h3 style="margin-bottom: 5px; color: #2d3748;">${event.title}</h3>
                     <div class="event-date" style="color: #718096; font-size: 0.9rem; margin-bottom: 10px;">${date}</div>
                     ${event.description ? `<p style="color: #4a5568; margin-bottom: 10px;">${event.description}</p>` : ''}
-                    
-                    ${hasMedia ? `
-                        <div style="margin-top: 10px;">
-                            <div style="font-size: 0.9rem; color: #718096; margin-bottom: 5px;">
-                                <i class="fas fa-paperclip"></i> Прикреплено медиа
-                            </div>
-                            ${mediaType === 'image' ? `
-                                <a href="${event.media_url}" target="_blank">
-                                    <img src="${event.media_url}" 
-                                         alt="${event.title}" 
-                                         style="max-width: 100px; max-height: 100px; border-radius: 6px; border: 1px solid #e2e8f0; object-fit: cover;"
-                                         onerror="this.style.display='none';">
-                                </a>
-                            ` : `
-                                <a href="${event.media_url}" target="_blank" style="color: #667eea; text-decoration: none; font-size: 0.9rem;">
-                                    <i class="fas fa-link"></i> ${mediaType === 'video' ? 'Видео' : 'Ссылка на медиа'}
-                                </a>
-                            `}
-                        </div>
-                    ` : ''}
                 </div>
             </div>
         `;
     });
     
     container.innerHTML = html;
-    console.log('✅ События обновлены');
 }
 
 function getEventIcon(eventType) {
@@ -1505,10 +955,7 @@ function getEventIcon(eventType) {
 
 // Функция уведомлений
 function showNotification(message, type = 'info') {
-    console.log(`🔔 ${type.toUpperCase()}: ${message}`);
-    
     try {
-        // Создаем уведомление если его нет
         let notification = document.getElementById('notification');
         if (!notification) {
             notification = document.createElement('div');
@@ -1522,7 +969,6 @@ function showNotification(message, type = 'info') {
             `;
             document.body.appendChild(notification);
             
-            // Обработчик закрытия
             notification.querySelector('.notification-close').addEventListener('click', () => {
                 notification.classList.remove('show');
                 setTimeout(() => {
@@ -1536,14 +982,12 @@ function showNotification(message, type = 'info') {
             text.textContent = message;
         }
         
-        // Обновляем класс типа
         notification.className = `notification ${type}`;
         notification.style.display = 'block';
         setTimeout(() => {
             notification.classList.add('show');
         }, 10);
         
-        // Автоматическое скрытие
         setTimeout(() => {
             notification.classList.remove('show');
             setTimeout(() => {
@@ -1557,10 +1001,7 @@ function showNotification(message, type = 'info') {
 
 // Функции загрузчика
 function showLoader(text = 'Загрузка...') {
-    console.log(`⏳ ${text}`);
-    
     try {
-        // Создаем загрузчик если его нет
         let loader = document.getElementById('loader');
         if (!loader) {
             loader = document.createElement('div');
@@ -1619,6 +1060,5 @@ window.loadFromLocalStorage = loadFromLocalStorage;
 window.getMediaTypeFromUrl = getMediaTypeFromUrl;
 window.readFileAsDataURL = readFileAsDataURL;
 window.showSelectedFiles = showSelectedFiles;
-window.createFallbackChatButton = createFallbackChatButton;
 
 console.log('✅ App.js загружен');
