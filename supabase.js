@@ -1,4 +1,4 @@
-// supabase.js - Клиент для работы с Supabase
+// supabase.js - Исправленная версия
 console.log('🔧 Supabase.js загружается...');
 
 const SUPABASE_URL = 'https://szwsvtxkhlacrarplgtn.supabase.co';
@@ -13,11 +13,17 @@ try {
                 persistSession: true,
                 autoRefreshToken: true,
                 detectSessionInUrl: true
+            },
+            realtime: {
+                params: {
+                    eventsPerSecond: 10
+                }
             }
         });
         console.log('✅ Supabase клиент создан');
     } else {
-        throw new Error('Библиотека Supabase не загружена');
+        console.warn('⚠️ Библиотека Supabase не загружена, используем демо-режим');
+        createFallbackClient();
     }
 } catch (error) {
     console.error('❌ Ошибка создания Supabase клиента:', error.message);
@@ -103,6 +109,7 @@ function createFallbackClient() {
     };
 }
 
+// Улучшенная функция уведомлений
 function showNotification(message, type = 'info') {
     console.log(`🔔 ${type.toUpperCase()}: ${message}`);
     
@@ -150,6 +157,7 @@ function showNotification(message, type = 'info') {
     }
 }
 
+// Функции загрузчика
 function showLoader(text = 'Загрузка...') {
     console.log(`⏳ ${text}`);
     
@@ -194,6 +202,7 @@ function hideLoader() {
     }
 }
 
+// Экспорт функций
 window.supabaseClient = supabaseClient;
 window.showNotification = showNotification;
 window.showLoader = showLoader;
