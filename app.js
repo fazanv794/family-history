@@ -1024,8 +1024,22 @@ async function loadUserData() {
     try {
         if (!window.currentUser) {
             console.log('👤 Пользователь не авторизован');
-            // Используем данные из localStorage
-            return;
+            // Проверяем демо-режим
+            const savedUser = localStorage.getItem('family_tree_user');
+            if (savedUser) {
+                try {
+                    window.currentUser = JSON.parse(savedUser);
+                    console.log('✅ Пользователь загружен из localStorage для чата');
+                } catch (e) {
+                    console.error('❌ Ошибка парсинга пользователя:', e);
+                }
+            }
+            
+            // Если все равно нет пользователя, выходим
+            if (!window.currentUser) {
+                console.log('❌ Нет пользователя для загрузки данных');
+                return;
+            }
         }
         
         showLoader('Загрузка данных...');
@@ -1034,6 +1048,7 @@ async function loadUserData() {
         
         // Загрузка данных из Supabase
         console.log('📦 Загрузка данных из Supabase...');
+        // ... остальной код остается без изменений ...
         
         // Загрузка людей
         if (window.supabaseClient) {
@@ -1143,6 +1158,176 @@ async function loadUserData() {
         if (typeof window.updateTreeInterface === 'function' && window.treeData.relatives.length > 0) {
             window.updateTreeInterface(window.treeData.relatives, window.treeData.name);
         }
+        
+        // АВТОМАТИЧЕСКАЯ ИНИЦИАЛИЗАЦИЯ ЧАТА ПРИ ЗАГРУЗКЕ ПОЛЬЗОВАТЕЛЯ
+        console.log('🔧 Проверка инициализации чата...');
+        if (typeof window.initChatSystem === 'function') {
+            console.log('✅ Функция initChatSystem найдена, запускаем через 2 секунды...');
+            // Даем время на загрузку остального интерфейса
+            setTimeout(() => {
+                console.log('🚀 Запуск инициализации чата...');
+                window.initChatSystem();
+            }, 2000);
+        } else {
+            console.log('⚠️ Функция initChatSystem не найдена, пробуем через 3 секунды...');
+            setTimeout(() => {
+                if (typeof window.initChatSystem === 'function') {
+                    window.initChatSystem();
+                } else {
+                    console.error('❌ Функция initChatSystem все еще не найдена');
+                    // Показываем кнопку чата вручную как запасной вариант
+                    createFallbackChatButton();
+                }
+            }, 3000);
+        }
+        
+        showNotification('✅ Данные загружены', 'success');
+        
+    } catch (error) {
+        console.error('❌ Ошибка загрузки данных:', error);
+        showNotification('Ошибка загрузки данных', 'error');
+        
+        // Используем данные из localStorage
+        if (window.people.length === 0) {
+            window.people = JSON.parse(localStorage.getItem('family_tree_people') || '[]');
+        }
+        if (window.events.length === 0) {
+            window.events = JSON.parse(localStorage.getItem('family_tree_events') || '[]');
+        }
+        if (window.media.length === 0) {
+            window.media = JSON.parse(localStorage.getItem('family_tree_media') || '[]');
+        }
+        
+        // Вызываем функции обновления UI для конкретных страниц
+        if (typeof window.updateStats === 'function') {
+            window.updateStats();
+        }
+        
+        if (typeof window.updateRecentEvents === 'function') {
+            window.updateRecentEvents();
+        }
+        
+        if (typeof window.updateTimeline === 'function') {
+            window.updateTimeline();
+        }
+        
+        if (typeof window.updateMediaGrid === 'function') {
+            window.updateMediaGrid();
+        }
+        
+        if (typeof window.updateTreeStats === 'function') {
+            window.updateTreeStats();
+        }
+        
+        if (typeof window.updateTreeInterface === 'function' && window.treeData.relatives.length > 0) {
+            window.updateTreeInterface(window.treeData.relatives, window.treeData.name);
+        }
+        
+        // Пробуем инициализировать чат даже при ошибке
+        setTimeout(() => {
+            if (typeof window.initChatSystem === 'function') {
+                window.initChatSystem();
+            }
+        }, 2000);
+    } finally {
+        hideLoader();
+    }
+}
+
+// Функция запасной кнопки чата (если основной скрипт не загрузился)
+function createFallbackChatButton() {
+    console.log('🔄 Создание запасной кнопки чата...');
+    
+    // Проверяем, не создана ли уже кнопка
+    if (document.getElementById('chat-toggle-btn')) {
+        return;
+    }
+    
+    const chatButtonHTML = `
+        <div id="chat-toggle-btn" style="
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.8rem;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.5);
+            z-index: 9999;
+            transition: all 0.3s;
+        ">
+            <i class="fas fa-comments"></i>
+        </div>
+        
+        <div id="chat-simple-modal" style="
+            display: none;
+            position: fixed;
+            bottom: 110px;
+            right: 30px;
+            width: 400px;
+            height: 500px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            z-index: 9998;
+            flex-direction: column;
+        ">
+            <div style="
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 20px;
+                border-radius: 15px 15px 0 0;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            ">
+                <h3 style="margin: 0; font-size: 1.2rem;">Чат</h3>
+                <button id="close-simple-chat" style="
+                    background: rgba(255,255,255,0.2);
+                    border: none;
+                    color: white;
+                    width: 36px;
+                    height: 36px;
+                    border-radius: 50%;
+                    cursor: pointer;
+                ">&times;</button>
+            </div>
+            <div style="padding: 20px; text-align: center; flex: 1; display: flex; flex-direction: column; justify-content: center;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #f6ad55; margin-bottom: 20px;"></i>
+                <h4 style="color: #4a5568; margin-bottom: 10px;">Чат временно недоступен</h4>
+                <p style="color: #718096;">Для использования чата необходимо обновить страницу</p>
+                <button onclick="location.reload()" class="btn" style="margin-top: 20px;">
+                    <i class="fas fa-sync-alt"></i> Обновить страницу
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', chatButtonHTML);
+    
+    // Добавляем обработчики
+    document.getElementById('chat-toggle-btn')?.addEventListener('click', () => {
+        const modal = document.getElementById('chat-simple-modal');
+        if (modal) {
+            modal.style.display = 'flex';
+        }
+    });
+    
+    document.getElementById('close-simple-chat')?.addEventListener('click', () => {
+        const modal = document.getElementById('chat-simple-modal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    });
+    
+    console.log('✅ Запасная кнопка чата создана');
+}
         
         showNotification('✅ Данные загружены', 'success');
         
@@ -1434,5 +1619,6 @@ window.loadFromLocalStorage = loadFromLocalStorage;
 window.getMediaTypeFromUrl = getMediaTypeFromUrl;
 window.readFileAsDataURL = readFileAsDataURL;
 window.showSelectedFiles = showSelectedFiles;
+window.createFallbackChatButton = createFallbackChatButton;
 
 console.log('✅ App.js загружен');

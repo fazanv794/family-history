@@ -2744,3 +2744,103 @@ select {
         font-size: 1.5rem;
     }
 }
+
+/* ========== ДОПОЛНИТЕЛЬНЫЕ СТИЛИ ДЛЯ ЧАТА ========== */
+
+.new-chat-container {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex: 1;
+}
+
+.new-chat-form {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.message-date {
+    text-align: center;
+    color: #a0aec0;
+    font-size: 0.85rem;
+    margin: 20px 0;
+    position: relative;
+}
+
+.message-date::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: #e2e8f0;
+    z-index: 1;
+}
+
+.message-date span {
+    background: #f8fafc;
+    padding: 0 15px;
+    position: relative;
+    z-index: 2;
+}
+
+/* Кнопки и иконки */
+.btn-icon {
+    background: none;
+    border: none;
+    color: #4a5568;
+    cursor: pointer;
+    padding: 5px;
+    font-size: 1rem;
+}
+
+.btn-icon:hover {
+    color: #667eea;
+}
+
+/* Прокрутка */
+.chats-list::-webkit-scrollbar,
+.chat-messages::-webkit-scrollbar {
+    width: 6px;
+}
+
+.chats-list::-webkit-scrollbar-track,
+.chat-messages::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.chats-list::-webkit-scrollbar-thumb,
+.chat-messages::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.chats-list::-webkit-scrollbar-thumb:hover,
+.chat-messages::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .chat-widget {
+        width: calc(100% - 40px);
+        right: 20px;
+        left: 20px;
+        bottom: 100px;
+        height: 70vh;
+    }
+    
+    .chat-toggle-btn {
+        bottom: 20px;
+        right: 20px;
+        width: 60px;
+        height: 60px;
+        font-size: 1.5rem;
+    }
+    
+    .chat-widget.active {
+        height: calc(100vh - 120px);
+    }
+}
