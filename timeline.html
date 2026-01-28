@@ -25,6 +25,7 @@
                 <li><a href="tree.html">Древо</a></li>
                 <li><a href="timeline.html" class="active">Лента событий</a></li>
                 <li><a href="media.html">Медиатека</a></li>
+                <li><a href="chats.html">Чаты</a></li>
                 <li><a href="profile.html">Мой профиль</a></li>
             </ul>
             
@@ -645,19 +646,5 @@
         window.deleteEvent = deleteEvent;
         window.addEventFromForm = addEventFromForm;
     </script>
-    <script src="chat.js"></script>
-
-<script>
-    // Инициализация чата после загрузки пользователя
-    document.addEventListener('DOMContentLoaded', () => {
-        // Ждем инициализации пользователя
-        setTimeout(() => {
-            if (window.currentUser && typeof window.initChatSystem === 'function') {
-                window.initChatSystem();
-            }
-        }, 1500);
-    });
-</script>
-
 </body>
 </html>

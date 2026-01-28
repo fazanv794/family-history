@@ -25,6 +25,7 @@
                 <li><a href="tree.html">Древо</a></li>
                 <li><a href="timeline.html">Лента событий</a></li>
                 <li><a href="media.html">Медиатека</a></li>
+                <li><a href="chats.html">Чаты</a></li>
                 <li><a href="profile.html" class="active">Мой профиль</a></li>
             </ul>
             
@@ -219,7 +220,6 @@
     <script src="supabase.js"></script>
     <script src="app.js"></script>
     <script src="profile.js"></script>
-    <script src="chat.js"></script>
     
 <!-- В конце profile.html, перед закрывающим тегом body -->
 <script>
@@ -264,18 +264,5 @@
         }
     });
 </script>
-
-<script>
-    // Инициализация чата после загрузки пользователя
-    document.addEventListener('DOMContentLoaded', () => {
-        // Ждем инициализации пользователя
-        setTimeout(() => {
-            if (window.currentUser && typeof window.initChatSystem === 'function') {
-                window.initChatSystem();
-            }
-        }, 1500);
-    });
-</script>
-
 </body>
 </html>

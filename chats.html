@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <!-- Шапка -->
+    <!-- Шапка для приложения -->
     <header id="app-header">
         <div class="header-container container">
             <a href="app.html" class="logo" id="home-link">
@@ -25,8 +25,8 @@
                 <li><a href="tree.html">Древо</a></li>
                 <li><a href="timeline.html">Лента событий</a></li>
                 <li><a href="media.html">Медиатека</a></li>
-                <li><a href="chats.html" class="active">Чаты</a></li>
                 <li><a href="profile.html">Мой профиль</a></li>
+                <li><a href="chats.html" class="active">Чаты</a></li>
             </ul>
             
             <div class="user-menu">
@@ -37,76 +37,38 @@
         </div>
     </header>
 
-    <!-- Главный контент -->
+    <!-- Главный контент приложения -->
     <main id="app-content">
+        <!-- Страница чатов -->
         <section id="chats-page" class="page">
             <div class="container">
-                <div class="chats-container">
-                    <!-- Левая колонка: список чатов -->
-                    <div class="chats-sidebar">
-                        <div class="chats-header">
-                            <h2>Чаты</h2>
-                            <button class="btn" id="create-chat-btn">
-                                <i class="fas fa-plus"></i> Новый чат
-                            </button>
-                        </div>
-                        
-                        <div class="chats-search">
-                            <input type="text" id="search-chats" placeholder="Поиск чатов...">
-                            <i class="fas fa-search"></i>
-                        </div>
-                        
-                        <div class="chats-list" id="chats-list">
-                            <!-- Список чатов будет здесь -->
-                        </div>
-                        
-                        <div class="chats-info">
-                            <h4>Как пользоваться чатами:</h4>
-                            <ol style="margin-left: 20px; color: #718096; font-size: 0.9rem;">
-                                <li>Нажмите "Новый чат" для создания</li>
-                                <li>Выберите пользователей из списка</li>
-                                <li>Начните общение!</li>
-                            </ol>
-                        </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                    <h2>Семейные чаты</h2>
+                    <button class="btn" id="create-chat-btn">
+                        <i class="fas fa-plus"></i> Новый чат
+                    </button>
+                </div>
+                
+                <div class="chats-layout" style="display: flex; gap: 20px; height: calc(100vh - 200px);">
+                    <!-- Список чатов -->
+                    <div class="chats-list" id="chats-list" style="flex: 0 0 300px; background: white; border-radius: 12px; padding: 20px; overflow-y: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        <!-- Чаты будут здесь -->
                     </div>
                     
-                    <!-- Правая колонка: выбранный чат -->
-                    <div class="chat-main">
-                        <div id="chat-empty-state" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 20px;">
-                            <i class="fas fa-comments" style="font-size: 4rem; color: #cbd5e0; margin-bottom: 20px;"></i>
-                            <h3 style="color: #4a5568; margin-bottom: 10px;">Выберите чат</h3>
-                            <p style="color: #718096; text-align: center;">Выберите существующий чат из списка слева или создайте новый</p>
+                    <!-- Окно чата -->
+                    <div class="chat-window" id="chat-window" style="flex: 1; background: white; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        <div class="chat-header" id="chat-header" style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e2e8f0;">
+                            <h3>Выберите чат</h3>
                         </div>
-                        
-                        <div id="chat-room" style="display: none; flex-direction: column; height: 100%;">
-                            <!-- Заголовок чата -->
-                            <div class="chat-room-header">
-                                <div class="chat-info">
-                                    <h3 id="current-chat-name">Название чата</h3>
-                                    <div class="chat-members" id="current-chat-members">
-                                        2 участника
-                                    </div>
-                                </div>
-                                <div class="chat-actions">
-                                    <button class="btn btn-small" id="chat-info-btn">
-                                        <i class="fas fa-info-circle"></i> Информация
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <!-- Сообщения -->
-                            <div class="messages-container" id="messages-container">
-                                <!-- Сообщения будут здесь -->
-                            </div>
-                            
-                            <!-- Ввод сообщения -->
-                            <div class="message-input-container">
-                                <textarea id="message-input" placeholder="Введите сообщение..." rows="3"></textarea>
-                                <button class="btn" id="send-message-btn">
-                                    <i class="fas fa-paper-plane"></i> Отправить
-                                </button>
-                            </div>
+                        <div class="chat-messages" id="chat-messages" style="flex: 1; overflow-y: auto; margin-bottom: 20px;">
+                            <!-- Сообщения будут здесь -->
                         </div>
+                        <form id="chat-form" style="display: flex; gap: 10px;">
+                            <input type="text" id="chat-input" placeholder="Введите сообщение..." style="flex: 1; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px;">
+                            <button type="submit" class="btn" style="padding: 12px 20px;">
+                                <i class="fas fa-paper-plane"></i> Отправить
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -117,14 +79,11 @@
     <footer>
         <div class="container">
             <div class="copyright">
-                <p>© 2025 История моей семьи. Все права защищены.</p>
+                <p>© 2024 История моей семьи. Все права защищены.</p>
             </div>
         </div>
     </footer>
 
-    <!-- Модальные окна -->
-    <div class="modal-overlay hidden" id="modal-overlay"></div>
-    
     <!-- Модальное окно создания чата -->
     <div id="create-chat-modal" class="modal hidden">
         <div class="modal-content">
@@ -135,42 +94,30 @@
             <div class="modal-body">
                 <form id="create-chat-form">
                     <div class="form-group">
-                        <label for="chat-name">Название чата *</label>
-                        <input type="text" id="chat-name" placeholder="Например: Семейный чат" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="chat-type">Тип чата</label>
-                        <select id="chat-type">
-                            <option value="personal">Личный чат</option>
-                            <option value="group">Групповой чат</option>
+                        <label for="chat-type">Тип чата *</label>
+                        <select id="chat-type" required>
+                            <option value="">Выберите тип</option>
+                            <option value="private">Приватный (1-на-1)</option>
+                            <option value="group">Групповой</option>
                         </select>
                     </div>
                     
+                    <div class="form-group hidden" id="group-name-group">
+                        <label for="group-name">Название группы *</label>
+                        <input type="text" id="group-name" placeholder="Введите название группы">
+                    </div>
+                    
                     <div class="form-group">
-                        <label>Выберите участников</label>
-                        <div id="available-users" style="
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                            padding: 10px;
-                            max-height: 200px;
-                            overflow-y: auto;
-                            margin-top: 10px;
-                        ">
-                            <!-- Список пользователей будет здесь -->
+                        <label>Найти пользователей</label>
+                        <input type="text" id="user-search" placeholder="Поиск по имени или email..." style="margin-bottom: 15px;">
+                        <div id="user-search-results" style="max-height: 200px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px;">
+                            <!-- Результаты поиска -->
                         </div>
                     </div>
                     
                     <div class="form-group">
                         <label>Выбранные участники</label>
-                        <div id="selected-users" style="
-                            border: 1px solid #e2e8f0;
-                            border-radius: 8px;
-                            padding: 15px;
-                            min-height: 60px;
-                            margin-top: 10px;
-                            background: #f8fafc;
-                        ">
+                        <div id="selected-users" style="display: flex; flex-wrap: wrap; gap: 10px; min-height: 40px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px;">
                             <!-- Выбранные пользователи -->
                         </div>
                     </div>
@@ -180,7 +127,7 @@
                             Отмена
                         </button>
                         <button type="submit" class="btn">
-                            <i class="fas fa-plus-circle"></i> Создать чат
+                            Создать чат
                         </button>
                     </div>
                 </form>
@@ -208,23 +155,6 @@
     <!-- Подключаем наши файлы -->
     <script src="supabase.js"></script>
     <script src="app.js"></script>
-    <script src ="chats-page.js"></script>
-    
-    <!-- Скрипт для чатов -->
- <!-- Скрипт для чатов -->
-<script>
-    // Простая инициализация
-    document.addEventListener('DOMContentLoaded', async function() {
-        console.log('💬 Страница чатов загружается...');
-        
-        // Ждем загрузку пользователя
-        await window.loadUserData();
-        
-        // Инициализируем страницу чатов
-        if (typeof window.initChatsPage === 'function') {
-            await window.initChatsPage();
-        }
-    });
-</script>
+    <script src="chats.js"></script>
 </body>
 </html>

@@ -1,9 +1,12 @@
-// supabase.js - Исправленная версия
+// supabase.js - Клиент для работы с Supabase
+
 console.log('🔧 Supabase.js загружается...');
 
+// Базовый клиент Supabase
 const SUPABASE_URL = 'https://szwsvtxkhlacrarplgtn.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6d3N2dHhraGxhY3JhcnBsZ3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxMzA1NjAsImV4cCI6MjA4MTcwNjU2MH0.dcRnrqlA4Iz1RthtFT7wL_KGorGz4lHnMMsWCP8i-ns';
 
+// Создаем клиент
 let supabaseClient;
 
 try {
@@ -13,17 +16,11 @@ try {
                 persistSession: true,
                 autoRefreshToken: true,
                 detectSessionInUrl: true
-            },
-            realtime: {
-                params: {
-                    eventsPerSecond: 10
-                }
             }
         });
         console.log('✅ Supabase клиент создан');
     } else {
-        console.warn('⚠️ Библиотека Supabase не загружена, используем демо-режим');
-        createFallbackClient();
+        throw new Error('Библиотека Supabase не загружена');
     }
 } catch (error) {
     console.error('❌ Ошибка создания Supabase клиента:', error.message);
@@ -31,6 +28,8 @@ try {
 }
 
 function createFallbackClient() {
+    console.log('⚠️ Создаем заглушку для Supabase');
+    
     supabaseClient = {
         auth: {
             getUser: async () => ({ 
@@ -38,6 +37,7 @@ function createFallbackClient() {
                 error: null 
             }),
             signUp: async (credentials) => {
+                console.log('📝 Регистрация (заглушка):', credentials.email);
                 const user = {
                     id: 'demo-' + Date.now(),
                     email: credentials.email,
@@ -46,6 +46,7 @@ function createFallbackClient() {
                 return { data: { user }, error: null };
             },
             signInWithPassword: async (credentials) => {
+                console.log('🔐 Вход (заглушка):', credentials.email);
                 const user = {
                     id: 'demo-' + Date.now(),
                     email: credentials.email,
@@ -72,14 +73,44 @@ function createFallbackClient() {
             select: (columns) => ({
                 eq: (column, value) => ({
                     order: (column, options) => {
+                        console.log(`📥 Запрос из ${tableName} где ${column}=${value}`);
+                        // Возвращаем демо-данные для тестирования
+                        if (tableName === 'events') {
+                            return Promise.resolve({ 
+                                data: [
+                                    {
+                                        id: 1,
+                                        title: 'Тестовое событие 1',
+                                        date: '2024-01-15',
+                                        event_type: 'birthday',
+                                        description: 'Это тестовое событие',
+                                        media_url: 'https://picsum.photos/300/200',
+                                        created_at: new Date().toISOString()
+                                    },
+                                    {
+                                        id: 2,
+                                        title: 'Тестовое событие 2',
+                                        date: '2024-01-10',
+                                        event_type: 'wedding',
+                                        description: 'Еще одно тестовое событие',
+                                        media_url: 'https://picsum.photos/300/201',
+                                        created_at: new Date().toISOString()
+                                    }
+                                ], 
+                                error: null 
+                            });
+                        }
                         return Promise.resolve({ data: [], error: null });
                     }
                 }),
                 order: (column, options) => {
+                    console.log(`📥 Запрос из ${tableName} с сортировкой`);
                     return Promise.resolve({ data: [], error: null });
                 }
             }),
             insert: (data) => {
+                console.log(`💾 Вставка в ${tableName}:`, data);
+                // Добавляем ID к данным
                 const result = data.map(item => ({ 
                     ...item, 
                     id: Date.now() + Math.floor(Math.random() * 1000)
@@ -91,6 +122,7 @@ function createFallbackClient() {
             },
             update: (data) => ({
                 eq: (column, value) => {
+                    console.log(`✏️ Обновление ${tableName}:`, data);
                     return Promise.resolve({ 
                         data: data, 
                         error: null 
@@ -99,6 +131,7 @@ function createFallbackClient() {
             }),
             delete: () => ({
                 eq: (column, value) => {
+                    console.log(`🗑️ Удаление из ${tableName} где ${column}=${value}`);
                     return Promise.resolve({ 
                         data: null, 
                         error: null 
@@ -109,7 +142,7 @@ function createFallbackClient() {
     };
 }
 
-// Улучшенная функция уведомлений
+// Функция уведомлений
 function showNotification(message, type = 'info') {
     console.log(`🔔 ${type.toUpperCase()}: ${message}`);
     
@@ -202,7 +235,7 @@ function hideLoader() {
     }
 }
 
-// Экспорт функций
+// Экспортируем
 window.supabaseClient = supabaseClient;
 window.showNotification = showNotification;
 window.showLoader = showLoader;
