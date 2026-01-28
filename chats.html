@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <!-- Шапка для приложения -->
+    <!-- Шапка -->
     <header id="app-header">
         <div class="header-container container">
             <a href="app.html" class="logo" id="home-link">
@@ -37,7 +37,7 @@
         </div>
     </header>
 
-    <!-- Главный контент приложения -->
+    <!-- Контент -->
     <main id="app-content">
         <section id="chats-page" class="page">
             <div class="container">
@@ -49,18 +49,16 @@
                 </div>
                 
                 <div class="chats-layout" style="display: flex; gap: 20px; height: calc(100vh - 200px);">
-                    <!-- Список чатов -->
                     <div class="chats-list" id="chats-list" style="flex: 0 0 300px; background: white; border-radius: 12px; padding: 20px; overflow-y: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-                        <!-- Чаты будут здесь -->
+                        <!-- Чаты -->
                     </div>
                     
-                    <!-- Окно чата -->
                     <div class="chat-window" id="chat-window" style="flex: 1; background: white; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
                         <div class="chat-header" id="chat-header" style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e2e8f0;">
                             <h3>Выберите чат</h3>
                         </div>
                         <div class="chat-messages" id="chat-messages" style="flex: 1; overflow-y: auto; margin-bottom: 20px;">
-                            <!-- Сообщения будут здесь -->
+                            <!-- Сообщения -->
                         </div>
                         <form id="chat-form" style="display: flex; gap: 10px;">
                             <input type="text" id="chat-input" placeholder="Введите сообщение..." style="flex: 1; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px;">
@@ -83,7 +81,7 @@
         </div>
     </footer>
 
-    <!-- Оверлей для модального окна -->
+    <!-- Оверлей -->
     <div id="modal-overlay" style="
         position: fixed;
         inset: 0;
@@ -95,7 +93,7 @@
         backdrop-filter: blur(4px);
     "></div>
 
-    <!-- Модальное окно создания чата -->
+    <!-- Модальное окно -->
     <div id="create-chat-modal" style="
         position: fixed;
         top: 50%;
@@ -151,16 +149,12 @@
                     <div class="form-group">
                         <label>Найти пользователей</label>
                         <input type="text" id="user-search" placeholder="Поиск по имени или email..." style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; margin-bottom: 12px;">
-                        <div id="user-search-results" style="max-height: 200px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; background: #fafafa;">
-                            <!-- Результаты поиска -->
-                        </div>
+                        <div id="user-search-results" style="max-height: 220px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; background: #f9fafb;"></div>
                     </div>
                     
                     <div class="form-group">
                         <label>Выбранные участники</label>
-                        <div id="selected-users" style="display: flex; flex-wrap: wrap; gap: 10px; min-height: 40px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; background: #fafafa;">
-                            <!-- Выбранные пользователи -->
-                        </div>
+                        <div id="selected-users" style="display: flex; flex-wrap: wrap; gap: 10px; min-height: 40px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; background: #f9fafb;"></div>
                     </div>
                     
                     <div class="modal-footer" style="margin-top: 24px; display: flex; justify-content: flex-end; gap: 16px;">
@@ -172,7 +166,7 @@
         </div>
     </div>
 
-    <!-- Уведомления -->
+    <!-- Уведомления и загрузчик -->
     <div id="notification" class="notification">
         <div class="notification-content">
             <span id="notification-text"></span>
@@ -180,7 +174,6 @@
         </div>
     </div>
 
-    <!-- Загрузчик -->
     <div id="loader" class="loader-overlay hidden">
         <div class="loader"></div>
         <div class="loader-text" id="loader-text">Загрузка...</div>
@@ -192,21 +185,22 @@
     <script src="app.js"></script>
     <script src="chats.js"></script>
 
-    <!-- Локальный скрипт управления модалкой -->
+    <!-- Локальный скрипт -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('Chats.html → модалка инициализирована');
+            console.log('Chats.html загружен');
 
             const btn = document.getElementById('create-chat-btn');
             const modal = document.getElementById('create-chat-modal');
             const overlay = document.getElementById('modal-overlay');
+            const searchInput = document.getElementById('user-search');
 
             if (btn) {
                 btn.addEventListener('click', () => {
-                    console.log('Открытие модалки');
                     overlay.style.display = 'flex';
                     modal.style.opacity = '1';
                     modal.style.transform = 'translate(-50%, -50%) scale(1)';
+                    console.log('Модалка открыта');
                 });
             }
 
@@ -218,7 +212,6 @@
                 });
             });
 
-            // Клик по фону → закрыть
             overlay.addEventListener('click', e => {
                 if (e.target === overlay) {
                     modal.style.opacity = '0';
@@ -226,8 +219,26 @@
                 }
             });
 
-            // Запуск основной логики чатов
-            if (typeof initChatsPage === 'function') initChatsPage();
+            // Поиск (привязываем один раз)
+            if (searchInput) {
+                let timeout;
+                searchInput.addEventListener('input', e => {
+                    clearTimeout(timeout);
+                    const query = e.target.value.trim();
+                    timeout = setTimeout(() => {
+                        console.log('Поиск:', query);
+                        if (typeof searchUsers === 'function') {
+                            searchUsers(query);
+                        } else {
+                            console.error('Функция searchUsers не найдена в chats.js');
+                        }
+                    }, 400);
+                });
+            }
+
+            if (typeof initChatsPage === 'function') {
+                initChatsPage();
+            }
         });
     </script>
 </body>

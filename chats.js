@@ -221,41 +221,47 @@ document.getElementById('create-chat-btn')?.addEventListener('click', () => {
 
 // Поиск пользователей
 async function searchUsers(query) {
-    if (!query || query.length < 2) return;
-    
+    console.log('Поиск запущен, запрос:', query);
+
+    if (!query || query.length < 2) {
+        document.getElementById('user-search-results').innerHTML = '';
+        return;
+    }
+
     try {
         const { data: users, error } = await window.supabaseClient
             .from('profiles')
             .select('id, full_name, email, avatar_url')
             .or(`full_name.ilike.%${query}%,email.ilike.%${query}%`)
-            .neq('id', window.currentUser.id)  // Исключаем себя
+            .neq('id', window.currentUser.id)
             .limit(10);
-        
+
+        console.log('Результат Supabase:', users, error);
+
         if (error) throw error;
-        
-        const results = document.getElementById('user-search-results');
-        results.innerHTML = '';
-        
+
+        const container = document.getElementById('user-search-results');
+        container.innerHTML = '';
+
+        if (!users.length) {
+            container.innerHTML = '<p style="text-align:center; color:#718096;">Никто не найден</p>';
+            return;
+        }
+
         users.forEach(user => {
-            const userItem = document.createElement('div');
-            userItem.style = 'display: flex; align-items: center; gap: 10px; padding: 10px; border-bottom: 1px solid #e2e8f0; cursor: pointer;';
-            userItem.innerHTML = `
-                <div class="avatar">${user.full_name?.substring(0, 2).toUpperCase() || 'U'}</div>
-                <div>
-                    <p style="margin: 0; color: #2d3748;">${user.full_name || user.email}</p>
-                    <p style="margin: 0; font-size: 0.85rem; color: #718096;">${user.email}</p>
-                </div>
+            const div = document.createElement('div');
+            div.style = 'padding:10px; border-bottom:1px solid #eee; cursor:pointer;';
+            div.innerHTML = `
+                <strong>${user.full_name || user.email.split('@')[0]}</strong><br>
+                <small>${user.email}</small>
             `;
-            userItem.onclick = () => addSelectedUser(user);
-            results.appendChild(userItem);
+            div.onclick = () => addSelectedUser(user);
+            container.appendChild(div);
         });
-        
-    } catch (error) {
-        console.error('Ошибка поиска пользователей:', error);
-        window.showNotification('Ошибка поиска', 'error');
+    } catch (err) {
+        console.error('Ошибка поиска:', err);
     }
 }
-
 // Добавление выбранного пользователя
 function addSelectedUser(user) {
     const selected = document.getElementById('selected-users');
