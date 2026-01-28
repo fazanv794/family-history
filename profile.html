@@ -219,6 +219,7 @@
     <script src="supabase.js"></script>
     <script src="app.js"></script>
     <script src="profile.js"></script>
+    <script src="chat.js"></script>
     
 <!-- В конце profile.html, перед закрывающим тегом body -->
 <script>
@@ -263,5 +264,18 @@
         }
     });
 </script>
+
+<script>
+    // Инициализация чата после загрузки пользователя
+    document.addEventListener('DOMContentLoaded', () => {
+        // Ждем инициализации пользователя
+        setTimeout(() => {
+            if (window.currentUser && typeof window.initChatSystem === 'function') {
+                window.initChatSystem();
+            }
+        }, 1500);
+    });
+</script>
+
 </body>
 </html>

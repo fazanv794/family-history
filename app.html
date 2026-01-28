@@ -202,6 +202,7 @@
     <!-- Подключаем наши файлы -->
     <script src="supabase.js"></script>
     <script src="app.js"></script>
+    <script src="chat.js"></script>
     
     <script>
         // Дополнительные обработчики для главной страницы
@@ -222,5 +223,18 @@
             console.log('✅ Главная страница инициализирована');
         });
     </script>
+
+    <script>
+    // Инициализация чата после загрузки пользователя
+    document.addEventListener('DOMContentLoaded', () => {
+        // Ждем инициализации пользователя
+        setTimeout(() => {
+            if (window.currentUser && typeof window.initChatSystem === 'function') {
+                window.initChatSystem();
+            }
+        }, 1500);
+    });
+</script>
+
 </body>
 </html>

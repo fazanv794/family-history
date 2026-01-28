@@ -25,7 +25,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         // Настраиваем общие обработчики событий
         setupCommonEventListeners();
-        
+        // Инициализация чата
+if (window.currentUser && typeof window.initChatSystem === 'function') {
+    setTimeout(() => {
+        window.initChatSystem();
+    }, 2000);
+}
         // Обновляем UI пользователя
         updateUserUI();
         
