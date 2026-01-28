@@ -266,22 +266,22 @@ async function loadUserChats() {
         window.showLoader('Загрузка чатов...');
         
         // Получаем чаты, где пользователь является участником
-        const { data: chatMembers, error: membersError } = await window.supabaseClient
-            .from('chat_members')
-            .select(`
-                chat_id,
-                chats (
-                    id,
-                    name,
-                    description,
-                    is_group,
-                    created_by,
-                    created_at,
-                    updated_at
-                )
-            `)
-            .eq('user_id', window.currentUser.id)
-            .order('joined_at', { ascending: false });
+const { data: chatMembers, error: membersError } = await window.supabaseClient
+    .from('chat_members')
+    .select(`
+        chat_id,
+        chats (
+            id,
+            name,
+            description,
+            is_group,
+            owner_id,  // ← ПРАВИЛЬНО
+            created_at,
+            updated_at
+        )
+    `)
+    .eq('user_id', window.currentUser.id)
+    .order('joined_at', { ascending: false });
         
         if (membersError) throw membersError;
         
@@ -831,7 +831,7 @@ async function createNewChat() {
             .insert([{
                 name: chatName,
                 is_group: chatType === 'group',
-                created_by: window.currentUser.id,
+                owner_id: window.currentUser.id,
                 description: chatType === 'group' ? 'Групповой чат' : 'Личный чат'
             }])
             .select()
