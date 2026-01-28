@@ -6,6 +6,8 @@
     { "source": "/tree-engine.js", "destination": "/tree-engine.js" },
     { "source": "/profile.js", "destination": "/profile.js" },
     { "source": "/supabase.js", "destination": "/supabase.js" },
+    { "source": "/app.js", "destination": "/app.js" },
+    { "source": "/style.css", "destination": "/style.css" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
@@ -14,7 +16,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self' https:; connect-src 'self' https: wss:; img-src 'self' https: data: blob:; style-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; frame-src 'self' https:;"
+          "value": "default-src 'self' https:; connect-src 'self' https: wss://*.supabase.co wss://*.supabase.com ws:; img-src 'self' https: data: blob:; style-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://*.supabase.co; frame-src 'self' https:;"
         }
       ]
     }
