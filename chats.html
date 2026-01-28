@@ -84,6 +84,9 @@
         </div>
     </footer>
 
+    <!-- Оверлей для модальных окон (ДОЛЖЕН БЫТЬ ЗДЕСЬ!) -->
+    <div class="modal-overlay hidden" id="modal-overlay"></div>
+
     <!-- Модальное окно создания чата -->
     <div id="create-chat-modal" class="modal hidden">
         <div class="modal-content">
@@ -157,51 +160,60 @@
     <script src="app.js"></script>
     <script src="chats.js"></script>
 
-<script>
-    // chats.html — локальный скрипт для инициализации модалки
-    document.addEventListener('DOMContentLoaded', () => {
-        console.log('Chats.html: локальная инициализация модалки');
+    <!-- Локальный скрипт для правильного открытия модалки -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Chats.html → DOM загружен, инициализация модалки');
 
-        const createBtn = document.getElementById('create-chat-btn');
-        if (createBtn) {
-            createBtn.addEventListener('click', () => {
-                console.log('Кнопка "Новый чат" нажата');
-                
-                const modal = document.getElementById('create-chat-modal');
-                const overlay = document.getElementById('modal-overlay');
-                
-                if (!modal || !overlay) {
-                    console.error('Модалка или оверлей НЕ НАЙДЕНЫ в DOM');
-                    alert('Ошибка: модальное окно не найдено. Проверь HTML.');
-                    return;
-                }
+            const createBtn = document.getElementById('create-chat-btn');
+            const modal = document.getElementById('create-chat-modal');
+            const overlay = document.getElementById('modal-overlay');
 
-                modal.classList.remove('hidden');
-                overlay.classList.remove('hidden');
+            // Проверяем наличие элементов сразу при загрузке
+            if (!createBtn) console.error('Кнопка #create-chat-btn НЕ НАЙДЕНА');
+            if (!modal)     console.error('Модальное окно #create-chat-modal НЕ НАЙДЕНО');
+            if (!overlay)   console.error('Оверлей #modal-overlay НЕ НАЙДЕН');
 
-                // Сброс формы
-                document.getElementById('user-search').value = '';
-                document.getElementById('user-search-results').innerHTML = '';
-                document.getElementById('selected-users').innerHTML = '';
-                document.getElementById('group-name-group').classList.add('hidden');
-                document.getElementById('chat-type').value = '';
+            if (createBtn) {
+                createBtn.addEventListener('click', function() {
+                    console.log('Кнопка "Новый чат" нажата');
+
+                    if (!modal || !overlay) {
+                        console.error('Модалка или оверлей НЕ НАЙДЕНЫ');
+                        alert('Ошибка: модальное окно или фон не найдены в HTML');
+                        return;
+                    }
+
+                    // Открываем
+                    modal.classList.remove('hidden');
+                    overlay.classList.remove('hidden');
+
+                    // Сброс формы
+                    if (document.getElementById('chat-type')) document.getElementById('chat-type').value = '';
+                    if (document.getElementById('group-name-group')) document.getElementById('group-name-group').classList.add('hidden');
+                    if (document.getElementById('user-search')) document.getElementById('user-search').value = '';
+                    if (document.getElementById('user-search-results')) document.getElementById('user-search-results').innerHTML = '';
+                    if (document.getElementById('selected-users')) document.getElementById('selected-users').innerHTML = '';
+                });
+            }
+
+            // Закрытие модалки (крестик и кнопка Отмена)
+            document.querySelectorAll('#create-chat-modal .modal-close, #create-chat-modal .cancel-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    if (modal) modal.classList.add('hidden');
+                    if (overlay) overlay.classList.add('hidden');
+                    console.log('Модалка закрыта');
+                });
             });
-        }
 
-        // Закрытие модалки
-        document.querySelector('#create-chat-modal .modal-close')?.addEventListener('click', closeCreateModal);
-        document.querySelector('#create-chat-modal .cancel-btn')?.addEventListener('click', closeCreateModal);
-
-        function closeCreateModal() {
-            document.getElementById('create-chat-modal')?.classList.add('hidden');
-            document.getElementById('modal-overlay')?.classList.add('hidden');
-        }
-
-        // Запуск основной инициализации из chats.js
-        if (typeof initChatsPage === 'function') {
-            initChatsPage();
-        }
-    });
-</script>
+            // Запуск основной логики чатов из chats.js
+            if (typeof initChatsPage === 'function') {
+                console.log('Запускаем initChatsPage() из chats.js');
+                initChatsPage();
+            } else {
+                console.warn('Функция initChatsPage() не найдена в chats.js');
+            }
+        });
+    </script>
 </body>
 </html>
