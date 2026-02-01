@@ -81,35 +81,10 @@
         </div>
     </footer>
 
-    <!-- Модальные окна (оверлей и модалка с исправленным центрированием) -->
-    <div class="modal-overlay hidden" id="modal-overlay" style="
-        position: fixed !important;
-        inset: 0 !important;
-        background: rgba(0,0,0,0.65) !important;
-        z-index: 99999 !important;
-        display: none !important;
-        align-items: center !important;
-        justify-content: center !important;
-        backdrop-filter: blur(4px) !important;
-    "></div>
+    <!-- Модальные окна (оставлены как были) -->
+    <div class="modal-overlay hidden" id="modal-overlay"></div>
     
-    <div id="add-event-modal" class="modal hidden" style="
-        position: fixed !important;
-        top: 50% !important;
-        left: 50% !important;
-        transform: translate(-50%, -50%) !important;
-        width: 90% !important;
-        max-width: 600px !important;
-        max-height: 90vh !important;
-        background: white !important;
-        border-radius: 16px !important;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.4) !important;
-        overflow-y: auto !important;
-        z-index: 100000 !important;
-        opacity: 0 !important;
-        transition: opacity 0.3s ease, transform 0.3s ease !important;
-        pointer-events: auto !important;
-    ">
+    <div id="add-event-modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Добавить семейное событие</h3>
@@ -185,7 +160,7 @@
     <script src="app.js"></script>
     
     <script>
-        // Функции для страницы ленты событий (оставляем как было)
+        // Функции для страницы ленты событий (оставлены как были)
         function updateTimeline() {
             const container = document.getElementById('timeline-container');
             if (!container) return;
@@ -336,6 +311,7 @@
             return icons[eventType] || 'fas fa-calendar';
         }
         
+        // Редактирование и удаление (оставлены как было)
         async function editEvent(eventId) {
             const event = (window.events || []).find(e => e.id === eventId);
             if (!event) return;
@@ -356,8 +332,6 @@
             submitBtn.dataset.editingId = eventId;
             
             const form = document.getElementById('add-event-form-modal');
-            const originalSubmit = form.onsubmit;
-            
             const newForm = form.cloneNode(true);
             form.parentNode.replaceChild(newForm, form);
             
@@ -389,35 +363,11 @@
                         window.events[index] = { ...window.events[index], ...updatedEvent };
                     }
                     
-                    if (updatedEvent.media_url && updatedEvent.media_url.trim() !== '') {
-                        const mediaExists = window.media.some(m => m.file_url === updatedEvent.media_url);
-                        if (!mediaExists) {
-                            const mediaItem = {
-                                id: Date.now() + Math.random(),
-                                file_url: updatedEvent.media_url,
-                                file_type: window.getMediaTypeFromUrl(updatedEvent.media_url),
-                                description: updatedEvent.description || `Медиа для события: ${updatedEvent.title}`,
-                                created_at: new Date().toISOString(),
-                                is_external: true
-                            };
-                            
-                            window.media.unshift(mediaItem);
-                            console.log('✅ Медиа добавлено в медиатеку из события');
-                            
-                            window.dispatchEvent(new CustomEvent('mediaChanged'));
-                        }
-                    }
-                    
                     window.showNotification('✅ Событие обновлено!', 'success');
                     window.closeAllModals();
                     
                     window.saveToLocalStorage();
-                    
                     updateTimeline();
-                    
-                    if (updatedEvent.media_url && typeof window.updateMediaGrid === 'function') {
-                        window.updateMediaGrid();
-                    }
                     
                 } catch (error) {
                     console.error('Ошибка обновления события:', error);
@@ -451,7 +401,6 @@
                 window.showNotification('✅ Событие удалено!', 'success');
                 
                 window.saveToLocalStorage();
-                
                 updateTimeline();
                 
             } catch (error) {
@@ -492,21 +441,20 @@
                     delete submitBtn.dataset.editingId;
                 }
                 
-                // Открытие модалки без window.showModal (чтобы точно работало)
-                document.getElementById('add-event-modal').classList.remove('hidden');
-                document.getElementById('modal-overlay').style.display = 'flex';
+                // Показываем модальное окно (как было)
+                window.showModal('add-event-modal');
             });
             
-            // Обработчики фильтров
             document.getElementById('filter-year')?.addEventListener('change', updateTimeline);
             document.getElementById('filter-type')?.addEventListener('change', updateTimeline);
             
             console.log('📊 Текущее количество событий:', window.events?.length || 0);
         });
         
-        // Функция для добавления события из формы (исправленная версия)
+        // Функция для добавления события из формы (исправленная — без перезагрузки)
         async function addEventFromForm(e) {
-            e.preventDefault();
+            e.preventDefault();   // ← главное исправление
+            
             console.log('📨 Добавление события из формы');
             
             const title = document.getElementById('event-title').value.trim();
@@ -533,7 +481,6 @@
                     created_at: new Date().toISOString()
                 };
                 
-                // Сохраняем в Supabase
                 if (window.currentUser && window.supabaseClient) {
                     const { data, error } = await window.supabaseClient
                         .from('events')
@@ -545,19 +492,17 @@
                     
                     if (data) {
                         newEvent.id = data.id;
+                        window.events = window.events || [];
+                        window.events.unshift(newEvent);
                     }
                 } else {
                     newEvent.id = Date.now() + Math.random();
+                    window.events = window.events || [];
+                    window.events.unshift(newEvent);
                 }
-                
-                window.events = window.events || [];
-                window.events.unshift(newEvent);
                 
                 window.showNotification('✅ Событие успешно добавлено!', 'success');
                 window.closeAllModals();
-                
-                // Сохраняем в localStorage только если нужно (можно убрать)
-                window.saveToLocalStorage();
                 
                 updateTimeline();
                 
