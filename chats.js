@@ -62,10 +62,10 @@ async function loadConversations() {
             
             const otherNames = participants
                 .filter(p => p.user_id !== window.currentUser.id)
-                .map(p => profileMap.get(p.user_id)?.full_name || 'Пользователь');
+                .map(p => profileMap.get(p.user_id)?.full_name || profileMap.get(p.user_id)?.email?.split('@')[0] || 'Пользователь');
             
             const chatName = conv.is_group 
-                ? conv.name || `Группа (${otherNames.length})`
+                ? conv.name || `Группа (${otherNames.length} чел.)`
                 : otherNames[0] || 'Приватный чат';
             
             const chatItem = document.createElement('div');
@@ -113,16 +113,14 @@ async function openConversation(convId, chatName) {
     container.scrollTop = container.scrollHeight;
 }
 
+// Добавление одного сообщения (для realtime и начальной загрузки)
 function appendMessage(msg) {
     const container = document.getElementById('chat-messages');
     if (!container) return;
 
     const isOwn = msg.sender_id === window.currentUser.id;
     const sender = msg.sender || {};
-    // Надёжный fallback: full_name → часть email → Аноним
-    const senderName = sender.full_name || 
-                      sender.email?.split('@')[0] || 
-                      'Аноним';
+    const senderName = sender.full_name || sender.email?.split('@')[0] || 'Аноним';
 
     const wrapper = document.createElement('div');
     wrapper.style.cssText = `
@@ -173,6 +171,7 @@ function appendMessage(msg) {
     container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
 }
 
+// Загрузка всех сообщений при открытии чата
 async function loadMessages(convId) {
     window.showLoader('Загрузка сообщений...');
     
@@ -193,8 +192,6 @@ async function loadMessages(convId) {
         
         messages.forEach(msg => appendMessage(msg));
         
-        container.scrollTop = container.scrollHeight;
-        
     } catch (error) {
         console.error('Ошибка загрузки сообщений:', error);
         window.showNotification('Ошибка загрузки сообщений', 'error');
@@ -209,21 +206,20 @@ function setupRealtimeSubscriptions() {
     window.supabaseClient
         .channel('conversations')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations' }, () => {
-            console.log('Realtime: обновление чатов');
+            console.log('Realtime: обновление списка чатов');
             loadConversations();
         })
         .subscribe();
 
-    // Новые сообщения (фильтр по текущему чату)
+    // Новые сообщения
     window.supabaseClient
         .channel('messages')
         .on('postgres_changes', {
             event: 'INSERT',
             schema: 'public',
-            table: 'messages',
-            filter: `conversation_id=eq.${currentConversationId}`
+            table: 'messages'
         }, (payload) => {
-            console.log('Realtime: новое сообщение получено', payload.new);
+            console.log('Realtime: новое сообщение', payload.new);
             if (payload.new.conversation_id === currentConversationId) {
                 appendMessage(payload.new);
             }
@@ -393,7 +389,6 @@ async function sendMessage(e) {
         if (error) throw error;
         
         input.value = '';
-        // Realtime добавит сообщение автоматически
     } catch (error) {
         console.error('Ошибка отправки:', error);
         window.showNotification('Ошибка отправки', 'error');
