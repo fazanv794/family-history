@@ -228,13 +228,17 @@
             }
         });
 
-        // Принудительное центрирование модалки при открытии (на случай конфликтов стилей)
+        // Принудительное центрирование модалки при открытии и ресайзе
         function centerModal() {
             const modal = document.getElementById('add-event-modal');
             if (modal && !modal.classList.contains('hidden')) {
+                modal.style.position = 'fixed';
                 modal.style.top = '50%';
                 modal.style.left = '50%';
                 modal.style.transform = 'translate(-50%, -50%)';
+                modal.style.margin = '0';
+                modal.style.maxHeight = '90vh';
+                modal.style.overflowY = 'auto';
             }
         }
 
@@ -243,8 +247,11 @@
             // ... открытие ...
             centerModal();
             const interval = setInterval(centerModal, 100);
-            setTimeout(() => clearInterval(interval), 1000); // остановка через 1 сек
+            setTimeout(() => clearInterval(interval), 1500); // остановка через 1.5 сек
         });
+
+        // Вызываем центрирование при ресайзе окна
+        window.addEventListener('resize', centerModal);
 
         // Функция для загрузки и отображения событий
         async function updateTimeline() {
@@ -377,7 +384,7 @@
                 
                 container.innerHTML = html;
                 
-                // Обработчики кнопок (добавляем после перерисовки)
+                // Обработчики кнопок редактирования и удаления (добавляем после перерисовки)
                 document.querySelectorAll('.edit-event-btn').forEach(btn => {
                     btn.addEventListener('click', () => {
                         const eventId = btn.dataset.id;
