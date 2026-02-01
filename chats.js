@@ -114,15 +114,27 @@ async function openConversation(convId, chatName) {
 }
 
 // Добавление одного сообщения (для realtime и начальной загрузки)
-function appendMessage(msg) {
-console.log('Получено сообщение в appendMessage:', msg);
-    console.log('Данные отправителя (msg.sender):', msg.sender);
-
+async function appendMessage(msg) {
     const container = document.getElementById('chat-messages');
     if (!container) return;
 
+    let sender = msg.sender || {};
+
+    // Если sender пустой (часто в realtime) — подгружаем по sender_id
+    if (!sender.full_name && msg.sender_id) {
+        console.log('Realtime: подгружаем отправителя по ID', msg.sender_id);
+        const { data: profile } = await window.supabaseClient
+            .from('profiles')
+            .select('full_name, avatar_url, email')
+            .eq('id', msg.sender_id)
+            .single();
+        
+        if (profile) {
+            sender = profile;
+        }
+    }
+
     const isOwn = msg.sender_id === window.currentUser.id;
-    const sender = msg.sender || {};
     const senderName = sender.full_name || sender.email?.split('@')[0] || 'Аноним';
 
     const wrapper = document.createElement('div');
