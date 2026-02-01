@@ -49,24 +49,26 @@
                 </div>
 
                 <div class="chats-layout" style="display: flex; gap: 20px; height: calc(100vh - 200px);">
+                    <!-- Список чатов -->
                     <div class="chats-list" id="chats-list" style="flex: 0 0 300px; background: white; border-radius: 12px; padding: 20px; overflow-y: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-                        <!-- Список чатов -->
+                        <!-- Чаты -->
                     </div>
 
-<div class="chat-window" id="chat-window" style="flex: 1; background: white; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; box-shadow: 0 2px 10px rgba(0,0,0,0.1); pointer-events: none;">
-    <div class="chat-header" id="chat-header" style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e2e8f0; pointer-events: auto;">
-        <h3>Выберите чат</h3>
-    </div>
-    <div class="chat-messages" id="chat-messages" style="flex: 1; overflow-y: auto; margin-bottom: 20px; pointer-events: auto;">
-        <!-- Сообщения будут здесь -->
-    </div>
-    <form id="chat-form" style="display: flex; gap: 10px; pointer-events: auto;">
-        <input type="text" id="chat-input" placeholder="Введите сообщение..." style="flex: 1; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px;">
-        <button type="submit" class="btn" style="padding: 12px 20px;">
-            <i class="fas fa-paper-plane"></i> Отправить
-        </button>
-    </form>
-</div>
+                    <!-- Окно чата -->
+                    <div class="chat-window" id="chat-window" style="flex: 1; background: white; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; box-shadow: 0 2px 10px rgba(0,0,0,0.1); pointer-events: none;">
+                        <div class="chat-header" id="chat-header" style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e2e8f0; pointer-events: auto;">
+                            <h3>Выберите чат</h3>
+                        </div>
+                        <div class="chat-messages" id="chat-messages" style="flex: 1; overflow-y: auto; margin-bottom: 20px; pointer-events: auto; background: #f8fafc; border-radius: 8px; padding: 10px;">
+                            <!-- Сообщения будут здесь -->
+                        </div>
+                        <form id="chat-form" style="display: flex; gap: 10px; pointer-events: auto;">
+                            <input type="text" id="chat-input" placeholder="Введите сообщение..." style="flex: 1; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px;">
+                            <button type="submit" class="btn" style="padding: 12px 20px;">
+                                <i class="fas fa-paper-plane"></i> Отправить
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </section>
@@ -81,7 +83,7 @@
         </div>
     </footer>
 
-    <!-- Оверлей для модалки -->
+    <!-- Оверлей -->
     <div id="modal-overlay" style="
         position: fixed;
         inset: 0;
@@ -93,7 +95,7 @@
         backdrop-filter: blur(4px);
     "></div>
 
-    <!-- Модальное окно создания чата -->
+    <!-- Модальное окно -->
     <div id="create-chat-modal" style="
         position: fixed;
         top: 50%;
@@ -185,7 +187,7 @@
     <script src="app.js"></script>
     <script src="chats.js"></script>
 
-    <!-- Управление модалкой и поиском -->
+    <!-- Локальный скрипт -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             console.log('Chats.html инициализирован');
@@ -200,22 +202,6 @@
                     modal.style.opacity = '1';
                     modal.style.transform = 'translate(-50%, -50%) scale(1)';
                     console.log('Модалка открыта');
-
-                    // Привязка поиска после открытия
-                    const searchField = document.getElementById('user-search');
-                    if (searchField) {
-                        // Удаляем предыдущие слушатели, если были
-                        const newHandler = e => {
-                            const q = e.target.value.trim();
-                            console.log('Поисковый запрос:', q);
-                            if (q.length >= 2 && typeof searchUsers === 'function') {
-                                searchUsers(q);
-                            }
-                        };
-                        searchField.removeEventListener('input', newHandler);
-                        searchField.addEventListener('input', newHandler);
-                        console.log('Поиск привязан');
-                    }
                 });
             }
 
@@ -231,6 +217,14 @@
                 if (e.target === overlay) {
                     modal.style.opacity = '0';
                     overlay.style.display = 'none';
+                }
+            });
+
+            // Предотвращаем открытие модалки при клике по пустому месту в чате
+            document.getElementById('chat-messages')?.addEventListener('click', e => {
+                if (e.target === e.currentTarget) {
+                    e.stopPropagation();
+                    e.preventDefault();
                 }
             });
 
