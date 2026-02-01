@@ -98,7 +98,7 @@
         backdrop-filter: blur(4px) !important;
     "></div>
 
-    <!-- Модальное окно добавления/редактирования события -->
+    <!-- Модальное окно добавления события -->
     <div id="add-event-modal" class="modal hidden" style="
         position: fixed !important;
         top: 50% !important;
@@ -344,7 +344,7 @@
             document.getElementById('event-media-url').value = event.media_url || '';
 
             document.getElementById('add-event-modal').classList.remove('hidden');
-            document.getElementById('modal-overlay').classList.remove('hidden');
+            document.getElementById('modal-overlay').style.display = 'flex';
         };
 
         // Удаление события
