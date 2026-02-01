@@ -362,7 +362,7 @@
                 window.showLoader('Сохранение изменений...');
                 
                 try {
-                    // Обновляем в Supabase (основное исправление здесь)
+                    // Обновляем в Supabase
                     if (window.currentUser && window.supabaseClient) {
                         const { error } = await window.supabaseClient
                             .from('events')
@@ -372,7 +372,7 @@
                         if (error) throw error;
                     }
                     
-                    // Обновляем локальный массив
+                    // Обновляем в локальном массиве
                     const index = window.events.findIndex(e => e.id === eventId);
                     if (index !== -1) {
                         window.events[index] = { ...window.events[index], ...updatedEvent };
@@ -388,7 +388,7 @@
                     
                 } catch (error) {
                     console.error('Ошибка обновления события:', error);
-                    window.showNotification('Ошибка обновления события: ' + (error.message || 'проверьте консоль'), 'error');
+                    window.showNotification('Ошибка обновления события', 'error');
                 } finally {
                     window.hideLoader();
                 }
