@@ -81,50 +81,18 @@
         </div>
     </footer>
 
-    <!-- Оверлей (центрирует модалку) -->
-    <div id="modal-overlay" class="modal-overlay hidden" style="
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        bottom: 0 !important;
-        width: 100vw !important;
-        height: 100vh !important;
-        background: rgba(0,0,0,0.65) !important;
-        z-index: 99999 !important;
-        display: none !important;
-        align-items: center !important;
-        justify-content: center !important;
-        backdrop-filter: blur(4px) !important;
-    "></div>
-
-    <!-- Модальное окно добавления/редактирования события -->
-    <div id="add-event-modal" class="modal hidden" style="
-        position: fixed !important;
-        top: 50% !important;
-        left: 50% !important;
-        transform: translate(-50%, -50%) !important;
-        width: 90% !important;
-        max-width: 600px !important;
-        max-height: 90vh !important;
-        background: white !important;
-        border-radius: 16px !important;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.4) !important;
-        overflow-y: auto !important;
-        z-index: 100000 !important;
-        opacity: 0 !important;
-        transition: opacity 0.3s ease, transform 0.3s ease !important;
-        pointer-events: auto !important;
-    ">
+    <!-- Модальные окна -->
+    <div class="modal-overlay hidden" id="modal-overlay"></div>
+    
+    <!-- Модальное окно добавления события -->
+    <div id="add-event-modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="modal-title">Добавить событие</h3>
-                <button class="modal-close">×</button>
+                <h3 id="modal-title">Добавить семейное событие</h3>
+                <button class="modal-close">&times;</button>
             </div>
             <div class="modal-body">
                 <form id="add-event-form-modal">
-                    <input type="hidden" id="event-id" name="id">
-
                     <div class="form-group">
                         <label for="event-title">Название события *</label>
                         <input type="text" id="event-title" placeholder="Например: День рождения мамы" required>
@@ -175,7 +143,7 @@
     <div id="notification" class="notification">
         <div class="notification-content">
             <span id="notification-text"></span>
-            <button class="notification-close">×</button>
+            <button class="notification-close">&times;</button>
         </div>
     </div>
 
@@ -193,290 +161,393 @@
     <script src="app.js"></script>
     
     <script>
-        // Открытие модалки добавления события
-        document.getElementById('add-event-btn')?.addEventListener('click', () => {
-            document.getElementById('modal-title').textContent = 'Добавить событие';
-            document.getElementById('add-event-form-modal').reset();
-            document.getElementById('event-id').value = '';
-
-            const modal = document.getElementById('add-event-modal');
-            const overlay = document.getElementById('modal-overlay');
-
-            overlay.style.display = 'flex';
-            modal.classList.remove('hidden');
-            modal.style.opacity = '1';
-            modal.style.transform = 'translate(-50%, -50%) scale(1)';
-        });
-
-        // Закрытие модалки
-        document.querySelectorAll('.modal-close, .cancel-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const modal = document.getElementById('add-event-modal');
-                const overlay = document.getElementById('modal-overlay');
-
-                modal.classList.add('hidden');
-                overlay.style.display = 'none';
-                modal.style.opacity = '0';
-            });
-        });
-
-        // Закрытие по клику на оверлей
-        document.getElementById('modal-overlay')?.addEventListener('click', e => {
-            if (e.target === e.currentTarget) {
-                document.getElementById('add-event-modal').classList.add('hidden');
-                e.currentTarget.style.display = 'none';
-            }
-        });
-
-        // Принудительное центрирование модалки при открытии и ресайзе
-        function centerModal() {
-            const modal = document.getElementById('add-event-modal');
-            if (modal && !modal.classList.contains('hidden')) {
-                modal.style.position = 'fixed';
-                modal.style.top = '50%';
-                modal.style.left = '50%';
-                modal.style.transform = 'translate(-50%, -50%)';
-                modal.style.margin = '0';
-                modal.style.maxHeight = '90vh';
-                modal.style.overflowY = 'auto';
-            }
-        }
-
-        // Вызываем центрирование при открытии и каждые 100мс (на случай анимаций)
-        document.getElementById('add-event-btn')?.addEventListener('click', () => {
-            centerModal();
-            const interval = setInterval(centerModal, 100);
-            setTimeout(() => clearInterval(interval), 1500); // остановка через 1.5 сек
-        });
-
-        // Вызываем центрирование при ресайзе окна
-        window.addEventListener('resize', centerModal);
-
-        // Функция для загрузки и отображения событий
-        async function updateTimeline() {
+        // Функции для страницы ленты событий
+        function updateTimeline() {
             const container = document.getElementById('timeline-container');
             if (!container) return;
             
-            container.innerHTML = '<p style="text-align:center; color:#718096;">Загрузка событий...</p>';
-
-            try {
-                let events = [];
-                if (window.currentUser && window.supabaseClient) {
-                    const { data, error } = await window.supabaseClient
-                        .from('events')
-                        .select('*')
-                        .order('date', { ascending: false });
-                    
-                    if (!error && data) events = data;
-                }
-
-                if (events.length === 0 && window.events?.length > 0) {
-                    events = [...window.events];
-                }
-
-                const selectedYear = document.getElementById('filter-year')?.value || '';
-                const selectedType = document.getElementById('filter-type')?.value || '';
-                
-                let filteredEvents = events;
-                
-                if (selectedYear) {
-                    filteredEvents = filteredEvents.filter(e => 
-                        new Date(e.date).getFullYear().toString() === selectedYear
-                    );
-                }
-                
-                if (selectedType) {
-                    filteredEvents = filteredEvents.filter(e => e.event_type === selectedType);
-                }
-                
-                filteredEvents.sort((a, b) => new Date(b.date) - new Date(a.date));
-                
-                if (!filteredEvents.length) {
-                    container.innerHTML = `
-                        <div style="text-align: center; padding: 40px; color: #718096; background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-                            <i class="fas fa-calendar" style="font-size: 3rem; margin-bottom: 20px; color: #cbd5e0;"></i>
-                            <h3 style="margin-bottom: 10px; color: #4a5568;">Событий пока нет</h3>
-                            <p>Добавьте первое событие в вашу семейную историю</p>
-                        </div>
-                    `;
-                    return;
-                }
-                
-                let html = '';
-                let currentYear = null;
-                
-                filteredEvents.forEach(event => {
-                    const date = new Date(event.date);
-                    const year = date.getFullYear();
-                    const formattedDate = date.toLocaleDateString('ru-RU', {
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric'
-                    });
-                    
-                    if (year !== currentYear) {
-                        html += `<h3 style="margin: 30px 0 15px; color: #2d3748;">${year}</h3>`;
-                        currentYear = year;
-                    }
-                    
-                    const icon = getEventIcon(event.event_type);
-                    
-                    const hasMedia = event.media_url && event.media_url.trim() !== '';
-                    const mediaType = hasMedia ? window.getMediaTypeFromUrl?.(event.media_url) : null;
-                    
-                    html += `
-                        <div class="timeline-event" style="display: flex; gap: 15px; margin-bottom: 20px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-                            <div class="event-icon" style="background: #667eea; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                                <i class="${icon}"></i>
-                            </div>
-                            <div class="event-content" style="flex: 1;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                    <h3 style="margin: 0; color: #2d3748;">${event.title}</h3>
-                                    <div>
-                                        <button class="btn btn-small edit-event-btn" data-id="${event.id}" style="margin-right: 5px;">
-                                            <i class="fas fa-edit"></i> Изменить
-                                        </button>
-                                        <button class="btn btn-small btn-danger delete-event-btn" data-id="${event.id}">
-                                            <i class="fas fa-trash"></i> Удалить
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="event-date" style="color: #718096; font-size: 0.9rem; margin-bottom: 10px;">
-                                    <i class="fas fa-calendar-alt"></i> ${formattedDate}
-                                </div>
-                                <p style="margin: 5px 0;">
-                                    <strong>Тип:</strong> ${
-                                        event.event_type === 'birthday' ? 'День рождения' :
-                                        event.event_type === 'wedding' ? 'Свадьба' :
-                                        event.event_type === 'anniversary' ? 'Годовщина' :
-                                        event.event_type === 'holiday' ? 'Праздник' : 'Другое'
-                                    }
-                                </p>
-                                ${event.description ? `<p style="color: #4a5568; margin-bottom: 15px;">${event.description}</p>` : ''}
-                                
-                                ${hasMedia ? `
-                                    <div class="event-media" style="margin: 15px 0;">
-                                        <div style="font-size: 0.9rem; color: #718096; margin-bottom: 8px;">
-                                            <i class="fas fa-paperclip"></i> Прикрепленное медиа:
-                                        </div>
-                                        ${mediaType === 'image' ? `
-                                            <a href="${event.media_url}" target="_blank">
-                                                <img src="${event.media_url}" 
-                                                     alt="${event.title}" 
-                                                     style="max-width: 100%; max-height: 200px; border-radius: 8px; border: 1px solid #e2e8f0;"
-                                                     onerror="this.style.display='none';">
-                                            </a>
-                                        ` : `
-                                            <div style="padding: 10px; background: #f7fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
-                                                <a href="${event.media_url}" target="_blank" style="color: #667eea; text-decoration: none;">
-                                                    <i class="fas fa-external-link-alt"></i> 
-                                                    ${mediaType === 'video' ? 'Видео' : 'Файл'}: ${event.media_url.substring(0, 50)}...
-                                                </a>
-                                            </div>
-                                        `}
-                                    </div>
-                                ` : ''}
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                container.innerHTML = html;
-                
-                // Обработчики кнопок редактирования и удаления (добавляем после перерисовки)
-                document.querySelectorAll('.edit-event-btn').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        const eventId = btn.dataset.id;
-                        editEvent(eventId);
-                    });
-                });
-                
-                document.querySelectorAll('.delete-event-btn').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        const eventId = btn.dataset.id;
-                        deleteEvent(eventId);
-                    });
-                });
-                
-            } catch (err) {
-                console.error('Ошибка загрузки событий:', err);
-                container.innerHTML = '<p style="color:red; text-align:center;">Ошибка загрузки событий</p>';
+            // Обновляем фильтр по годам
+            updateYearFilter();
+            
+            // Фильтруем события
+            const selectedYear = document.getElementById('filter-year')?.value || '';
+            const selectedType = document.getElementById('filter-type')?.value || '';
+            
+            let filteredEvents = window.events || [];
+            
+            if (selectedYear) {
+                filteredEvents = filteredEvents.filter(event => 
+                    new Date(event.date).getFullYear().toString() === selectedYear
+                );
             }
-        }
-
-        // Функция иконок событий
-        function getEventIcon(type) {
-            const icons = {
-                birthday: 'fas fa-birthday-cake',
-                wedding: 'fas fa-ring',
-                anniversary: 'fas fa-heart',
-                holiday: 'fas fa-gift',
-                other: 'fas fa-calendar'
-            };
-            return icons[type] || 'fas fa-calendar';
-        }
-
-        // Редактирование события
-        window.editEvent = function(id) {
-            const event = window.events?.find(e => e.id === id);
-            if (!event) {
-                window.showNotification('Событие не найдено', 'error');
+            
+            if (selectedType) {
+                filteredEvents = filteredEvents.filter(event => 
+                    event.event_type === selectedType
+                );
+            }
+            
+            // Сортируем по дате
+            filteredEvents.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            if (filteredEvents.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #718096; background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                        <i class="fas fa-calendar" style="font-size: 3rem; margin-bottom: 20px; color: #cbd5e0;"></i>
+                        <h3 style="margin-bottom: 10px; color: #4a5568;">Событий пока нет</h3>
+                        <p>Добавьте первое событие в вашу семейную историю</p>
+                    </div>
+                `;
                 return;
             }
-
-            document.getElementById('modal-title').textContent = 'Редактировать событие';
-            document.getElementById('event-id').value = event.id;
+            
+            let html = '';
+            let currentYear = null;
+            
+            filteredEvents.forEach(event => {
+                const date = new Date(event.date);
+                const year = date.getFullYear();
+                const formattedDate = date.toLocaleDateString('ru-RU', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                });
+                
+                if (year !== currentYear) {
+                    html += `<h3 style="margin: 30px 0 15px; color: #2d3748;">${year}</h3>`;
+                    currentYear = year;
+                }
+                
+                const icon = getEventIcon(event.event_type);
+                
+                // Проверяем есть ли медиа
+                const hasMedia = event.media_url && event.media_url.trim() !== '';
+                const mediaType = hasMedia ? window.getMediaTypeFromUrl(event.media_url) : null;
+                
+                html += `
+                    <div class="timeline-event" style="display: flex; gap: 15px; margin-bottom: 20px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                        <div class="event-icon" style="background: #667eea; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <i class="${icon}"></i>
+                        </div>
+                        <div class="event-content" style="flex: 1;">
+                            <h3 style="margin-bottom: 5px; color: #2d3748;">${event.title}</h3>
+                            <div class="event-date" style="color: #718096; font-size: 0.9rem; margin-bottom: 10px;">${formattedDate}</div>
+                            ${event.description ? `<p style="color: #4a5568; margin-bottom: 15px;">${event.description}</p>` : ''}
+                            
+                            ${hasMedia ? `
+                                <div class="event-media" style="margin: 15px 0;">
+                                    <div style="font-size: 0.9rem; color: #718096; margin-bottom: 8px;">
+                                        <i class="fas fa-paperclip"></i> Прикрепленное медиа:
+                                    </div>
+                                    ${mediaType === 'image' ? `
+                                        <a href="${event.media_url}" target="_blank" style="display: block;">
+                                            <img src="${event.media_url}" 
+                                                 alt="${event.title}" 
+                                                 style="max-width: 100%; max-height: 200px; border-radius: 8px; border: 1px solid #e2e8f0;"
+                                                 onerror="this.style.display='none';">
+                                        </a>
+                                    ` : `
+                                        <div style="padding: 10px; background: #f7fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+                                            <a href="${event.media_url}" target="_blank" style="color: #667eea; text-decoration: none; display: flex; align-items: center; gap: 8px;">
+                                                <i class="fas fa-external-link-alt"></i>
+                                                <span>${mediaType === 'video' ? 'Видео' : 'Файл'}: ${event.media_url.substring(0, 50)}...</span>
+                                            </a>
+                                        </div>
+                                    `}
+                                </div>
+                            ` : ''}
+                            
+                            <div style="margin-top: 10px;">
+                                <button class="btn btn-small edit-event-btn" data-id="${event.id}" style="margin-right: 5px;">
+                                    <i class="fas fa-edit"></i> Изменить
+                                </button>
+                                <button class="btn btn-small btn-danger delete-event-btn" data-id="${event.id}">
+                                    <i class="fas fa-trash"></i> Удалить
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            
+            // Добавляем обработчики для кнопок редактирования и удаления
+            document.querySelectorAll('.edit-event-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const eventId = e.target.closest('button').dataset.id;
+                    editEvent(eventId);
+                });
+            });
+            
+            document.querySelectorAll('.delete-event-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const eventId = e.target.closest('button').dataset.id;
+                    deleteEvent(eventId);
+                });
+            });
+        }
+        
+        function updateYearFilter() {
+            const filter = document.getElementById('filter-year');
+            if (!filter) return;
+            
+            const events = window.events || [];
+            const years = [...new Set(events.map(event => 
+                new Date(event.date).getFullYear()
+            ))].sort((a, b) => b - a);
+            
+            let html = '<option value="">Все годы</option>';
+            years.forEach(year => {
+                html += `<option value="${year}">${year}</option>`;
+            });
+            
+            filter.innerHTML = html;
+        }
+        
+        function getEventIcon(eventType) {
+            const icons = {
+                'birthday': 'fas fa-birthday-cake',
+                'wedding': 'fas fa-ring',
+                'anniversary': 'fas fa-heart',
+                'holiday': 'fas fa-gift',
+                'other': 'fas fa-calendar'
+            };
+            
+            return icons[eventType] || 'fas fa-calendar';
+        }
+        
+        async function editEvent(eventId) {
+            const event = (window.events || []).find(e => e.id === eventId);
+            if (!event) return;
+            
+            // Заполняем форму
             document.getElementById('event-title').value = event.title;
             document.getElementById('event-date').value = event.date.split('T')[0];
             document.getElementById('event-type').value = event.event_type || 'other';
             document.getElementById('event-description').value = event.description || '';
             document.getElementById('event-media-url').value = event.media_url || '';
-
-            const modal = document.getElementById('add-event-modal');
-            const overlay = document.getElementById('modal-overlay');
-
-            overlay.style.display = 'flex';
-            modal.classList.remove('hidden');
-            modal.style.opacity = '1';
-            modal.style.transform = 'translate(-50%, -50%) scale(1)';
-        };
-
-        // Удаление события
-        window.deleteEvent = async function(id) {
+            
+            // Показываем модальное окно
+            window.showModal('add-event-modal');
+            
+            // Меняем заголовок
+            const modalTitle = document.querySelector('#add-event-modal h3');
+            const submitBtn = document.querySelector('#add-event-modal button[type="submit"]');
+            
+            if (modalTitle) modalTitle.textContent = 'Редактировать событие';
+            if (submitBtn) submitBtn.textContent = 'Сохранить изменения';
+            submitBtn.dataset.editingId = eventId;
+            
+            // Сохраняем текущий обработчик формы
+            const form = document.getElementById('add-event-form-modal');
+            const originalSubmit = form.onsubmit;
+            
+            // Удаляем старый обработчик
+            const newForm = form.cloneNode(true);
+            form.parentNode.replaceChild(newForm, form);
+            
+            // Добавляем новый обработчик
+            newForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const updatedEvent = {
+                    title: document.getElementById('event-title').value,
+                    date: document.getElementById('event-date').value,
+                    event_type: document.getElementById('event-type').value,
+                    description: document.getElementById('event-description').value,
+                    media_url: document.getElementById('event-media-url').value
+                };
+                
+                window.showLoader('Сохранение изменений...');
+                
+                try {
+                    // Обновляем в Supabase
+                    if (window.currentUser && window.supabaseClient) {
+                        const { error } = await window.supabaseClient
+                            .from('events')
+                            .update(updatedEvent)
+                            .eq('id', eventId);
+                        
+                        if (error) throw error;
+                    }
+                    
+                    // Обновляем в локальном массиве
+                    const index = window.events.findIndex(e => e.id === eventId);
+                    if (index !== -1) {
+                        window.events[index] = { ...window.events[index], ...updatedEvent };
+                    }
+                    
+                    window.showNotification('✅ Событие обновлено!', 'success');
+                    window.closeAllModals();
+                    
+                    // Сохраняем в localStorage
+                    window.saveToLocalStorage();
+                    
+                    updateTimeline();
+                    
+                } catch (error) {
+                    console.error('Ошибка обновления события:', error);
+                    window.showNotification('Ошибка обновления события', 'error');
+                } finally {
+                    window.hideLoader();
+                }
+            });
+        }
+        
+        async function deleteEvent(eventId) {
             if (!confirm('Удалить это событие?')) return;
-
+            
             window.showLoader('Удаление события...');
-
+            
             try {
+                // Удаляем из Supabase
                 if (window.currentUser && window.supabaseClient) {
                     const { error } = await window.supabaseClient
                         .from('events')
                         .delete()
-                        .eq('id', id);
+                        .eq('id', eventId);
                     
                     if (error) throw error;
                 }
-
-                window.events = window.events?.filter(e => e.id !== id) || [];
-
-                window.showNotification('Событие удалено!', 'success');
+                
+                // Удаляем из локального массива
+                const index = window.events.findIndex(e => e.id === eventId);
+                if (index !== -1) {
+                    window.events.splice(index, 1);
+                }
+                
+                window.showNotification('✅ Событие удалено!', 'success');
+                
+                // Сохраняем в localStorage
+                window.saveToLocalStorage();
+                
                 updateTimeline();
-
-            } catch (err) {
-                console.error('Ошибка удаления:', err);
-                window.showNotification('Ошибка удаления', 'error');
+                
+            } catch (error) {
+                console.error('Ошибка удаления события:', error);
+                window.showNotification('Ошибка удаления события', 'error');
             } finally {
                 window.hideLoader();
             }
-        };
-
-        // Инициализация
-        document.addEventListener('DOMContentLoaded', () => {
+        }
+        
+        // Инициализация страницы
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('📅 Инициализация страницы ленты событий...');
+            
+            // Загружаем данные
+            await window.loadUserData();
+            
+            console.log('✅ Данные загружены, события:', window.events?.length || 0);
+            
+            // Обновляем ленту событий
             updateTimeline();
-
+            
+            // Обработчик кнопки добавления события
+            document.getElementById('add-event-btn')?.addEventListener('click', () => {
+                console.log('📝 Открытие формы добавления события');
+                
+                // Сбрасываем форму
+                const today = new Date().toISOString().split('T')[0];
+                
+                document.getElementById('event-title').value = '';
+                document.getElementById('event-date').value = today;
+                document.getElementById('event-type').value = 'birthday';
+                document.getElementById('event-description').value = '';
+                document.getElementById('event-media-url').value = '';
+                
+                // Удаляем старый обработчик формы если он есть
+                const form = document.getElementById('add-event-form-modal');
+                if (form) {
+                    const newForm = form.cloneNode(true);
+                    form.parentNode.replaceChild(newForm, form);
+                    
+                    // Добавляем новый обработчик
+                    newForm.addEventListener('submit', async function(e) {
+                        e.preventDefault();
+                        console.log('📨 Отправка формы добавления события');
+                        
+                        const title = document.getElementById('event-title').value.trim();
+                        const date = document.getElementById('event-date').value;
+                        const event_type = document.getElementById('event-type').value;
+                        const description = document.getElementById('event-description').value.trim();
+                        const media_url = document.getElementById('event-media-url').value.trim();
+                        
+                        if (!title || !date || !event_type) {
+                            window.showNotification('Заполните обязательные поля', 'error');
+                            return;
+                        }
+                        
+                        window.showLoader('Добавление события...');
+                        
+                        try {
+                            const newEvent = {
+                                title,
+                                date,
+                                event_type,
+                                description,
+                                media_url,
+                                user_id: window.currentUser?.id,
+                                created_at: new Date().toISOString()
+                            };
+                            
+                            // Сохраняем в Supabase
+                            if (window.currentUser && window.supabaseClient) {
+                                const { data, error } = await window.supabaseClient
+                                    .from('events')
+                                    .insert([newEvent])
+                                    .select()
+                                    .single();
+                                
+                                if (error) throw error;
+                                
+                                if (data) {
+                                    newEvent.id = data.id;
+                                    window.events = window.events || [];
+                                    window.events.unshift(newEvent);
+                                }
+                            } else {
+                                // Для гостя — только локально
+                                newEvent.id = Date.now() + Math.random();
+                                window.events = window.events || [];
+                                window.events.unshift(newEvent);
+                            }
+                            
+                            window.showNotification('✅ Событие добавлено!', 'success');
+                            window.closeAllModals();
+                            
+                            // Сохраняем в localStorage
+                            window.saveToLocalStorage();
+                            
+                            // Обновляем ленту
+                            updateTimeline();
+                            
+                        } catch (error) {
+                            console.error('Ошибка добавления события:', error);
+                            window.showNotification('Ошибка добавления события', 'error');
+                        } finally {
+                            window.hideLoader();
+                        }
+                    });
+                }
+                
+                // Показываем модальное окно
+                window.showModal('add-event-modal');
+            });
+            
+            // Обработчики фильтров
             document.getElementById('filter-year')?.addEventListener('change', updateTimeline);
             document.getElementById('filter-type')?.addEventListener('change', updateTimeline);
+            
+            console.log('📊 Текущее количество событий:', window.events?.length || 0);
         });
+        
+        // Экспортируем функции
+        window.updateTimeline = updateTimeline;
+        window.getEventIcon = getEventIcon;
+        window.editEvent = editEvent;
+        window.deleteEvent = deleteEvent;
     </script>
 </body>
 </html>
