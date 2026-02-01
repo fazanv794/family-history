@@ -62,16 +62,11 @@ async function loadConversations() {
             
             const otherNames = participants
                 .filter(p => p.user_id !== window.currentUser.id)
-                .map(p => {
-                    const prof = profileMap.get(p.user_id);
-                    return prof?.full_name || prof?.email?.split('@')[0] || 'Пользователь';
-                });
+                .map(p => profileMap.get(p.user_id)?.full_name || 'Пользователь');
             
             const chatName = conv.is_group 
-                ? conv.name || `Группа (${otherNames.length} чел.)`
+                ? conv.name || `Группа (${otherNames.length})`
                 : otherNames[0] || 'Приватный чат';
-            
-            const participantCount = participants.length;
             
             const chatItem = document.createElement('div');
             chatItem.className = 'chat-item';
@@ -84,7 +79,7 @@ async function loadConversations() {
                     <div>
                         <h4 style="margin: 0; color: #2d3748;">${chatName}</h4>
                         <p style="margin: 0; color: #718096; font-size: 0.9rem;">
-                            Участников: ${participantCount}
+                            Участников: ${participants.length}
                         </p>
                     </div>
                 </div>
@@ -114,50 +109,54 @@ async function openConversation(convId, chatName) {
     
     await loadMessages(convId);
     
-    const messagesContainer = document.getElementById('chat-messages');
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    const container = document.getElementById('chat-messages');
+    container.scrollTop = container.scrollHeight;
 }
 
-// Добавление одного сообщения (для realtime)
+// Добавление одного сообщения (для realtime и начальной загрузки)
 function appendMessage(msg) {
     const container = document.getElementById('chat-messages');
     if (!container) return;
 
     const isOwn = msg.sender_id === window.currentUser.id;
-    const sender = msg.sender || { full_name: 'Аноним' };
-    const senderName = sender.full_name || 'Аноним';
+    const sender = msg.sender || {};
+    const senderName = sender.full_name || sender.email?.split('@')[0] || 'Аноним';
 
     const wrapper = document.createElement('div');
-    wrapper.style.display = 'flex';
-    wrapper.style.alignItems = 'flex-start';
-    wrapper.style.gap = '10px';
-    if (isOwn) wrapper.style.flexDirection = 'row-reverse';
+    wrapper.style.cssText = `
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        ${isOwn ? 'flex-direction: row-reverse;' : ''}
+        animation: messageAppear 0.4s ease-out;
+    `;
 
     if (!isOwn) {
         const avatar = document.createElement('div');
-        avatar.style.width = '36px';
-        avatar.style.height = '36px';
-        avatar.style.borderRadius = '50%';
-        avatar.style.background = sender.avatar_url 
-            ? `url(${sender.avatar_url}) center/cover`
-            : 'linear-gradient(135deg, #667eea, #764ba2)';
-        avatar.style.color = 'white';
-        avatar.style.display = 'flex';
-        avatar.style.alignItems = 'center';
-        avatar.style.justifyContent = 'center';
-        avatar.style.fontSize = '14px';
-        avatar.style.fontWeight = 'bold';
+        avatar.style.cssText = `
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: ${sender.avatar_url ? `url(${sender.avatar_url}) center/cover` : 'linear-gradient(135deg, #667eea, #764ba2)'};
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+        `;
         avatar.textContent = !sender.avatar_url ? senderName[0].toUpperCase() : '';
         wrapper.appendChild(avatar);
     }
 
     const msgDiv = document.createElement('div');
-    msgDiv.style.maxWidth = '70%';
-    msgDiv.style.padding = '12px 16px';
-    msgDiv.style.borderRadius = '18px';
-    msgDiv.style.background = isOwn ? '#667eea' : '#f1f5f9';
-    msgDiv.style.color = isOwn ? 'white' : '#2d3748';
-
+    msgDiv.style.cssText = `
+        max-width: 70%;
+        padding: 12px 16px;
+        border-radius: 18px;
+        background: ${isOwn ? '#667eea' : '#f1f5f9'};
+        color: ${isOwn ? 'white' : '#2d3748'};
+    `;
     msgDiv.innerHTML = `
         ${!isOwn ? `<small style="font-size:0.8rem; opacity:0.8; display:block; margin-bottom:4px;">${senderName}</small>` : ''}
         <p style="margin:0; word-break:break-word;">${msg.content}</p>
@@ -168,7 +167,7 @@ function appendMessage(msg) {
 
     wrapper.appendChild(msgDiv);
     container.appendChild(wrapper);
-
+    
     container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
 }
 
@@ -200,15 +199,16 @@ async function loadMessages(convId) {
 
 // Realtime подписки
 function setupRealtimeSubscriptions() {
-    // Подписка на новые чаты
+    // Новые чаты
     window.supabaseClient
         .channel('conversations')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations' }, () => {
+            console.log('Realtime: обновление чатов');
             loadConversations();
         })
         .subscribe();
 
-    // Подписка на новые сообщения (фильтр по текущему чату)
+    // Новые сообщения (фильтр по текущему чату)
     window.supabaseClient
         .channel('messages')
         .on('postgres_changes', {
@@ -217,7 +217,7 @@ function setupRealtimeSubscriptions() {
             table: 'messages',
             filter: `conversation_id=eq.${currentConversationId}`
         }, (payload) => {
-            console.log('Новое сообщение в реальном времени:', payload.new);
+            console.log('Realtime: новое сообщение получено', payload.new);
             if (payload.new.conversation_id === currentConversationId) {
                 appendMessage(payload.new);
             }
@@ -296,7 +296,7 @@ async function searchUsers(query) {
     }
 }
 
-// Добавление выбранного пользователя
+// Добавление участника
 function addSelectedUser(user) {
     const selected = document.getElementById('selected-users');
     if (!selected) return;
