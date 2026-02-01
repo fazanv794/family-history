@@ -115,6 +115,9 @@ async function openConversation(convId, chatName) {
 
 // Добавление одного сообщения (для realtime и начальной загрузки)
 function appendMessage(msg) {
+console.log('Получено сообщение в appendMessage:', msg);
+    console.log('Данные отправителя (msg.sender):', msg.sender);
+
     const container = document.getElementById('chat-messages');
     if (!container) return;
 
