@@ -81,11 +81,35 @@
         </div>
     </footer>
 
-    <!-- Модальные окна -->
-    <div class="modal-overlay hidden" id="modal-overlay"></div>
-    
+    <!-- Оверлей для модалок -->
+    <div id="modal-overlay" class="modal-overlay hidden" style="
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.65);
+        z-index: 9999;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(4px);
+    "></div>
+
     <!-- Модальное окно добавления/редактирования события -->
-    <div id="add-event-modal" class="modal hidden">
+    <div id="add-event-modal" class="modal hidden" style="
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 90%;
+        max-width: 600px;
+        max-height: 90vh;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        overflow-y: auto;
+        z-index: 10000;
+        opacity: 0;
+        transition: opacity 0.3s ease, transform 0.3s ease;
+    ">
         <div class="modal-content">
             <div class="modal-header">
                 <h3 id="modal-title">Добавить событие</h3>
@@ -163,7 +187,157 @@
     <script src="app.js"></script>
     
     <script>
-        // Функция для загрузки и отображения событий
+        // Открытие модалки добавления события
+        document.getElementById('add-event-btn')?.addEventListener('click', () => {
+            document.getElementById('modal-title').textContent = 'Добавить событие';
+            document.getElementById('add-event-form-modal').reset();
+            document.getElementById('event-id').value = '';
+
+            const modal = document.getElementById('add-event-modal');
+            const overlay = document.getElementById('modal-overlay');
+
+            modal.classList.remove('hidden');
+            overlay.classList.remove('hidden');
+            modal.style.opacity = '1';
+        });
+
+        // Закрытие модалки
+        document.querySelectorAll('.modal-close, .cancel-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const modal = document.getElementById('add-event-modal');
+                const overlay = document.getElementById('modal-overlay');
+
+                modal.classList.add('hidden');
+                overlay.classList.add('hidden');
+                modal.style.opacity = '0';
+            });
+        });
+
+        // Закрытие по клику на оверлей
+        document.getElementById('modal-overlay')?.addEventListener('click', e => {
+            if (e.target === e.currentTarget) {
+                document.getElementById('add-event-modal').classList.add('hidden');
+                e.currentTarget.classList.add('hidden');
+            }
+        });
+
+        // Обработка формы (добавление и редактирование)
+        document.getElementById('add-event-form-modal')?.addEventListener('submit', async e => {
+            e.preventDefault();
+
+            const id = document.getElementById('event-id').value;
+            const title = document.getElementById('event-title').value.trim();
+            const date = document.getElementById('event-date').value;
+            const event_type = document.getElementById('event-type').value;
+            const description = document.getElementById('event-description').value.trim();
+            const media_url = document.getElementById('event-media-url').value.trim();
+
+            if (!title || !date || !event_type) {
+                window.showNotification('Заполните обязательные поля', 'error');
+                return;
+            }
+
+            const eventData = {
+                title,
+                date,
+                event_type,
+                description,
+                media_url,
+                user_id: window.currentUser?.id
+            };
+
+            try {
+                if (id) {
+                    // Редактирование
+                    const { error } = await window.supabaseClient
+                        .from('events')
+                        .update(eventData)
+                        .eq('id', id);
+                    
+                    if (error) throw error;
+                    window.showNotification('Событие обновлено!', 'success');
+                } else {
+                    // Создание
+                    const { data, error } = await window.supabaseClient
+                        .from('events')
+                        .insert([eventData])
+                        .select()
+                        .single();
+                    
+                    if (error) throw error;
+                    
+                    // Добавляем новое событие в локальный массив
+                    if (data) {
+                        window.events = window.events || [];
+                        window.events.unshift(data);
+                    }
+                    
+                    window.showNotification('Событие добавлено!', 'success');
+                }
+
+                // Закрываем модалку
+                document.getElementById('add-event-modal').classList.add('hidden');
+                document.getElementById('modal-overlay').classList.add('hidden');
+
+                // Обновляем ленту событий
+                updateTimeline();
+
+            } catch (err) {
+                console.error('Ошибка сохранения события:', err);
+                window.showNotification('Ошибка сохранения: ' + err.message, 'error');
+            }
+        });
+
+        // Редактирование события
+        window.editEvent = function(id) {
+            const event = window.events?.find(e => e.id === id);
+            if (!event) {
+                window.showNotification('Событие не найдено', 'error');
+                return;
+            }
+
+            document.getElementById('modal-title').textContent = 'Редактировать событие';
+            document.getElementById('event-id').value = event.id;
+            document.getElementById('event-title').value = event.title;
+            document.getElementById('event-date').value = event.date.split('T')[0];
+            document.getElementById('event-type').value = event.event_type || 'other';
+            document.getElementById('event-description').value = event.description || '';
+            document.getElementById('event-media-url').value = event.media_url || '';
+
+            document.getElementById('add-event-modal').classList.remove('hidden');
+            document.getElementById('modal-overlay').classList.remove('hidden');
+        };
+
+        // Удаление события
+        window.deleteEvent = async function(id) {
+            if (!confirm('Удалить это событие?')) return;
+
+            window.showLoader('Удаление события...');
+
+            try {
+                if (window.currentUser && window.supabaseClient) {
+                    const { error } = await window.supabaseClient
+                        .from('events')
+                        .delete()
+                        .eq('id', id);
+                    
+                    if (error) throw error;
+                }
+
+                window.events = window.events?.filter(e => e.id !== id) || [];
+
+                window.showNotification('Событие удалено!', 'success');
+                updateTimeline();
+
+            } catch (err) {
+                console.error('Ошибка удаления:', err);
+                window.showNotification('Ошибка удаления', 'error');
+            } finally {
+                window.hideLoader();
+            }
+        };
+
+        // Загрузка и отображение событий
         async function updateTimeline() {
             const container = document.getElementById('timeline-container');
             if (!container) return;
@@ -171,7 +345,6 @@
             container.innerHTML = '<p style="text-align:center; color:#718096;">Загрузка событий...</p>';
 
             try {
-                // Загружаем события из Supabase (если авторизован)
                 let events = [];
                 if (window.currentUser && window.supabaseClient) {
                     const { data, error } = await window.supabaseClient
@@ -179,40 +352,31 @@
                         .select('*')
                         .order('date', { ascending: false });
                     
-                    if (!error && data) {
-                        events = data;
-                    } else {
-                        console.warn('Не удалось загрузить события из Supabase:', error);
-                    }
+                    if (!error && data) events = data;
                 }
 
-                // Если Supabase не дал данных — используем локальные (для гостя)
-                if (events.length === 0 && window.events && window.events.length > 0) {
+                if (events.length === 0 && window.events?.length > 0) {
                     events = [...window.events];
                 }
 
-                // Фильтрация
                 const selectedYear = document.getElementById('filter-year')?.value || '';
                 const selectedType = document.getElementById('filter-type')?.value || '';
                 
                 let filteredEvents = events;
                 
                 if (selectedYear) {
-                    filteredEvents = filteredEvents.filter(event => 
-                        new Date(event.date).getFullYear().toString() === selectedYear
+                    filteredEvents = filteredEvents.filter(e => 
+                        new Date(e.date).getFullYear().toString() === selectedYear
                     );
                 }
                 
                 if (selectedType) {
-                    filteredEvents = filteredEvents.filter(event => 
-                        event.event_type === selectedType
-                    );
+                    filteredEvents = filteredEvents.filter(e => e.event_type === selectedType);
                 }
                 
-                // Сортировка по дате (новые сверху)
                 filteredEvents.sort((a, b) => new Date(b.date) - new Date(a.date));
                 
-                if (filteredEvents.length === 0) {
+                if (!filteredEvents.length) {
                     container.innerHTML = `
                         <div style="text-align: center; padding: 40px; color: #718096; background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
                             <i class="fas fa-calendar" style="font-size: 3rem; margin-bottom: 20px; color: #cbd5e0;"></i>
@@ -281,7 +445,7 @@
                                             <i class="fas fa-paperclip"></i> Прикрепленное медиа:
                                         </div>
                                         ${mediaType === 'image' ? `
-                                            <a href="${event.media_url}" target="_blank" style="display: block;">
+                                            <a href="${event.media_url}" target="_blank">
                                                 <img src="${event.media_url}" 
                                                      alt="${event.title}" 
                                                      style="max-width: 100%; max-height: 200px; border-radius: 8px; border: 1px solid #e2e8f0;"
@@ -289,9 +453,9 @@
                                             </a>
                                         ` : `
                                             <div style="padding: 10px; background: #f7fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
-                                                <a href="${event.media_url}" target="_blank" style="color: #667eea; text-decoration: none; display: flex; align-items: center; gap: 8px;">
-                                                    <i class="fas fa-external-link-alt"></i>
-                                                    <span>${mediaType === 'video' ? 'Видео' : 'Файл'}: ${event.media_url.substring(0, 50)}...</span>
+                                                <a href="${event.media_url}" target="_blank" style="color: #667eea; text-decoration: none;">
+                                                    <i class="fas fa-external-link-alt"></i> 
+                                                    ${mediaType === 'video' ? 'Видео' : 'Файл'}: ${event.media_url.substring(0, 50)}...
                                                 </a>
                                             </div>
                                         `}
@@ -304,112 +468,33 @@
                 
                 container.innerHTML = html;
                 
-                // Добавляем обработчики кнопок
+                // Обработчики кнопок
                 document.querySelectorAll('.edit-event-btn').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        const eventId = btn.dataset.id;
-                        editEvent(eventId);
-                    });
+                    btn.addEventListener('click', () => editEvent(btn.dataset.id));
                 });
                 
                 document.querySelectorAll('.delete-event-btn').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        const eventId = btn.dataset.id;
-                        deleteEvent(eventId);
-                    });
+                    btn.addEventListener('click', () => deleteEvent(btn.dataset.id));
                 });
                 
             } catch (err) {
-                console.error('Ошибка загрузки событий:', err);
+                console.error('Ошибка загрузки:', err);
                 container.innerHTML = '<p style="color:red; text-align:center;">Ошибка загрузки событий</p>';
             }
         }
 
-        // Открытие модалки для добавления
-        document.getElementById('add-event-btn')?.addEventListener('click', () => {
-            document.getElementById('modal-title').textContent = 'Добавить событие';
-            document.getElementById('add-event-form-modal').reset();
-            document.getElementById('event-id').value = '';
-            document.getElementById('add-event-modal').classList.remove('hidden');
-            document.getElementById('modal-overlay').classList.remove('hidden');
-        });
-
-        // Закрытие модалки
-        document.querySelectorAll('.modal-close, .cancel-btn').forEach(el => {
-            el.addEventListener('click', () => {
-                document.getElementById('add-event-modal').classList.add('hidden');
-                document.getElementById('modal-overlay').classList.add('hidden');
-            });
-        });
-
-        // Обработка формы (добавление и редактирование)
-        document.getElementById('add-event-form-modal')?.addEventListener('submit', async function(e) {
-            e.preventDefault();
-
-            const id = document.getElementById('event-id').value;
-            const title = document.getElementById('event-title').value.trim();
-            const date = document.getElementById('event-date').value;
-            const event_type = document.getElementById('event-type').value;
-            const description = document.getElementById('event-description').value.trim();
-            const media_url = document.getElementById('event-media-url').value.trim();
-
-            if (!title || !date || !event_type) {
-                window.showNotification('Заполните обязательные поля', 'error');
-                return;
-            }
-
-            const eventData = {
-                title,
-                date,
-                event_type,
-                description,
-                media_url,
-                user_id: window.currentUser?.id
+        // Функции иконок и т.д. (оставляем как было)
+        function getEventIcon(type) {
+            const icons = {
+                birthday: 'fas fa-birthday-cake',
+                wedding: 'fas fa-ring',
+                anniversary: 'fas fa-heart',
+                holiday: 'fas fa-gift',
+                other: 'fas fa-calendar'
             };
+            return icons[type] || 'fas fa-calendar';
+        }
 
-            try {
-                if (id) {
-                    // Редактирование
-                    const { error } = await window.supabaseClient
-                        .from('events')
-                        .update(eventData)
-                        .eq('id', id);
-                    
-                    if (error) throw error;
-                    window.showNotification('Событие обновлено!', 'success');
-                } else {
-                    // Создание
-                    const { data, error } = await window.supabaseClient
-                        .from('events')
-                        .insert([eventData])
-                        .select()
-                        .single();
-                    
-                    if (error) throw error;
-                    
-                    // Обновляем локальный массив
-                    if (data) {
-                        window.events = window.events || [];
-                        window.events.unshift(data);
-                    }
-                    
-                    window.showNotification('Событие добавлено!', 'success');
-                }
-
-                // Закрываем модалку
-                document.getElementById('add-event-modal').classList.add('hidden');
-                document.getElementById('modal-overlay').classList.add('hidden');
-
-                // Обновляем ленту
-                updateTimeline();
-
-            } catch (err) {
-                console.error('Ошибка сохранения события:', err);
-                window.showNotification('Ошибка сохранения: ' + err.message, 'error');
-            }
-        });
-
-        // Редактирование события
         window.editEvent = function(id) {
             const event = window.events?.find(e => e.id === id);
             if (!event) {
@@ -429,11 +514,8 @@
             document.getElementById('modal-overlay').classList.remove('hidden');
         };
 
-        // Удаление события
         window.deleteEvent = async function(id) {
-            if (!confirm('Удалить это событие?')) return;
-
-            window.showLoader('Удаление события...');
+            if (!confirm('Удалить событие?')) return;
 
             try {
                 if (window.currentUser && window.supabaseClient) {
@@ -441,29 +523,21 @@
                         .from('events')
                         .delete()
                         .eq('id', id);
-                    
                     if (error) throw error;
                 }
 
-                // Удаляем локально
                 window.events = window.events?.filter(e => e.id !== id) || [];
-
                 window.showNotification('Событие удалено!', 'success');
                 updateTimeline();
-
             } catch (err) {
-                console.error('Ошибка удаления:', err);
+                console.error(err);
                 window.showNotification('Ошибка удаления', 'error');
-            } finally {
-                window.hideLoader();
             }
         };
 
         // Инициализация
         document.addEventListener('DOMContentLoaded', () => {
             updateTimeline();
-
-            // Обработчики фильтров
             document.getElementById('filter-year')?.addEventListener('change', updateTimeline);
             document.getElementById('filter-type')?.addEventListener('change', updateTimeline);
         });
