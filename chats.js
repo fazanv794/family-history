@@ -126,17 +126,14 @@ async function openConversation(convId, chatName) {
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
 
-// Загрузка сообщений (исправленный join)
+// Загрузка сообщений (красивый визуал: справа/слева)
 async function loadMessages(convId) {
     window.showLoader('Загрузка сообщений...');
     
     try {
         const { data: messages, error } = await window.supabaseClient
             .from('messages')
-            .select(`
-                *,
-                sender_id!inner(full_name)
-            `)
+            .select('*, sender:sender_id (full_name, avatar_url)')
             .eq('conversation_id', convId)
             .order('created_at', { ascending: true });
         
@@ -144,34 +141,70 @@ async function loadMessages(convId) {
         
         const messagesContainer = document.getElementById('chat-messages');
         messagesContainer.innerHTML = '';
+        messagesContainer.style.display = 'flex';
+        messagesContainer.style.flexDirection = 'column';
+        messagesContainer.style.gap = '12px';
+        messagesContainer.style.padding = '10px';
         
         messages.forEach(msg => {
             const isOwn = msg.sender_id === window.currentUser.id;
-            const senderName = msg.sender_id?.full_name || 'Аноним';
+            const sender = msg.sender || { full_name: 'Аноним', avatar_url: null };
+            const senderName = sender.full_name || 'Аноним';
             
+            const messageWrapper = document.createElement('div');
+            messageWrapper.style.display = 'flex';
+            messageWrapper.style.alignItems = 'flex-start';
+            messageWrapper.style.gap = '10px';
+            if (isOwn) messageWrapper.style.flexDirection = 'row-reverse';
+            
+            // Аватарка (только у чужих сообщений)
+            if (!isOwn) {
+                const avatar = document.createElement('div');
+                avatar.style.width = '36px';
+                avatar.style.height = '36px';
+                avatar.style.borderRadius = '50%';
+                avatar.style.background = sender.avatar_url 
+                    ? `url(${sender.avatar_url}) center/cover`
+                    : 'linear-gradient(135deg, #667eea, #764ba2)';
+                avatar.style.color = 'white';
+                avatar.style.display = 'flex';
+                avatar.style.alignItems = 'center';
+                avatar.style.justifyContent = 'center';
+                avatar.style.fontSize = '14px';
+                avatar.style.fontWeight = 'bold';
+                avatar.textContent = !sender.avatar_url ? senderName[0].toUpperCase() : '';
+                messageWrapper.appendChild(avatar);
+            }
+            
+            // Само сообщение
             const messageItem = document.createElement('div');
-            messageItem.style = `
-                margin-bottom: 15px;
-                padding: 12px 15px;
-                border-radius: 8px;
-                max-width: 70%;
-                ${isOwn ? 'background: #667eea; color: white; align-self: flex-end; margin-left: auto;' : 'background: #f1f5f9; color: #2d3748; align-self: flex-start;'}
-            `;
+            messageItem.style.maxWidth = '70%';
+            messageItem.style.padding = '12px 16px';
+            messageItem.style.borderRadius = '18px';
+            messageItem.style.background = isOwn ? '#667eea' : '#f1f5f9';
+            messageItem.style.color = isOwn ? 'white' : '#2d3748';
+            messageItem.style.position = 'relative';
+            
             messageItem.innerHTML = `
-                <p style="margin: 0 0 5px 0; font-size: 0.85rem; opacity: 0.8;">
+                ${!isOwn ? `<small style="font-size:0.8rem; opacity:0.8; display:block; margin-bottom:4px;">
                     ${senderName}
-                </p>
-                <p style="margin: 0;">${msg.content}</p>
-                <p style="margin: 5px 0 0 0; font-size: 0.75rem; opacity: 0.6; text-align: right;">
-                    ${new Date(msg.created_at).toLocaleTimeString('ru-RU')}
-                </p>
+                </small>` : ''}
+                <p style="margin:0; word-break:break-word;">${msg.content}</p>
+                <small style="font-size:0.75rem; opacity:0.7; display:block; margin-top:6px; text-align:right;">
+                    ${new Date(msg.created_at).toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'})}
+                </small>
             `;
-            messagesContainer.appendChild(messageItem);
+            
+            messageWrapper.appendChild(messageItem);
+            messagesContainer.appendChild(messageWrapper);
         });
+        
+        // Прокрутка вниз
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
         
     } catch (error) {
         console.error('Ошибка загрузки сообщений:', error);
-        window.showNotification('Ошибка загрузки сообщений: ' + (error.message || 'проверьте консоль'), 'error');
+        window.showNotification('Ошибка загрузки сообщений', 'error');
     } finally {
         window.hideLoader();
     }

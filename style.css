@@ -2500,3 +2500,29 @@ select {
 .modal:not(.hidden) {
     animation: modalAppear 0.3s ease-out forwards !important;
 }
+
+/* Стили для сообщений в чате */
+#chat-messages {
+    padding: 15px;
+    background: #f8fafc;
+    border-radius: 12px;
+}
+
+.chat-messages div {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Стиль для собственного сообщения (справа) */
+.chat-messages div[style*="align-self: flex-end"] {
+    margin-left: auto;
+}
+
+/* Стиль для чужого сообщения (слева) */
+.chat-messages div[style*="align-self: flex-start"] {
+    margin-right: auto;
+}
