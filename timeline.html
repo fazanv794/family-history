@@ -81,11 +81,41 @@
         </div>
     </footer>
 
-    <!-- Модальные окна -->
-    <div class="modal-overlay hidden" id="modal-overlay"></div>
-    
-    <!-- Модальное окно добавления события -->
-    <div id="add-event-modal" class="modal hidden">
+    <!-- Оверлей (центрирует модалку) -->
+    <div id="modal-overlay" class="modal-overlay hidden" style="
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        background: rgba(0,0,0,0.65) !important;
+        z-index: 99999 !important;
+        display: none !important;
+        align-items: center !important;
+        justify-content: center !important;
+        backdrop-filter: blur(4px) !important;
+    "></div>
+
+    <!-- Модальное окно добавления/редактирования события -->
+    <div id="add-event-modal" class="modal hidden" style="
+        position: fixed !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        width: 90% !important;
+        max-width: 600px !important;
+        max-height: 90vh !important;
+        background: white !important;
+        border-radius: 16px !important;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.4) !important;
+        overflow-y: auto !important;
+        z-index: 100000 !important;
+        opacity: 0 !important;
+        transition: opacity 0.3s ease, transform 0.3s ease !important;
+        pointer-events: auto !important;
+    ">
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Добавить семейное событие</h3>
@@ -183,7 +213,7 @@
             try {
                 let events = [];
 
-                // Загружаем события из Supabase
+                // Загружаем из Supabase
                 if (window.supabaseClient) {
                     const { data, error } = await window.supabaseClient
                         .from('events')
@@ -347,29 +377,30 @@
         };
 
         // Инициализация страницы
-        document.addEventListener('DOMContentLoaded', async () => {
+        document.addEventListener('DOMContentLoaded', () => {
             console.log('📅 Инициализация страницы ленты событий...');
 
             // Загружаем данные пользователя
-            await window.loadUserData?.();
+            window.loadUserData?.();
 
             // Подгружаем события из Supabase
             if (window.supabaseClient) {
-                const { data, error } = await window.supabaseClient
+                window.supabaseClient
                     .from('events')
                     .select('*')
-                    .order('date', { ascending: false });
-
-                if (!error && data) {
-                    window.events = data;
-                    console.log('✅ События загружены из Supabase:', data.length);
-                } else {
-                    console.error('Ошибка загрузки событий из Supabase:', error);
-                    window.events = [];
-                }
+                    .order('date', { ascending: false })
+                    .then(({ data, error }) => {
+                        if (error) {
+                            console.error('Ошибка загрузки событий из Supabase:', error);
+                        } else {
+                            window.events = data || [];
+                            console.log('✅ События загружены из Supabase:', window.events.length);
+                        }
+                        updateTimeline();
+                    });
+            } else {
+                updateTimeline();
             }
-
-            updateTimeline();
 
             // Обработчик кнопки "Добавить событие"
             document.getElementById('add-event-btn')?.addEventListener('click', () => {
@@ -387,14 +418,30 @@
                 document.querySelector('#add-event-modal button[type="submit"]').textContent = 'Добавить событие';
 
                 document.getElementById('add-event-modal').classList.remove('hidden');
-                document.getElementById('modal-overlay').classList.remove('hidden');
+                document.getElementById('modal-overlay').style.display = 'flex';
             });
 
-            // Обработчик отправки формы (добавление события)
-            document.getElementById('add-event-form-modal')?.addEventListener('submit', async function(e) {
-                e.preventDefault(); // ← предотвращаем перезагрузку страницы
+            // Закрытие модалки
+            document.querySelectorAll('.modal-close, .cancel-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.getElementById('add-event-modal').classList.add('hidden');
+                    document.getElementById('modal-overlay').style.display = 'none';
+                });
+            });
 
-                console.log('Форма добавления события отправлена');
+            // Закрытие по клику на оверлей
+            document.getElementById('modal-overlay')?.addEventListener('click', e => {
+                if (e.target === e.currentTarget) {
+                    document.getElementById('add-event-modal').classList.add('hidden');
+                    e.currentTarget.style.display = 'none';
+                }
+            });
+
+            // Обработчик отправки формы
+            document.getElementById('add-event-form-modal')?.addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                console.log('Форма отправлена');
 
                 const title = document.getElementById('event-title').value.trim();
                 const date = document.getElementById('event-date').value;
@@ -420,7 +467,6 @@
                         created_at: new Date().toISOString()
                     };
 
-                    // Сохраняем в Supabase
                     if (window.currentUser && window.supabaseClient) {
                         const { data, error } = await window.supabaseClient
                             .from('events')
@@ -436,7 +482,6 @@
                             window.events.unshift(newEvent);
                         }
                     } else {
-                        // Для гостя — только в память
                         newEvent.id = Date.now() + Math.random();
                         window.events = window.events || [];
                         window.events.unshift(newEvent);
@@ -444,16 +489,14 @@
 
                     window.showNotification?.('✅ Событие добавлено!', 'success');
 
-                    // Закрываем модалку
                     document.getElementById('add-event-modal').classList.add('hidden');
-                    document.getElementById('modal-overlay').classList.add('hidden');
+                    document.getElementById('modal-overlay').style.display = 'none';
 
-                    // Обновляем ленту
                     updateTimeline();
 
                 } catch (error) {
                     console.error('Ошибка добавления события:', error);
-                    window.showNotification?.('Ошибка добавления события: ' + (error.message || 'проверь консоль'), 'error');
+                    window.showNotification?.('Ошибка: ' + (error.message || 'проверь консоль'), 'error');
                 } finally {
                     window.hideLoader?.();
                 }
