@@ -113,14 +113,16 @@ async function openConversation(convId, chatName) {
     container.scrollTop = container.scrollHeight;
 }
 
-// Добавление одного сообщения (для realtime и начальной загрузки)
 function appendMessage(msg) {
     const container = document.getElementById('chat-messages');
     if (!container) return;
 
     const isOwn = msg.sender_id === window.currentUser.id;
     const sender = msg.sender || {};
-    const senderName = sender.full_name || sender.email?.split('@')[0] || 'Аноним';
+    // Надёжный fallback: full_name → часть email → Аноним
+    const senderName = sender.full_name || 
+                      sender.email?.split('@')[0] || 
+                      'Аноним';
 
     const wrapper = document.createElement('div');
     wrapper.style.cssText = `
@@ -171,14 +173,16 @@ function appendMessage(msg) {
     container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
 }
 
-// Загрузка всех сообщений при открытии чата
 async function loadMessages(convId) {
     window.showLoader('Загрузка сообщений...');
     
     try {
         const { data: messages, error } = await window.supabaseClient
             .from('messages')
-            .select('*, sender:sender_id (full_name, avatar_url)')
+            .select(`
+                *,
+                sender:sender_id (full_name, avatar_url)
+            `)
             .eq('conversation_id', convId)
             .order('created_at', { ascending: true });
         
@@ -188,6 +192,8 @@ async function loadMessages(convId) {
         container.innerHTML = '';
         
         messages.forEach(msg => appendMessage(msg));
+        
+        container.scrollTop = container.scrollHeight;
         
     } catch (error) {
         console.error('Ошибка загрузки сообщений:', error);
