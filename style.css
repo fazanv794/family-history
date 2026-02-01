@@ -2526,3 +2526,35 @@ select {
 .chat-messages div[style*="align-self: flex-start"] {
     margin-right: auto;
 }
+
+/* Контейнер сообщений */
+#chat-messages {
+    padding: 15px;
+    background: #f8fafc;
+    border-radius: 12px;
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Плавное появление новых сообщений */
+#chat-messages > div {
+    animation: messageAppear 0.4s ease-out;
+}
+
+@keyframes messageAppear {
+    from { opacity: 0; transform: translateY(15px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Твои сообщения справа */
+#chat-messages div[style*="flex-direction: row-reverse"] > div {
+    border-bottom-right-radius: 4px;
+}
+
+/* Чужие слева */
+#chat-messages div[style*="flex-direction: row"] > div {
+    border-bottom-left-radius: 4px;
+}

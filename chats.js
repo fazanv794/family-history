@@ -9,7 +9,6 @@ let realtimeSubscriptions = [];
 async function initChatsPage() {
     console.log('🔄 Инициализация страницы чатов...');
     
-    // Проверяем авторизацию
     await window.loadUserData();
     if (!window.currentUser) {
         window.showNotification('Пожалуйста, войдите в систему', 'error');
@@ -17,13 +16,8 @@ async function initChatsPage() {
         return;
     }
     
-    // Настраиваем обработчики
     setupChatEventListeners();
-    
-    // Загружаем чаты
     await loadConversations();
-    
-    // Настраиваем realtime
     setupRealtimeSubscriptions();
 }
 
@@ -43,20 +37,18 @@ async function loadConversations() {
         chatsList.innerHTML = '';
         
         for (const conv of convs || []) {
-            // Получаем участников
             const { data: participants, error: partErr } = await window.supabaseClient
                 .from('conversation_participants')
                 .select('user_id')
                 .eq('conversation_id', conv.id);
             
             if (partErr) {
-                console.warn('Ошибка участников для чата', conv.id, partErr);
+                console.warn('Ошибка участников', conv.id, partErr);
                 continue;
             }
             
-            // Получаем профили отдельно (без join'а, чтобы избежать 400)
             const userIds = participants.map(p => p.user_id);
-            const { data: profilesData, error: profErr } = await window.supabaseClient
+            const { data: profiles, error: profErr } = await window.supabaseClient
                 .from('profiles')
                 .select('id, full_name, email')
                 .in('id', userIds);
@@ -66,7 +58,7 @@ async function loadConversations() {
                 continue;
             }
             
-            const profileMap = new Map(profilesData.map(p => [p.id, p]));
+            const profileMap = new Map(profiles.map(p => [p.id, p]));
             
             const otherNames = participants
                 .filter(p => p.user_id !== window.currentUser.id)
@@ -126,7 +118,61 @@ async function openConversation(convId, chatName) {
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
 
-// Загрузка сообщений (красивый визуал: справа/слева)
+// Добавление одного сообщения (для realtime)
+function appendMessage(msg) {
+    const container = document.getElementById('chat-messages');
+    if (!container) return;
+
+    const isOwn = msg.sender_id === window.currentUser.id;
+    const sender = msg.sender || { full_name: 'Аноним' };
+    const senderName = sender.full_name || 'Аноним';
+
+    const wrapper = document.createElement('div');
+    wrapper.style.display = 'flex';
+    wrapper.style.alignItems = 'flex-start';
+    wrapper.style.gap = '10px';
+    if (isOwn) wrapper.style.flexDirection = 'row-reverse';
+
+    if (!isOwn) {
+        const avatar = document.createElement('div');
+        avatar.style.width = '36px';
+        avatar.style.height = '36px';
+        avatar.style.borderRadius = '50%';
+        avatar.style.background = sender.avatar_url 
+            ? `url(${sender.avatar_url}) center/cover`
+            : 'linear-gradient(135deg, #667eea, #764ba2)';
+        avatar.style.color = 'white';
+        avatar.style.display = 'flex';
+        avatar.style.alignItems = 'center';
+        avatar.style.justifyContent = 'center';
+        avatar.style.fontSize = '14px';
+        avatar.style.fontWeight = 'bold';
+        avatar.textContent = !sender.avatar_url ? senderName[0].toUpperCase() : '';
+        wrapper.appendChild(avatar);
+    }
+
+    const msgDiv = document.createElement('div');
+    msgDiv.style.maxWidth = '70%';
+    msgDiv.style.padding = '12px 16px';
+    msgDiv.style.borderRadius = '18px';
+    msgDiv.style.background = isOwn ? '#667eea' : '#f1f5f9';
+    msgDiv.style.color = isOwn ? 'white' : '#2d3748';
+
+    msgDiv.innerHTML = `
+        ${!isOwn ? `<small style="font-size:0.8rem; opacity:0.8; display:block; margin-bottom:4px;">${senderName}</small>` : ''}
+        <p style="margin:0; word-break:break-word;">${msg.content}</p>
+        <small style="font-size:0.75rem; opacity:0.7; display:block; margin-top:6px; text-align:right;">
+            ${new Date(msg.created_at).toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'})}
+        </small>
+    `;
+
+    wrapper.appendChild(msgDiv);
+    container.appendChild(wrapper);
+
+    container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+}
+
+// Загрузка всех сообщений при открытии чата
 async function loadMessages(convId) {
     window.showLoader('Загрузка сообщений...');
     
@@ -139,68 +185,10 @@ async function loadMessages(convId) {
         
         if (error) throw error;
         
-        const messagesContainer = document.getElementById('chat-messages');
-        messagesContainer.innerHTML = '';
-        messagesContainer.style.display = 'flex';
-        messagesContainer.style.flexDirection = 'column';
-        messagesContainer.style.gap = '12px';
-        messagesContainer.style.padding = '10px';
+        const container = document.getElementById('chat-messages');
+        container.innerHTML = '';
         
-        messages.forEach(msg => {
-            const isOwn = msg.sender_id === window.currentUser.id;
-            const sender = msg.sender || { full_name: 'Аноним', avatar_url: null };
-            const senderName = sender.full_name || 'Аноним';
-            
-            const messageWrapper = document.createElement('div');
-            messageWrapper.style.display = 'flex';
-            messageWrapper.style.alignItems = 'flex-start';
-            messageWrapper.style.gap = '10px';
-            if (isOwn) messageWrapper.style.flexDirection = 'row-reverse';
-            
-            // Аватарка (только у чужих сообщений)
-            if (!isOwn) {
-                const avatar = document.createElement('div');
-                avatar.style.width = '36px';
-                avatar.style.height = '36px';
-                avatar.style.borderRadius = '50%';
-                avatar.style.background = sender.avatar_url 
-                    ? `url(${sender.avatar_url}) center/cover`
-                    : 'linear-gradient(135deg, #667eea, #764ba2)';
-                avatar.style.color = 'white';
-                avatar.style.display = 'flex';
-                avatar.style.alignItems = 'center';
-                avatar.style.justifyContent = 'center';
-                avatar.style.fontSize = '14px';
-                avatar.style.fontWeight = 'bold';
-                avatar.textContent = !sender.avatar_url ? senderName[0].toUpperCase() : '';
-                messageWrapper.appendChild(avatar);
-            }
-            
-            // Само сообщение
-            const messageItem = document.createElement('div');
-            messageItem.style.maxWidth = '70%';
-            messageItem.style.padding = '12px 16px';
-            messageItem.style.borderRadius = '18px';
-            messageItem.style.background = isOwn ? '#667eea' : '#f1f5f9';
-            messageItem.style.color = isOwn ? 'white' : '#2d3748';
-            messageItem.style.position = 'relative';
-            
-            messageItem.innerHTML = `
-                ${!isOwn ? `<small style="font-size:0.8rem; opacity:0.8; display:block; margin-bottom:4px;">
-                    ${senderName}
-                </small>` : ''}
-                <p style="margin:0; word-break:break-word;">${msg.content}</p>
-                <small style="font-size:0.75rem; opacity:0.7; display:block; margin-top:6px; text-align:right;">
-                    ${new Date(msg.created_at).toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'})}
-                </small>
-            `;
-            
-            messageWrapper.appendChild(messageItem);
-            messagesContainer.appendChild(messageWrapper);
-        });
-        
-        // Прокрутка вниз
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        messages.forEach(msg => appendMessage(msg));
         
     } catch (error) {
         console.error('Ошибка загрузки сообщений:', error);
@@ -210,36 +198,38 @@ async function loadMessages(convId) {
     }
 }
 
-// Настройка realtime подписок
+// Realtime подписки
 function setupRealtimeSubscriptions() {
-    const convSub = window.supabaseClient
+    // Подписка на новые чаты
+    window.supabaseClient
         .channel('conversations')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations' }, () => {
             loadConversations();
         })
         .subscribe();
-    
-    const msgSub = window.supabaseClient
+
+    // Подписка на новые сообщения (фильтр по текущему чату)
+    window.supabaseClient
         .channel('messages')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+        .on('postgres_changes', {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'messages',
+            filter: `conversation_id=eq.${currentConversationId}`
+        }, (payload) => {
+            console.log('Новое сообщение в реальном времени:', payload.new);
             if (payload.new.conversation_id === currentConversationId) {
-                loadMessages(currentConversationId);
+                appendMessage(payload.new);
             }
         })
         .subscribe();
-    
-    realtimeSubscriptions.push(convSub, msgSub);
 }
 
 // Обработчики событий
 function setupChatEventListeners() {
-    // Форма отправки сообщения
     document.getElementById('chat-form')?.addEventListener('submit', sendMessage);
-
-    // Форма создания чата
     document.getElementById('create-chat-form')?.addEventListener('submit', createChatFromForm);
-
-    // Выбор типа чата
+    
     document.getElementById('chat-type')?.addEventListener('change', (e) => {
         const groupGroup = document.getElementById('group-name-group');
         if (e.target.value === 'group') {
@@ -257,17 +247,14 @@ async function searchUsers(query) {
     console.log('[searchUsers] Запрос:', query);
 
     const container = document.getElementById('user-search-results');
-    if (!container) {
-        console.error('[searchUsers] Контейнер #user-search-results не найден');
-        return;
-    }
+    if (!container) return;
 
     if (!query || query.length < 2) {
         container.innerHTML = '';
         return;
     }
 
-    container.innerHTML = '<p style="text-align:center; color:#718096; padding:12px;">Поиск...</p>';
+    container.innerHTML = '<p style="text-align:center; color:#718096;">Поиск...</p>';
 
     try {
         const { data: users, error } = await window.supabaseClient
@@ -277,20 +264,20 @@ async function searchUsers(query) {
             .neq('id', window.currentUser?.id || '')
             .limit(8);
 
-        console.log('[searchUsers] Ответ Supabase:', { users, error });
+        console.log('[searchUsers] Ответ:', users, error);
 
         if (error) throw error;
 
         container.innerHTML = '';
 
-        if (!users || users.length === 0) {
-            container.innerHTML = '<p style="text-align:center; color:#718096; padding:12px;">Пользователи не найдены</p>';
+        if (!users?.length) {
+            container.innerHTML = '<p style="text-align:center; color:#718096;">Никто не найден</p>';
             return;
         }
 
         users.forEach(user => {
             const div = document.createElement('div');
-            div.style.cssText = 'padding:10px 12px; border-bottom:1px solid #eee; cursor:pointer; display:flex; align-items:center; gap:12px; transition:background 0.2s;';
+            div.style.cssText = 'padding:10px 12px; border-bottom:1px solid #eee; cursor:pointer; display:flex; align-items:center; gap:12px;';
             div.innerHTML = `
                 <div style="width:40px;height:40px;background:#667eea;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;">
                     ${(user.full_name || user.email)[0].toUpperCase()}
@@ -300,17 +287,12 @@ async function searchUsers(query) {
                     <div style="font-size:0.85rem;color:#718096;">${user.email}</div>
                 </div>
             `;
-            div.onclick = () => {
-                console.log('Выбран:', user);
-                addSelectedUser(user);
-            };
-            div.onmouseover = () => div.style.background = '#f0f4f8';
-            div.onmouseout = () => div.style.background = '';
+            div.onclick = () => addSelectedUser(user);
             container.appendChild(div);
         });
     } catch (err) {
         console.error('[searchUsers] Ошибка:', err);
-        container.innerHTML = '<p style="color:red; text-align:center; padding:12px;">Ошибка поиска</p>';
+        container.innerHTML = '<p style="color:red; text-align:center;">Ошибка поиска</p>';
     }
 }
 
@@ -347,18 +329,6 @@ async function createChatFromForm(e) {
         if (type === 'group' && !groupName) throw new Error('Введите название группы');
         if (selectedUsers.length === 0) throw new Error('Выберите хотя бы одного пользователя');
         if (type === 'private' && selectedUsers.length !== 1) throw new Error('Для приватного чата выберите одного пользователя');
-        
-        // Для приватного чата проверяем существование
-        if (type === 'private') {
-            const partnerId = selectedUsers[0];
-            const { data: existing } = await window.supabaseClient
-                .from('conversations')
-                .select('id')
-                .eq('is_group', false)
-                .limit(1);
-            
-            // Более точная проверка требует join'а — пока пропускаем
-        }
         
         const { data: conv, error: convError } = await window.supabaseClient
             .from('conversations')
@@ -417,10 +387,10 @@ async function sendMessage(e) {
         if (error) throw error;
         
         input.value = '';
-        // Realtime сам обновит
+        // Realtime добавит сообщение автоматически
     } catch (error) {
         console.error('Ошибка отправки:', error);
-        window.showNotification('Ошибка отправки: ' + (error.message || 'проверьте консоль'), 'error');
+        window.showNotification('Ошибка отправки', 'error');
     }
 }
 
