@@ -81,34 +81,39 @@
         </div>
     </footer>
 
-    <!-- Оверлей для модальных окон -->
+    <!-- Оверлей (центрирует модалку) -->
     <div id="modal-overlay" class="modal-overlay hidden" style="
-        position: fixed;
-        inset: 0;
-        background: rgba(0,0,0,0.65);
-        z-index: 9999;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        backdrop-filter: blur(4px);
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        background: rgba(0,0,0,0.65) !important;
+        z-index: 99999 !important;
+        display: none !important;
+        align-items: center !important;
+        justify-content: center !important;
+        backdrop-filter: blur(4px) !important;
     "></div>
 
-    <!-- Модальное окно добавления/редактирования события -->
+    <!-- Модальное окно (центрировано строго) -->
     <div id="add-event-modal" class="modal hidden" style="
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 90%;
-        max-width: 600px;
-        max-height: 90vh;
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.4);
-        overflow-y: auto;
-        z-index: 10000;
-        opacity: 0;
-        transition: opacity 0.3s ease, transform 0.3s ease;
+        position: fixed !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        width: 90% !important;
+        max-width: 600px !important;
+        max-height: 90vh !important;
+        background: white !important;
+        border-radius: 16px !important;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.4) !important;
+        overflow-y: auto !important;
+        z-index: 100000 !important;
+        opacity: 0 !important;
+        transition: opacity 0.3s ease, transform 0.3s ease !important;
     ">
         <div class="modal-content">
             <div class="modal-header">
@@ -187,7 +192,7 @@
     <script src="app.js"></script>
     
     <script>
-        // Открытие модалки добавления события
+        // Открытие модалки
         document.getElementById('add-event-btn')?.addEventListener('click', () => {
             document.getElementById('modal-title').textContent = 'Добавить событие';
             document.getElementById('add-event-form-modal').reset();
@@ -353,19 +358,13 @@
                 
                 container.innerHTML = html;
                 
-                // Обработчики кнопок редактирования и удаления
+                // Обработчики кнопок
                 document.querySelectorAll('.edit-event-btn').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        const eventId = btn.dataset.id;
-                        editEvent(eventId);
-                    });
+                    btn.addEventListener('click', () => editEvent(btn.dataset.id));
                 });
                 
                 document.querySelectorAll('.delete-event-btn').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        const eventId = btn.dataset.id;
-                        deleteEvent(eventId);
-                    });
+                    btn.addEventListener('click', () => deleteEvent(btn.dataset.id));
                 });
                 
             } catch (err) {
@@ -374,7 +373,7 @@
             }
         }
 
-        // Функция иконок событий (оставляем как было)
+        // Функция иконок событий
         function getEventIcon(type) {
             const icons = {
                 birthday: 'fas fa-birthday-cake',
@@ -435,7 +434,7 @@
             }
         };
 
-        // Инициализация страницы
+        // Инициализация
         document.addEventListener('DOMContentLoaded', () => {
             updateTimeline();
 
