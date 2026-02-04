@@ -354,6 +354,7 @@ function setupFormHandlers() {
 }
 
 // Показать модальное окно - ПРОСТАЯ РАБОЧАЯ ВЕРСИЯ
+// Показать модальное окно - ИСПРАВЛЕННАЯ ВЕРСИЯ
 window.showModal = function(modalId) {
     console.log('📂 Показать модальное окно:', modalId);
     
@@ -365,7 +366,7 @@ window.showModal = function(modalId) {
         return;
     }
     
-    // Клонируем модальное окно и добавляем в overlay
+    // Клонируем модальное окно
     const modalClone = modal.cloneNode(true);
     modalClone.id = modalId + '-clone';
     modalClone.classList.remove('hidden');
@@ -374,14 +375,17 @@ window.showModal = function(modalId) {
     overlay.innerHTML = '';
     overlay.appendChild(modalClone);
     
-    // Показываем overlay и модальное окно
+    // Показываем overlay
     overlay.classList.remove('hidden');
+    
+    // Добавляем класс для блокировки скролла body
+    document.body.classList.add('modal-open');
+    
+    // После небольшой задержки добавляем класс active для анимации
     setTimeout(() => {
         overlay.classList.add('active');
         modalClone.classList.add('active');
     }, 10);
-    
-    document.body.style.overflow = 'hidden';
     
     // Добавляем обработчики для кнопок закрытия внутри этого модального окна
     const closeBtn = modalClone.querySelector('.modal-close');
@@ -394,37 +398,49 @@ window.showModal = function(modalId) {
         btn.addEventListener('click', closeAllModals);
     });
     
-    // Заполняем данные если нужно
-    if (modalId === 'edit-profile-modal' && window.currentUser) {
-        const nameParts = (window.currentUser.user_metadata?.name || '').split(' ');
-        const nameInput = modalClone.querySelector('#edit-profile-name');
-        const lastNameInput = modalClone.querySelector('#edit-profile-last-name');
-        const emailInput = modalClone.querySelector('#edit-profile-email');
-        
-        if (nameInput) nameInput.value = nameParts[0] || '';
-        if (lastNameInput) lastNameInput.value = nameParts.slice(1).join(' ') || '';
-        if (emailInput) emailInput.value = window.currentUser.email || '';
-    }
+    // Закрытие по клику на overlay
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) {
+            closeAllModals();
+        }
+    });
+    
+    // Закрытие по Escape
+    const escapeHandler = function(e) {
+        if (e.key === 'Escape') {
+            closeAllModals();
+            document.removeEventListener('keydown', escapeHandler);
+        }
+    };
+    document.addEventListener('keydown', escapeHandler);
     
     return modalClone;
 };
 
-// Закрыть все модальные окна
+
 window.closeAllModals = function() {
     console.log('❌ Закрыть все модальные окна');
     
     const overlay = document.getElementById('modal-overlay');
     if (overlay) {
+        // Убираем классы для анимации
         overlay.classList.remove('active');
+        
+        // Находим активное модальное окно
+        const activeModal = overlay.querySelector('.modal.active');
+        if (activeModal) {
+            activeModal.classList.remove('active');
+        }
+        
+        // Ждем завершения анимации и скрываем
         setTimeout(() => {
             overlay.classList.add('hidden');
             overlay.innerHTML = '';
+            document.body.classList.remove('modal-open');
         }, 300);
     }
     
-    document.body.style.overflow = '';
-    
-    // Сбрасываем основные формы (но не формы шагов)
+    // Сбрасываем основные формы
     document.querySelectorAll('form').forEach(form => {
         if (form.id && !form.id.includes('step') && !form.id.includes('add-person-step')) {
             form.reset();
@@ -437,7 +453,7 @@ window.closeAllModals = function() {
     
     const filesList = document.getElementById('selected-files-list');
     if (filesList) filesList.innerHTML = '';
-};
+};ы
 
 // Выход из системы
 async function handleLogout() {
