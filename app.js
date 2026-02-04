@@ -453,7 +453,7 @@ window.closeAllModals = function() {
     
     const filesList = document.getElementById('selected-files-list');
     if (filesList) filesList.innerHTML = '';
-};ы
+};
 
 // Выход из системы
 async function handleLogout() {
