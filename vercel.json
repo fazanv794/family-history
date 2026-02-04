@@ -16,7 +16,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self' https:; connect-src 'self' https: wss://*.supabase.co wss://*.supabase.com ws:; img-src 'self' https: data: blob:; style-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://*.supabase.co; frame-src 'self' https:;"
+          "value": "default-src 'self' https:; connect-src 'self' https: wss://*.supabase.co wss://*.supabase.com ws:; img-src 'self' https: data: blob:; style-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline' https://unpkg.com https://*.supabase.co https://*.supabase.com 'unsafe-eval'; frame-src 'self' https:;"
         }
       ]
     }

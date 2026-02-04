@@ -102,9 +102,10 @@ function openAddEventModal(eventId = null) {
     window.showModal('add-event-modal');
 }
 
-// Обработка отправки формы события
+// Обработка отправки формы события - ИСПРАВЛЕННАЯ ВЕРСИЯ
 async function handleAddEventSubmit(e) {
     e.preventDefault();
+    e.stopPropagation(); // Дополнительно останавливаем всплытие
     console.log('📨 Обработка формы события...');
     
     const form = e.target;
@@ -119,13 +120,15 @@ async function handleAddEventSubmit(e) {
     // Валидация
     if (!title) {
         window.showNotification('Введите название события', 'error');
-        return;
+        return false; // Возвращаем false
     }
     
     if (!date) {
         window.showNotification('Выберите дату события', 'error');
-        return;
+        return false;
     }
+    
+    console.log('Данные формы:', { title, date, eventType, isEditing });
     
     window.showLoader(isEditing ? 'Сохранение изменений...' : 'Добавление события...');
     
@@ -143,6 +146,7 @@ async function handleAddEventSubmit(e) {
         
         if (isEditing) {
             // Обновление существующего события
+            console.log('Редактирование события ID:', isEditing);
             const { data, error } = await window.supabaseClient
                 .from('events')
                 .update(eventData)
@@ -150,36 +154,47 @@ async function handleAddEventSubmit(e) {
                 .eq('user_id', window.currentUser.id)
                 .select();
             
-            if (error) throw error;
+            if (error) {
+                console.error('Ошибка обновления события:', error);
+                throw error;
+            }
             result = data && data[0];
             
             // Обновляем локальную копию
             const index = window.events.findIndex(e => e.id == isEditing);
             if (index !== -1) {
-                window.events[index] = { ...window.events[index], ...eventData };
+                window.events[index] = { ...window.events[index], ...eventData, id: isEditing };
             }
             
             window.showNotification('✅ Событие обновлено!', 'success');
         } else {
             // Добавление нового события
+            console.log('Добавление нового события:', eventData);
             const { data, error } = await window.supabaseClient
                 .from('events')
                 .insert([eventData])
                 .select();
             
-            if (error) throw error;
+            if (error) {
+                console.error('Ошибка добавления события:', error);
+                throw error;
+            }
             result = data && data[0];
+            console.log('Событие добавлено в Supabase:', result);
             
             // Добавляем в начало локального массива
             if (result) {
                 window.events.unshift(result);
+                console.log('Событие добавлено в локальный массив');
             }
             
             window.showNotification('✅ Событие добавлено!', 'success');
         }
         
         // Обновляем интерфейс
+        console.log('Обновление интерфейса...');
         renderEvents();
+        updateYearFilter();
         
         // Закрываем модальное окно
         window.closeAllModals();
@@ -187,9 +202,12 @@ async function handleAddEventSubmit(e) {
         // Очищаем форму
         form.reset();
         
+        return false; // Предотвращаем отправку формы
+        
     } catch (error) {
         console.error('❌ Ошибка сохранения события:', error);
         window.showNotification(`Ошибка: ${error.message}`, 'error');
+        return false; // Предотвращаем отправку формы при ошибке
     } finally {
         window.hideLoader();
     }
