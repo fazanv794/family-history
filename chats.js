@@ -21,6 +21,11 @@ async function initChatsPage() {
     setupRealtimeSubscriptions();
 }
 
+console.log('Клик по кнопке Новый чат');
+console.log('overlay найден:', !!overlay);
+console.log('modal найден:', !!modal);
+if (overlay) console.log('overlay display до:', overlay.style.display);
+
 // Загрузка списка чатов
 async function loadConversations() {
     window.showLoader('Загрузка чатов...');
