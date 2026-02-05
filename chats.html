@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
+
     <!-- Шапка -->
     <header id="app-header">
         <div class="header-container container">
@@ -48,23 +49,23 @@
                     </button>
                 </div>
 
-                <div class="chats-layout" style="display: flex; gap: 20px; height: calc(100vh - 200px);">
+                <div class="chats-layout">
                     <!-- Список чатов -->
-                    <div class="chats-list" id="chats-list" style="flex: 0 0 300px; background: white; border-radius: 12px; padding: 20px; overflow-y: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-                        <!-- Чаты будут здесь -->
+                    <div class="chats-list" id="chats-list">
+                        <!-- Чаты будут здесь динамически -->
                     </div>
 
                     <!-- Окно чата -->
-                    <div class="chat-window" id="chat-window" style="flex: 1; background: white; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; box-shadow: 0 2px 10px rgba(0,0,0,0.1); pointer-events: none;">
-                        <div class="chat-header" id="chat-header" style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e2e8f0; pointer-events: auto;">
+                    <div class="chat-window" id="chat-window">
+                        <div class="chat-header" id="chat-header">
                             <h3>Выберите чат</h3>
                         </div>
-                        <div class="chat-messages" id="chat-messages" style="flex: 1; overflow-y: auto; margin-bottom: 20px; pointer-events: auto; background: #f8fafc; border-radius: 8px; padding: 10px;">
+                        <div class="chat-messages" id="chat-messages">
                             <!-- Сообщения будут здесь -->
                         </div>
-                        <form id="chat-form" style="display: flex; gap: 10px; pointer-events: auto;">
-                            <input type="text" id="chat-input" placeholder="Введите сообщение..." style="flex: 1; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px;">
-                            <button type="submit" class="btn" style="padding: 12px 20px;">
+                        <form id="chat-form">
+                            <input type="text" id="chat-input" placeholder="Введите сообщение...">
+                            <button type="submit" class="btn">
                                 <i class="fas fa-paper-plane"></i> Отправить
                             </button>
                         </form>
@@ -74,16 +75,7 @@
         </section>
     </main>
 
-    <!-- Подвал -->
-    <footer>
-        <div class="container">
-            <div class="copyright">
-                <p>© 2025 История моей семьи. Все права защищены.</p>
-            </div>
-        </div>
-    </footer>
-
-    <!-- Оверлей и модальное окно -->
+    <!-- Модальное окно создания чата -->
     <div id="modal-overlay" class="modal-overlay hidden"></div>
 
     <div id="create-chat-modal" class="modal hidden">
@@ -129,7 +121,7 @@
     </div>
 
     <!-- Уведомления и лоадер -->
-    <div id="notification" class="notification">
+    <div id="notification" class="notification hidden">
         <div class="notification-content">
             <span id="notification-text"></span>
             <button class="notification-close">×</button>
@@ -147,165 +139,128 @@
     <script src="app.js"></script>
     <script src="chats.js"></script>
 
+    <!-- Локальный скрипт для модалки и поиска -->
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('💬 Chats.html загружен');
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Chats страница загружена');
 
+            const modalOverlay = document.getElementById('modal-overlay');
             const modal = document.getElementById('create-chat-modal');
-            const overlay = document.getElementById('modal-overlay');
             const openBtn = document.getElementById('create-chat-btn');
 
-            // Изначально скрываем
-            if (modal && overlay) {
-                modal.style.display = 'none';
-                overlay.style.display = 'none';
-                modal.classList.add('hidden');
-                overlay.classList.add('hidden');
-            }
-
             // Открытие модалки
-            if (openBtn && modal && overlay) {
-                openBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    overlay.style.display = 'flex';
-                    overlay.classList.remove('hidden');
-                    modal.style.display = 'block';
+            if (openBtn) {
+                openBtn.addEventListener('click', () => {
+                    modalOverlay.classList.remove('hidden');
                     modal.classList.remove('hidden');
-                    modal.style.opacity = '1';
-                    modal.style.transform = 'translate(-50%, -50%) scale(1)';
-                    document.body.style.overflow = 'hidden';
+                    document.body.classList.add('modal-open');
                     console.log('Модалка открыта');
                 });
             }
 
-            // Функция закрытия
+            // Закрытие модалки
             function closeModal() {
-                if (modal && overlay) {
-                    modal.style.opacity = '0';
-                    modal.style.transform = 'translate(-50%, -50%) scale(0.95)';
-                    overlay.style.opacity = '0';
-                    setTimeout(() => {
-                        modal.style.display = 'none';
-                        overlay.style.display = 'none';
-                        modal.classList.add('hidden');
-                        overlay.classList.add('hidden');
-                        document.body.style.overflow = 'auto';
-                    }, 350);
-                }
+                modal.classList.add('hidden');
+                modalOverlay.classList.add('hidden');
+                document.body.classList.remove('modal-open');
+                console.log('Модалка закрыта');
             }
 
-            // Закрытие по кнопкам
-            document.querySelectorAll('.modal-close, .cancel-btn').forEach(btn => {
-                btn.addEventListener('click', closeModal);
+            // Кнопка × и Отмена
+            document.querySelectorAll('.modal-close, .cancel-btn').forEach(el => {
+                el.addEventListener('click', closeModal);
             });
 
-            // Закрытие по клику на оверлей
-            if (overlay) {
-                overlay.addEventListener('click', e => {
-                    if (e.target === overlay) closeModal();
-                });
-            }
+            // Клик по оверлею вне модалки
+            modalOverlay.addEventListener('click', e => {
+                if (e.target === modalOverlay) {
+                    closeModal();
+                }
+            });
 
-            // ────────────────────────────────────────────────
-            //               ПОИСК ПОЛЬЗОВАТЕЛЕЙ
-            // ────────────────────────────────────────────────
-
-            const userSearch = document.getElementById('user-search');
-            const searchResults = document.getElementById('user-search-results');
-            const selectedUsersDiv = document.getElementById('selected-users');
+            // Показ/скрытие поля названия группы
             const chatType = document.getElementById('chat-type');
             const groupNameGroup = document.getElementById('group-name-group');
 
-            let selectedUserIds = [];
-
-            // Показ/скрытие названия группы
             if (chatType && groupNameGroup) {
                 chatType.addEventListener('change', () => {
                     groupNameGroup.classList.toggle('hidden', chatType.value !== 'group');
                 });
             }
 
-            // Поиск пользователей
-            if (userSearch && searchResults) {
-                let timeout;
-                userSearch.addEventListener('input', e => {
-                    clearTimeout(timeout);
-                    const q = e.target.value.trim();
+            // Поиск пользователей (упрощённый рабочий вариант)
+            const userSearch = document.getElementById('user-search');
+            const searchResults = document.getElementById('user-search-results');
+            const selectedUsersDiv = document.getElementById('selected-users');
 
-                    timeout = setTimeout(async () => {
-                        if (q.length < 2) {
-                            searchResults.innerHTML = '<div class="search-hint">Введите минимум 2 символа</div>';
+            let selectedIds = [];
+
+            if (userSearch && searchResults) {
+                userSearch.addEventListener('input', async (e) => {
+                    const q = e.target.value.trim();
+                    if (q.length < 2) {
+                        searchResults.innerHTML = '<div class="search-hint">Введите минимум 2 символа</div>';
+                        return;
+                    }
+
+                    searchResults.innerHTML = '<div class="search-loading">Поиск...</div>';
+
+                    try {
+                        const { data, error } = await supabaseClient
+                            .from('profiles')
+                            .select('id, full_name, email')
+                            .ilike('full_name', `%${q}%`)
+                            .limit(8);
+
+                        if (error) throw error;
+
+                        searchResults.innerHTML = '';
+
+                        if (!data?.length) {
+                            searchResults.innerHTML = '<div class="search-hint">Никто не найден</div>';
                             return;
                         }
 
-                        searchResults.innerHTML = '<div class="search-loading">Поиск...</div>';
+                        data.forEach(user => {
+                            if (selectedIds.includes(user.id) || user.id === window.currentUser?.id) return;
 
-                        try {
-                            const { data, error } = await supabaseClient
-                                .from('profiles')
-                                .select('id, full_name, email, avatar_url')
-                                .ilike('full_name', `%${q}%`)
-                                .neq('id', window.currentUser?.id || '')
-                                .limit(12);
+                            const item = document.createElement('div');
+                            item.className = 'user-result-item';
+                            item.innerHTML = `
+                                <div class="avatar small">${user.full_name?.[0] || '?'}</div>
+                                <div>
+                                    <div>${user.full_name || 'Без имени'}</div>
+                                    <div style="font-size:0.85rem;color:#718096;">${user.email}</div>
+                                </div>
+                            `;
 
-                            if (error) throw error;
-
-                            searchResults.innerHTML = '';
-
-                            if (!data?.length) {
-                                searchResults.innerHTML = '<div class="search-hint">Никто не найден</div>';
-                                return;
-                            }
-
-                            data.forEach(user => {
-                                if (selectedUserIds.includes(user.id)) return;
-
-                                const div = document.createElement('div');
-                                div.className = 'user-result-item';
-                                div.innerHTML = `
-                                    <div class="avatar small">${user.full_name?.[0] || user.email?.[0] || '?'}</div>
-                                    <div class="user-info">
-                                        <div class="name">${user.full_name || 'Без имени'}</div>
-                                        <div class="email">${user.email}</div>
-                                    </div>
+                            item.addEventListener('click', () => {
+                                selectedIds.push(user.id);
+                                const tag = document.createElement('div');
+                                tag.className = 'selected-user-tag';
+                                tag.innerHTML = `
+                                    ${user.full_name || user.email.split('@')[0]}
+                                    <button class="remove-tag">×</button>
                                 `;
-
-                                div.addEventListener('click', () => {
-                                    addSelectedUser(user);
-                                });
-
-                                searchResults.appendChild(div);
+                                tag.querySelector('.remove-tag').onclick = () => {
+                                    selectedIds = selectedIds.filter(id => id !== user.id);
+                                    tag.remove();
+                                };
+                                selectedUsersDiv.appendChild(tag);
+                                userSearch.value = '';
+                                searchResults.innerHTML = '';
                             });
-                        } catch (err) {
-                            console.error('Ошибка поиска:', err);
-                            searchResults.innerHTML = '<div class="search-error">Ошибка поиска</div>';
-                        }
-                    }, 350);
+
+                            searchResults.appendChild(item);
+                        });
+                    } catch (err) {
+                        console.error(err);
+                        searchResults.innerHTML = '<div class="search-error">Ошибка поиска</div>';
+                    }
                 });
             }
 
-            function addSelectedUser(user) {
-                if (selectedUserIds.includes(user.id)) return;
-                selectedUserIds.push(user.id);
-
-                const tag = document.createElement('div');
-                tag.className = 'selected-user-tag';
-                tag.innerHTML = `
-                    ${user.full_name || user.email.split('@')[0]}
-                    <button type="button" class="remove-tag">×</button>
-                `;
-
-                tag.querySelector('.remove-tag').addEventListener('click', () => {
-                    selectedUserIds = selectedUserIds.filter(id => id !== user.id);
-                    tag.remove();
-                });
-
-                selectedUsersDiv.appendChild(tag);
-                userSearch.value = '';
-                searchResults.innerHTML = '';
-            }
-
-            // Запуск основной логики чатов из chats.js
+            // Запуск основной логики чатов (если есть в chats.js)
             if (typeof initChatsPage === 'function') {
                 initChatsPage();
             }
