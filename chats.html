@@ -189,6 +189,30 @@
 
     <!-- Локальный скрипт -->
     <script>
+          document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔒 Принудительно скрываем все модалки при загрузке');
+            
+            // Скрываем модалку создания чата
+            const modal = document.getElementById('create-chat-modal');
+            if (modal) {
+                modal.style.display = 'none';
+                modal.style.visibility = 'hidden';
+                modal.style.opacity = '0';
+                modal.classList.add('hidden');
+            }
+            
+            // Скрываем оверлей
+            const overlay = document.getElementById('modal-overlay');
+            if (overlay) {
+                overlay.style.display = 'none';
+                overlay.style.visibility = 'hidden';
+                overlay.style.opacity = '0';
+                overlay.classList.add('hidden');
+            }
+            
+            // Разблокируем скролл страницы
+            document.body.style.overflow = 'auto';
+        });
         document.addEventListener('DOMContentLoaded', () => {
             console.log('Chats.html инициализирован');
 
