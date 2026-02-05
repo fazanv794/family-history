@@ -2600,12 +2600,7 @@ select {
     display: none !important;
 }
 
-/* ========== ЭКСТРЕННЫЙ FIX ДЛЯ МОДАЛЬНЫХ ОКОН ========== */
 
-/* Сбрасываем все стили для модальных окон */
-#modal-overlay {
-    all: initial !important;
-}
 
 #modal-overlay {
     position: fixed !important;
@@ -2623,10 +2618,6 @@ select {
 
 #modal-overlay:not(.hidden) {
     display: flex !important;
-}
-
-#modal-overlay > .modal {
-    all: initial !important;
 }
 
 #modal-overlay > .modal {
@@ -2677,25 +2668,3 @@ select {
     border-top: 1px solid #e2e8f0 !important;
 }
 
-/* Специальные стили для чатов */
-#create-chat-modal {
-    display: none !important;
-    opacity: 0 !important;
-    transform: translate(-50%, -50%) scale(0.95) !important;
-    transition: opacity 0.3s ease, transform 0.3s ease !important;
-}
-
-#create-chat-modal:not(.hidden) {
-    display: block !important;
-}
-
-#modal-overlay {
-    display: none !important;
-    opacity: 0 !important;
-    transition: opacity 0.3s ease !important;
-}
-
-#modal-overlay:not(.hidden) {
-    display: flex !important;
-    opacity: 1 !important;
-}
