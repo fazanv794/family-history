@@ -187,72 +187,49 @@
     <script src="app.js"></script>
     <script src="chats.js"></script>
 
-<script>
-    // Исправление проблемы с кликами по пустому месту
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('Исправление кликов по пустому месту...');
-        
-        // 1. Отключаем все клики по пустому месту в чате
-        const chatMessages = document.getElementById('chat-messages');
-        if (chatMessages) {
-            // Удаляем старые обработчики
-            chatMessages.onclick = null;
-            
-            // Добавляем новый безопасный обработчик
-            chatMessages.addEventListener('click', function(e) {
-                // Если кликнули по самому контейнеру (пустое место)
-                if (e.target === this) {
-                    console.log('Клик по пустому месту в чате - игнорируем');
-                    e.stopPropagation();
-                    e.preventDefault();
-                    return false;
-                }
-            });
-        }
-        
-        // 2. Запрещаем открытие модалки при клике в окне чата
-        const chatWindow = document.getElementById('chat-window');
-        if (chatWindow) {
-            chatWindow.addEventListener('click', function(e) {
-                // Разрешаем клики только по элементам с pointer-events: auto
-                const allowedElements = ['chat-header', 'chat-messages', 'chat-form', 'chat-input'];
-                const isAllowed = allowedElements.some(id => 
-                    e.target.id === id || e.target.closest(`#${id}`)
-                );
-                
-                if (!isAllowed && e.target === this) {
-                    console.log('Клик по окну чата - предотвращаем');
-                    e.stopPropagation();
-                    e.preventDefault();
-                    return false;
-                }
-            });
-        }
-        
-        // 3. Включаем pointer-events только для нужных элементов
-        setTimeout(() => {
-            const elements = [
-                '#chat-header',
-                '#chat-messages',
-                '#chat-form',
-                '#chat-input',
-                '#chat-form button'
-            ];
-            
-            elements.forEach(selector => {
-                const el = document.querySelector(selector);
-                if (el) {
-                    el.style.pointerEvents = 'auto';
-                    el.style.cursor = 'default';
-                }
-            });
-            
-            // Для всего окна чата отключаем pointer-events
-            if (chatWindow) {
-                chatWindow.style.pointerEvents = 'none';
+    <!-- Локальный скрипт -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Chats.html инициализирован');
+
+            const openBtn = document.getElementById('create-chat-btn');
+            const modal = document.getElementById('create-chat-modal');
+            const overlay = document.getElementById('modal-overlay');
+
+            if (openBtn) {
+                openBtn.addEventListener('click', () => {
+                    overlay.style.display = 'flex';
+                    modal.style.opacity = '1';
+                    modal.style.transform = 'translate(-50%, -50%) scale(1)';
+                    console.log('Модалка открыта');
+                });
             }
-        }, 100);
-    });
-</script>
+
+            // Закрытие модалки
+            document.querySelectorAll('#create-chat-modal .modal-close, #create-chat-modal .cancel-btn').forEach(el => {
+                el.addEventListener('click', () => {
+                    modal.style.opacity = '0';
+                    overlay.style.display = 'none';
+                });
+            });
+
+            overlay.addEventListener('click', e => {
+                if (e.target === overlay) {
+                    modal.style.opacity = '0';
+                    overlay.style.display = 'none';
+                }
+            });
+
+            // Предотвращаем открытие модалки при клике по пустому месту в чате
+            document.getElementById('chat-messages')?.addEventListener('click', e => {
+                if (e.target === e.currentTarget) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                }
+            });
+
+            if (typeof initChatsPage === 'function') initChatsPage();
+        });
+    </script>
 </body>
 </html>
