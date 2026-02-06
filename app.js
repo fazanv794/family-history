@@ -235,18 +235,18 @@ function setupCommonEventListeners() {
         }
     });
     
-    // Закрытие модальных окон
-    setupModalCloseHandlers();
-    
-    // Формы
+    // Сначала настраиваем формы (чтобы они успели зарегистрироваться)
     setupFormHandlers();
+    
+    // Затем настраиваем закрытие модальных окон
+    setupModalCloseHandlers();
     
     // Сохраняем данные при закрытии страницы
     window.addEventListener('beforeunload', () => {
         saveToLocalStorage();
     });
     
-    // Сохраняем данные при изменении
+    // Сохраняем данные при изменении дерева
     window.addEventListener('treeDataChanged', () => {
         saveToLocalStorage();
     });
@@ -1396,7 +1396,6 @@ function hideLoader() {
     }
 }
 
-
 async function createNewTree(treeName, description = '') {
   try {
     if (!window.currentUser) {
@@ -1560,7 +1559,7 @@ async function handleInvitation(token) {
   }
 }
 
-
+console.log('✅ App.js загружен');
 
 window.updateStats = updateStats;
 window.updateRecentEvents = updateRecentEvents;
@@ -1583,5 +1582,3 @@ window.createNewTree = createNewTree;
 window.loadUserTrees = loadUserTrees;
 window.updateTreeSettings = updateTreeSettings;
 window.handleInvitation = handleInvitation;
-
-console.log('✅ App.js загружен');
