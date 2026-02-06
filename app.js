@@ -1396,7 +1396,172 @@ function hideLoader() {
     }
 }
 
-// Экспортируем функции
+
+async function createNewTree(treeName, description = '') {
+  try {
+    if (!window.currentUser) {
+      throw new Error('Пользователь не авторизован');
+    }
+    
+    window.showLoader('Создание нового дерева...');
+    
+    const treeData = {
+      name: treeName,
+      description: description,
+      user_id: window.currentUser.id,
+      is_public: false,
+      settings: {
+        theme: 'default',
+        show_living: true,
+        show_dates: true,
+        show_photos: true
+      }
+    };
+    
+    const { data, error } = await window.supabaseClient
+      .from('family_trees')
+      .insert([treeData])
+      .select();
+    
+    if (error) throw error;
+    
+    window.showNotification(`✅ Дерево "${treeName}" создано!`, 'success');
+    
+    // Сохраняем в localStorage
+    window.treeData = {
+      id: data[0].id,
+      name: treeName,
+      description: description,
+      created: new Date().toISOString(),
+      relatives: []
+    };
+    
+    localStorage.setItem('family_tree_data', JSON.stringify(window.treeData));
+    
+    return data[0];
+  } catch (error) {
+    console.error('Ошибка создания дерева:', error);
+    window.showNotification('Ошибка создания дерева: ' + error.message, 'error');
+    return null;
+  } finally {
+    window.hideLoader();
+  }
+}
+
+async function loadUserTrees() {
+  try {
+    if (!window.currentUser) {
+      console.log('Пользователь не авторизован');
+      return [];
+    }
+    
+    const { data, error } = await window.supabaseClient
+      .from('family_trees')
+      .select('*')
+      .eq('user_id', window.currentUser.id)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    
+    console.log('Загружено деревьев:', data?.length || 0);
+    return data || [];
+  } catch (error) {
+    console.error('Ошибка загрузки деревьев:', error);
+    return [];
+  }
+}
+
+async function updateTreeSettings(treeId, settings) {
+  try {
+    const { error } = await window.supabaseClient
+      .from('family_trees')
+      .update({ 
+        settings: settings,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', treeId);
+    
+    if (error) throw error;
+    
+    return true;
+  } catch (error) {
+    console.error('Ошибка обновления настроек:', error);
+    return false;
+  }
+}
+
+// Функция для обработки приглашений
+async function handleInvitation(token) {
+  try {
+    window.showLoader('Обработка приглашения...');
+    
+    // Получаем информацию о приглашении
+    const { data: invitation, error: inviteError } = await window.supabaseClient
+      .from('tree_invitations')
+      .select(`
+        *,
+        family_trees (*),
+        inviter:profiles (full_name, email)
+      `)
+      .eq('token', token)
+      .eq('status', 'pending')
+      .single();
+    
+    if (inviteError) throw new Error('Приглашение не найдено');
+    
+    // Проверяем срок действия
+    if (new Date(invitation.expires_at) < new Date()) {
+      throw new Error('Срок действия приглашения истек');
+    }
+    
+    // Показываем диалог принятия приглашения
+    const accept = confirm(
+      `Вы приглашены ${invitation.inviter?.full_name || invitation.inviter?.email || 'неизвестным пользователем'} ` +
+      `в дерево "${invitation.family_trees?.name || 'Неизвестное дерево"}. ` +
+      `Права доступа: ${invitation.permissions === 'viewer' ? 'Просмотр' : invitation.permissions === 'editor' ? 'Редактирование' : 'Администратор'}. ` +
+      `Принять приглашение?`
+    );
+    
+    if (!accept) {
+      window.showNotification('Приглашение отклонено', 'info');
+      return;
+    }
+    
+    // Добавляем доступ
+    const { error: accessError } = await window.supabaseClient
+      .from('tree_access')
+      .insert([{
+        tree_id: invitation.tree_id,
+        user_id: window.currentUser.id,
+        permissions: invitation.permissions,
+        granted_by: invitation.inviter_id
+      }]);
+    
+    if (accessError) throw accessError;
+    
+    // Обновляем статус приглашения
+    await window.supabaseClient
+      .from('tree_invitations')
+      .update({ status: 'accepted' })
+      .eq('id', invitation.id);
+    
+    window.showNotification('✅ Вы успешно присоединились к дереву!', 'success');
+    
+    // Перенаправляем на страницу дерева
+    setTimeout(() => {
+      window.location.href = `tree.html?tree=${invitation.tree_id}`;
+    }, 1500);
+    
+  } catch (error) {
+    console.error('Ошибка обработки приглашения:', error);
+    window.showNotification('Ошибка: ' + error.message, 'error');
+  } finally {
+    window.hideLoader();
+  }
+}
+
+
+
 window.updateStats = updateStats;
 window.updateRecentEvents = updateRecentEvents;
 window.getEventIcon = getEventIcon;
@@ -1414,5 +1579,9 @@ window.loadFromLocalStorage = loadFromLocalStorage;
 window.getMediaTypeFromUrl = getMediaTypeFromUrl;
 window.readFileAsDataURL = readFileAsDataURL;
 window.showSelectedFiles = showSelectedFiles;
+window.createNewTree = createNewTree;
+window.loadUserTrees = loadUserTrees;
+window.updateTreeSettings = updateTreeSettings;
+window.handleInvitation = handleInvitation;
 
 console.log('✅ App.js загружен');

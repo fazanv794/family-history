@@ -267,62 +267,106 @@
     <script src="app.js"></script>
     <script src="tree-builder-simple.js"></script>
     <script src="tree-engine.js"></script>
+    <script src="tree-engine-v2.js"></script>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', async function() {
-            console.log('🌳 Страница дерева загружается...');
-            
-            // Загружаем данные из localStorage
-            if (typeof window.loadFromLocalStorage === 'function') {
-                window.loadFromLocalStorage();
-            }
-            
-            // Проверяем есть ли сохраненное дерево
-            if (window.treeData && window.treeData.relatives && window.treeData.relatives.length > 0) {
-                console.log('✅ Найдено сохраненное дерево:', window.treeData.name);
-                
-                // Создаем интерактивное дерево
-                if (typeof window.createInteractiveTree === 'function') {
-                    window.createInteractiveTree(window.treeData.relatives, 'tree-visualization-container');
-                } else if (typeof window.updateTreeInterface === 'function') {
-                    // Используем старую версию для совместимости
-                    window.updateTreeInterface(window.treeData.relatives, window.treeData.name);
-                }
-                
-                // Обновляем статистику
-                if (typeof window.updateTreeStats === 'function') {
-                    window.updateTreeStats();
-                }
-                
-                // Показываем контролы
-                document.getElementById('tree-controls-panel').style.display = 'flex';
-            }
-            
-            // Обработчики кнопок
-            document.getElementById('start-builder-btn')?.addEventListener('click', function(e) {
-                e.preventDefault();
-                if (typeof window.startTreeBuilder === 'function') {
-                    window.startTreeBuilder('auto');
-                } else {
-                    window.showNotification('Построитель дерева не загружен', 'error');
-                }
-            });
-            
-            document.getElementById('add-person-to-tree-btn')?.addEventListener('click', function(e) {
-                e.preventDefault();
-                window.showModal('add-person-modal');
-            });
-            
-            // Карточки действий
-            const actionCards = document.querySelectorAll('.action-card');
-            actionCards.forEach(card => {
-                card.addEventListener('click', function(e) {
-                    if (this.getAttribute('onclick')) return;
-                });
-            });
-            
-            console.log('✅ Страница дерева инициализирована');
-        });
-    </script>
+<script>
+  document.addEventListener('DOMContentLoaded', async function() {
+    console.log('🌳 Страница дерева загружается...');
+    
+    // Проверяем параметры URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const treeId = urlParams.get('tree');
+    const inviteToken = urlParams.get('invite');
+    
+    // Если есть токен приглашения, обрабатываем его
+    if (inviteToken && window.currentUser) {
+      await window.handleInvitation(inviteToken);
+      return;
+    }
+    
+    // Загружаем данные пользователя
+    await window.loadUserData();
+    
+    // Загружаем список деревьев пользователя
+    const userTrees = await window.loadUserTrees();
+    
+    // Инициализируем Tree Engine V2
+    if (typeof window.FamilyTreeEngine !== 'undefined') {
+      const container = document.getElementById('tree-visualization-container');
+      
+      if (container) {
+        // Если есть конкретное дерево в URL, загружаем его
+        if (treeId) {
+          await window.treeEngine.initialize('tree-visualization-container', treeId);
+        } 
+        // Иначе показываем список деревьев или создаем новое
+        else if (userTrees.length > 0) {
+          await window.treeEngine.initialize('tree-visualization-container', userTrees[0].id);
+        } else {
+          // Показываем сообщение о создании первого дерева
+          container.innerHTML = `
+            <div class="tree-empty-state">
+              <i class="fas fa-tree" style="font-size: 4rem; color: #cbd5e0; margin-bottom: 20px;"></i>
+              <h3>У вас еще нет деревьев</h3>
+              <p style="margin-bottom: 20px;">Создайте свое первое генеалогическое дерево</p>
+              <button class="btn" onclick="createFirstTree()">
+                <i class="fas fa-plus"></i> Создать первое дерево
+              </button>
+            </div>
+          `;
+        }
+      }
+    }
+    
+    // Обновляем UI
+    updateTreeUI();
+    
+    console.log('✅ Страница дерева инициализирована');
+  });
+  
+  function updateTreeUI() {
+    // Обновляем статистику и контролы
+    if (window.treeEngine && window.treeEngine.currentTree) {
+      const controlsPanel = document.getElementById('tree-controls-panel');
+      if (controlsPanel) {
+        controlsPanel.style.display = 'flex';
+        
+        // Добавляем кнопки для нового движка
+        const newControls = `
+          <button class="btn btn-small" onclick="window.treeEngine.showPersonForm()">
+            <i class="fas fa-user-plus"></i> Добавить человека
+          </button>
+          <button class="btn btn-small" onclick="window.treeEngine.inviteToTree()">
+            <i class="fas fa-share-alt"></i> Пригласить
+          </button>
+          <button class="btn btn-small" onclick="window.treeEngine.exportTree('json')">
+            <i class="fas fa-download"></i> Экспорт JSON
+          </button>
+          <button class="btn btn-small" onclick="window.treeEngine.printTree()">
+            <i class="fas fa-print"></i> Печать
+          </button>
+        `;
+        
+        controlsPanel.innerHTML = newControls;
+      }
+      
+      // Обновляем название дерева
+      const treeHeader = document.querySelector('.tree-header h2');
+      if (treeHeader) {
+        treeHeader.textContent = window.treeEngine.currentTree.name;
+      }
+    }
+  }
+  
+  async function createFirstTree() {
+    const treeName = prompt('Введите название для вашего первого дерева:', 'Моя семья');
+    if (!treeName) return;
+    
+    const tree = await window.createNewTree(treeName, 'Мое первое семейное дерево');
+    if (tree) {
+      location.reload();
+    }
+  }
+</script>
 </body>
 </html>
