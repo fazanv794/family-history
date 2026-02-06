@@ -68,28 +68,36 @@ async function loadConversations() {
                 ? conv.name || `Группа (${otherNames.length} чел.)`
                 : otherNames[0] || 'Приватный чат';
             
+            // Создаем элемент чата с классами вместо инлайн-стилей
             const chatItem = document.createElement('div');
             chatItem.className = 'chat-item';
-            chatItem.style = 'padding: 15px; border-bottom: 1px solid #e2e8f0; cursor: pointer; transition: background 0.3s;';
+            chatItem.dataset.convId = conv.id;
+            
+            const avatarColor = conv.is_group ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)';
+            
             chatItem.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <div class="avatar" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="chat-item-content">
+                    <div class="chat-avatar" style="background: ${avatarColor};">
                         ${conv.is_group ? '<i class="fas fa-users"></i>' : chatName.substring(0, 2).toUpperCase()}
                     </div>
-                    <div>
-                        <h4 style="margin: 0; color: #2d3748;">${chatName}</h4>
-                        <p style="margin: 0; color: #718096; font-size: 0.9rem;">
-                            Участников: ${participants.length}
-                        </p>
+                    <div class="chat-info">
+                        <h4 class="chat-name">${chatName}</h4>
+                        <p class="chat-participants">Участников: ${participants.length}</p>
                     </div>
                 </div>
             `;
+            
             chatItem.onclick = () => openConversation(conv.id, chatName);
             chatsList.appendChild(chatItem);
         }
         
         if (convs.length === 0) {
-            chatsList.innerHTML = '<p style="text-align: center; color: #718096; padding: 20px;">Нет чатов. Создайте новый!</p>';
+            chatsList.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-comments" style="font-size: 4rem; color: #cbd5e0; margin-bottom: 20px;"></i>
+                    <p style="text-align: center; color: #718096; padding: 20px;">Нет чатов. Создайте новый!</p>
+                </div>
+            `;
         }
         
     } catch (error) {
@@ -104,6 +112,17 @@ async function loadConversations() {
 async function openConversation(convId, chatName) {
     currentConversationId = convId;
     
+    // Убираем активный класс у всех чатов
+    document.querySelectorAll('.chat-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    
+    // Добавляем активный класс к выбранному чату
+    const activeChat = document.querySelector(`.chat-item[data-conv-id="${convId}"]`);
+    if (activeChat) {
+        activeChat.classList.add('active');
+    }
+    
     const header = document.getElementById('chat-header');
     header.innerHTML = `<h3>${chatName}</h3>`;
     
@@ -113,16 +132,15 @@ async function openConversation(convId, chatName) {
     container.scrollTop = container.scrollHeight;
 }
 
-// Добавление одного сообщения (для realtime и начальной загрузки)
+// Добавление одного сообщения
 async function appendMessage(msg) {
     const container = document.getElementById('chat-messages');
     if (!container) return;
 
     let sender = msg.sender || {};
 
-    // Если sender пустой (часто в realtime) — подгружаем по sender_id
+    // Если sender пустой, подгружаем по sender_id
     if (!sender.full_name && msg.sender_id) {
-        console.log('Realtime: подгружаем отправителя по ID', msg.sender_id);
         const { data: profile } = await window.supabaseClient
             .from('profiles')
             .select('full_name, avatar_url, email')
@@ -136,53 +154,46 @@ async function appendMessage(msg) {
 
     const isOwn = msg.sender_id === window.currentUser.id;
     const senderName = sender.full_name || sender.email?.split('@')[0] || 'Аноним';
+    const senderInitials = senderName.substring(0, 2).toUpperCase();
 
-    const wrapper = document.createElement('div');
-    wrapper.style.cssText = `
-        display: flex;
-        align-items: flex-start;
-        gap: 10px;
-        ${isOwn ? 'flex-direction: row-reverse;' : ''}
-        animation: messageAppear 0.4s ease-out;
-    `;
+    const messageWrapper = document.createElement('div');
+    messageWrapper.className = isOwn ? 'message-wrapper own' : 'message-wrapper other';
 
+    const messageContent = document.createElement('div');
+    messageContent.className = 'message-content';
+
+    // Аватар для чужих сообщений
     if (!isOwn) {
         const avatar = document.createElement('div');
-        avatar.style.cssText = `
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: ${sender.avatar_url ? `url(${sender.avatar_url}) center/cover` : 'linear-gradient(135deg, #667eea, #764ba2)'};
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            font-weight: bold;
-        `;
-        avatar.textContent = !sender.avatar_url ? senderName[0].toUpperCase() : '';
-        wrapper.appendChild(avatar);
+        avatar.className = 'message-avatar';
+        avatar.textContent = senderInitials;
+        messageWrapper.appendChild(avatar);
     }
 
-    const msgDiv = document.createElement('div');
-    msgDiv.style.cssText = `
-        max-width: 70%;
-        padding: 12px 16px;
-        border-radius: 18px;
-        background: ${isOwn ? '#667eea' : '#f1f5f9'};
-        color: ${isOwn ? 'white' : '#2d3748'};
-    `;
-    msgDiv.innerHTML = `
-        ${!isOwn ? `<small style="font-size:0.8rem; opacity:0.8; display:block; margin-bottom:4px;">${senderName}</small>` : ''}
-        <p style="margin:0; word-break:break-word;">${msg.content}</p>
-        <small style="font-size:0.75rem; opacity:0.7; display:block; margin-top:6px; text-align:right;">
-            ${new Date(msg.created_at).toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'})}
-        </small>
-    `;
+    // Имя отправителя для чужих сообщений
+    if (!isOwn) {
+        const senderElement = document.createElement('span');
+        senderElement.className = 'message-sender';
+        senderElement.textContent = senderName;
+        messageContent.appendChild(senderElement);
+    }
 
-    wrapper.appendChild(msgDiv);
-    container.appendChild(wrapper);
+    // Текст сообщения
+    const textElement = document.createElement('p');
+    textElement.className = 'message-text';
+    textElement.textContent = msg.content;
+    messageContent.appendChild(textElement);
+
+    // Время отправки
+    const timeElement = document.createElement('span');
+    timeElement.className = 'message-time';
+    timeElement.textContent = new Date(msg.created_at).toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'});
+    messageContent.appendChild(timeElement);
+
+    messageWrapper.appendChild(messageContent);
+    container.appendChild(messageWrapper);
     
+    // Прокрутка к последнему сообщению
     container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
 }
 
@@ -193,10 +204,7 @@ async function loadMessages(convId) {
     try {
         const { data: messages, error } = await window.supabaseClient
             .from('messages')
-            .select(`
-                *,
-                sender:sender_id (full_name, avatar_url)
-            `)
+            .select(`*, sender:sender_id (full_name, avatar_url)`)
             .eq('conversation_id', convId)
             .order('created_at', { ascending: true });
         
@@ -271,7 +279,7 @@ async function searchUsers(query) {
         return;
     }
 
-    container.innerHTML = '<p style="text-align:center; color:#718096;">Поиск...</p>';
+    container.innerHTML = '<p class="search-loading">Поиск...</p>';
 
     try {
         const { data: users, error } = await window.supabaseClient
@@ -288,28 +296,33 @@ async function searchUsers(query) {
         container.innerHTML = '';
 
         if (!users?.length) {
-            container.innerHTML = '<p style="text-align:center; color:#718096;">Никто не найден</p>';
+            container.innerHTML = '<p class="no-results">Никто не найден</p>';
             return;
         }
 
         users.forEach(user => {
-            const div = document.createElement('div');
-            div.style.cssText = 'padding:10px 12px; border-bottom:1px solid #eee; cursor:pointer; display:flex; align-items:center; gap:12px;';
-            div.innerHTML = `
-                <div style="width:40px;height:40px;background:#667eea;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;">
-                    ${(user.full_name || user.email)[0].toUpperCase()}
+            const userDiv = document.createElement('div');
+            userDiv.className = 'user-search-item';
+            userDiv.dataset.userId = user.id;
+            
+            const initials = (user.full_name || user.email)[0].toUpperCase();
+            
+            userDiv.innerHTML = `
+                <div class="user-avatar">
+                    ${initials}
                 </div>
-                <div>
-                    <div style="font-weight:500;">${user.full_name || user.email.split('@')[0]}</div>
-                    <div style="font-size:0.85rem;color:#718096;">${user.email}</div>
+                <div class="user-info">
+                    <div class="user-name">${user.full_name || user.email.split('@')[0]}</div>
+                    <div class="user-email">${user.email}</div>
                 </div>
             `;
-            div.onclick = () => addSelectedUser(user);
-            container.appendChild(div);
+            
+            userDiv.onclick = () => addSelectedUser(user);
+            container.appendChild(userDiv);
         });
     } catch (err) {
         console.error('[searchUsers] Ошибка:', err);
-        container.innerHTML = '<p style="color:red; text-align:center;">Ошибка поиска</p>';
+        container.innerHTML = '<p class="search-error">Ошибка поиска</p>';
     }
 }
 
@@ -318,16 +331,32 @@ function addSelectedUser(user) {
     const selected = document.getElementById('selected-users');
     if (!selected) return;
 
-    const exists = [...selected.children].some(child => child.dataset.id === user.id);
-    if (exists) return;
+    // Проверяем, не добавлен ли уже пользователь
+    const exists = [...selected.querySelectorAll('.selected-user-tag')]
+        .some(tag => tag.dataset.userId === user.id);
+    
+    if (exists) {
+        window.showNotification('Этот пользователь уже добавлен', 'info');
+        return;
+    }
 
     const tag = document.createElement('div');
-    tag.dataset.id = user.id;
-    tag.style = 'display: flex; align-items: center; gap: 5px; padding: 5px 10px; background: #e2e8f0; border-radius: 20px; font-size: 0.9rem;';
+    tag.className = 'selected-user-tag';
+    tag.dataset.userId = user.id;
+    
+    const displayName = user.full_name || user.email.split('@')[0];
+    
     tag.innerHTML = `
-        ${user.full_name || user.email}
-        <i class="fas fa-times" style="cursor: pointer;" onclick="this.parentElement.remove()"></i>
+        ${displayName}
+        <i class="fas fa-times remove-user"></i>
     `;
+    
+    // Обработчик удаления пользователя
+    tag.querySelector('.remove-user').onclick = (e) => {
+        e.stopPropagation();
+        tag.remove();
+    };
+    
     selected.appendChild(tag);
 }
 
@@ -339,8 +368,11 @@ async function createChatFromForm(e) {
     try {
         const type = document.getElementById('chat-type').value;
         const groupName = document.getElementById('group-name').value.trim();
-        const selectedUsers = [...document.getElementById('selected-users').children]
-            .map(tag => tag.dataset.id);
+        const selectedUsers = [...document.querySelectorAll('.selected-user-tag')]
+            .map(tag => tag.dataset.userId)
+            .filter(id => id);
+        
+        console.log('Выбранные пользователи:', selectedUsers);
         
         if (!type) throw new Error('Выберите тип чата');
         if (type === 'group' && !groupName) throw new Error('Введите название группы');
@@ -371,8 +403,14 @@ async function createChatFromForm(e) {
         if (partError) throw partError;
         
         window.showNotification('✅ Чат создан!', 'success');
-        document.getElementById('modal-overlay').style.display = 'none';
-        document.getElementById('create-chat-modal').style.opacity = '0';
+        window.closeAllModals();
+        
+        // Сбрасываем форму
+        e.target.reset();
+        document.getElementById('selected-users').innerHTML = '';
+        document.getElementById('user-search-results').innerHTML = '';
+        document.getElementById('group-name-group').classList.add('hidden');
+        
         await loadConversations();
         
     } catch (error) {
@@ -386,11 +424,19 @@ async function createChatFromForm(e) {
 // Отправка сообщения
 async function sendMessage(e) {
     e.preventDefault();
-    if (!currentConversationId) return window.showNotification('Выберите чат', 'error');
+    
+    if (!currentConversationId) {
+        window.showNotification('Выберите чат', 'error');
+        return;
+    }
     
     const input = document.getElementById('chat-input');
     const content = input.value.trim();
-    if (!content) return;
+    
+    if (!content) {
+        window.showNotification('Введите сообщение', 'error');
+        return;
+    }
     
     try {
         const { error } = await window.supabaseClient
@@ -398,24 +444,93 @@ async function sendMessage(e) {
             .insert({
                 conversation_id: currentConversationId,
                 sender_id: window.currentUser.id,
-                content
+                content: content
             });
         
         if (error) throw error;
         
         input.value = '';
+        input.focus();
+        
     } catch (error) {
         console.error('Ошибка отправки:', error);
         window.showNotification('Ошибка отправки', 'error');
     }
 }
 
-// Закрытие подписок
-window.addEventListener('beforeunload', () => {
-    realtimeSubscriptions.forEach(sub => sub.unsubscribe());
+// Дополнительные стили (добавьте их в style.css)
+function addChatStyles() {
+    if (!document.getElementById('chat-styles')) {
+        const style = document.createElement('style');
+        style.id = 'chat-styles';
+        style.textContent = `
+            .search-loading,
+            .no-results,
+            .search-error {
+                text-align: center;
+                padding: 20px;
+                color: #718096;
+                font-style: italic;
+            }
+            
+            .search-error {
+                color: #f56565;
+            }
+            
+            .empty-state {
+                text-align: center;
+                padding: 40px 20px;
+                color: #718096;
+            }
+            
+            .chat-item.active {
+                background: #ebf8ff;
+                border-left: 4px solid #4299e1;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+}
+
+// Инициализация при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📄 Страница чатов загружена');
+    
+    // Добавляем стили
+    addChatStyles();
+    
+    // Ждем загрузки основных скриптов
+    setTimeout(() => {
+        if (typeof initChatsPage === 'function') {
+            initChatsPage();
+        } else {
+            console.log('⚠️ Функция initChatsPage не найдена, запускаем базовую инициализацию');
+            
+            // Базовая инициализация
+            if (typeof window.loadUserData === 'function') {
+                window.loadUserData().then(() => {
+                    setupChatEventListeners();
+                    if (window.currentUser) {
+                        window.showNotification('Чаты готовы к использованию', 'info');
+                    }
+                });
+            }
+        }
+    }, 100);
 });
 
-// Экспорт
+// Закрытие подписок при закрытии страницы
+window.addEventListener('beforeunload', () => {
+    realtimeSubscriptions.forEach(sub => {
+        if (sub && typeof sub.unsubscribe === 'function') {
+            sub.unsubscribe();
+        }
+    });
+});
+
+// Экспорт функций для глобального доступа
 window.initChatsPage = initChatsPage;
+window.searchUsers = searchUsers;
+window.addSelectedUser = addSelectedUser;
 
 console.log('✅ Chats.js загружен');
