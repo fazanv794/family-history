@@ -1513,14 +1513,6 @@ window.handleInvitation = async function(token) {
       throw new Error('Срок действия приглашения истек');
     }
     
-    // Показываем диалог принятия приглашения
-    const accept = confirm(
-      `Вы приглашены ${invitation.inviter?.full_name || invitation.inviter?.email || 'неизвестным пользователем'} ` +
-      `в дерево "${invitation.family_trees?.name || 'Неизвестное дерево"}. ` +
-      `Права доступа: ${invitation.permissions === 'viewer' ? 'Просмотр' : invitation.permissions === 'editor' ? 'Редактирование' : 'Администратор'}. ` +
-      `Принять приглашение?`
-    );
-    
     if (!accept) {
       window.showNotification('Приглашение отклонено', 'info');
       return;
