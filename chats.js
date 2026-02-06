@@ -4,93 +4,26 @@ console.log('💬 Chats.js загружается...');
 // Глобальные переменные
 let currentConversationId = null;
 let realtimeSubscriptions = [];
-let currentConversationName = null;
 
 // Инициализация страницы чатов
 async function initChatsPage() {
     console.log('🔄 Инициализация страницы чатов...');
     
-    // Обновляем шапку сразу
-    updateHeader();
-    
-    try {
-        // Быстрая проверка авторизации без загрузчика
-        if (!window.currentUser) {
-            const { data: { user } } = await window.supabaseClient?.auth.getUser();
-            if (!user) {
-                window.showNotification('Пожалуйста, войдите в систему', 'error');
-                setTimeout(() => window.location.href = 'auth.html', 1500);
-                return;
-            }
-            window.currentUser = user;
-        }
-        
-        // Обновляем UI пользователя
-        updateUserUI();
-        
-        setupChatEventListeners();
-        await loadConversations(true); // Быстрая загрузка без лоадера
-        setupRealtimeSubscriptions();
-        
-    } catch (error) {
-        console.error('Ошибка инициализации чатов:', error);
-        // Пробуем использовать демо-режим
-        if (!window.currentUser && typeof window.loadFromLocalStorage === 'function') {
-            window.loadFromLocalStorage();
-            setupChatEventListeners();
-            await loadConversations(true);
-        }
-    }
-}
-
-// Обновление шапки
-function updateHeader() {
-    const usernameElements = document.querySelectorAll('#username');
-    const avatarElements = document.querySelectorAll('#user-avatar');
-    
-    if (usernameElements.length > 0) {
-        const name = window.currentUser?.user_metadata?.name || 
-                    window.currentUser?.email?.split('@')[0] || 
-                    'Гость';
-        usernameElements.forEach(el => {
-            el.textContent = name;
-        });
+    await window.loadUserData();
+    if (!window.currentUser) {
+        window.showNotification('Пожалуйста, войдите в систему', 'error');
+        setTimeout(() => window.location.href = 'auth.html', 1500);
+        return;
     }
     
-    if (avatarElements.length > 0) {
-        avatarElements.forEach(el => {
-            const name = window.currentUser?.user_metadata?.name || 
-                        window.currentUser?.email?.split('@')[0] || 
-                        'Г';
-            el.textContent = name.substring(0, 1).toUpperCase();
-        });
-    }
+    setupChatEventListeners();
+    await loadConversations();
+    setupRealtimeSubscriptions();
 }
 
-// Обновление UI пользователя
-function updateUserUI() {
-    if (!window.currentUser) return;
-    
-    const displayName = window.currentUser.user_metadata?.name || 
-                       window.currentUser.email?.split('@')[0] || 
-                       'Пользователь';
-    
-    document.querySelectorAll('#username').forEach(el => {
-        el.textContent = displayName;
-    });
-    
-    document.querySelectorAll('#user-avatar').forEach(el => {
-        el.textContent = getUserInitials(displayName);
-    });
-}
-
-function getUserInitials(name) {
-    return name.substring(0, 2).toUpperCase();
-}
-
-// Загрузка списка чатов (без лоадера по умолчанию)
-async function loadConversations(showLoader = false) {
-    if (showLoader) window.showLoader('Загрузка чатов...');
+// Загрузка списка чатов
+async function loadConversations() {
+    window.showLoader('Загрузка чатов...');
     
     try {
         const { data: convs, error: convErr } = await window.supabaseClient
@@ -101,161 +34,169 @@ async function loadConversations(showLoader = false) {
         if (convErr) throw convErr;
         
         const chatsList = document.getElementById('chats-list');
-        if (!chatsList) return;
-        
-        // Очищаем только если есть новые данные
         chatsList.innerHTML = '';
         
-        // Если нет чатов, показываем сообщение
-        if (!convs || convs.length === 0) {
-            chatsList.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-comments"></i>
-                    <p>Нет чатов. Создайте новый!</p>
-                </div>
-            `;
-            return;
-        }
-        
-        for (const conv of convs) {
+        for (const conv of convs || []) {
             const { data: participants, error: partErr } = await window.supabaseClient
                 .from('conversation_participants')
                 .select('user_id')
                 .eq('conversation_id', conv.id);
             
-            if (partErr) continue;
+            if (partErr) {
+                console.warn('Ошибка участников', conv.id, partErr);
+                continue;
+            }
             
             const userIds = participants.map(p => p.user_id);
-            const { data: profiles } = await window.supabaseClient
+            const { data: profiles, error: profErr } = await window.supabaseClient
                 .from('profiles')
                 .select('id, full_name, email')
                 .in('id', userIds);
             
-            const profileMap = new Map((profiles || []).map(p => [p.id, p]));
+            if (profErr) {
+                console.warn('Ошибка профилей', profErr);
+                continue;
+            }
+            
+            const profileMap = new Map(profiles.map(p => [p.id, p]));
             
             const otherNames = participants
-                .filter(p => p.user_id !== window.currentUser?.id)
-                .map(p => profileMap.get(p.user_id)?.full_name || 
-                         profileMap.get(p.user_id)?.email?.split('@')[0] || 
-                         'Пользователь');
+                .filter(p => p.user_id !== window.currentUser.id)
+                .map(p => profileMap.get(p.user_id)?.full_name || profileMap.get(p.user_id)?.email?.split('@')[0] || 'Пользователь');
             
             const chatName = conv.is_group 
-                ? conv.name || `Группа (${otherNames.length})`
+                ? conv.name || `Группа (${otherNames.length} чел.)`
                 : otherNames[0] || 'Приватный чат';
             
             const chatItem = document.createElement('div');
             chatItem.className = 'chat-item';
-            if (currentConversationId === conv.id) {
-                chatItem.classList.add('active');
-            }
-            chatItem.dataset.convId = conv.id;
-            
-            const avatarColor = conv.is_group 
-                ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
-                : 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)';
-            
+            chatItem.style = 'padding: 15px; border-bottom: 1px solid #e2e8f0; cursor: pointer; transition: background 0.3s;';
             chatItem.innerHTML = `
-                <div class="chat-item-content">
-                    <div class="chat-avatar" style="background: ${avatarColor};">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div class="avatar" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                         ${conv.is_group ? '<i class="fas fa-users"></i>' : chatName.substring(0, 2).toUpperCase()}
                     </div>
-                    <div class="chat-info">
-                        <h4 class="chat-name">${chatName}</h4>
-                        <p class="chat-participants">Участников: ${participants.length}</p>
+                    <div>
+                        <h4 style="margin: 0; color: #2d3748;">${chatName}</h4>
+                        <p style="margin: 0; color: #718096; font-size: 0.9rem;">
+                            Участников: ${participants.length}
+                        </p>
                     </div>
                 </div>
             `;
-            
             chatItem.onclick = () => openConversation(conv.id, chatName);
             chatsList.appendChild(chatItem);
         }
         
+        if (convs.length === 0) {
+            chatsList.innerHTML = '<p style="text-align: center; color: #718096; padding: 20px;">Нет чатов. Создайте новый!</p>';
+        }
+        
     } catch (error) {
         console.error('Ошибка загрузки чатов:', error);
-        // Показываем демо-чаты для тестирования
-        showDemoChats();
+        window.showNotification('Ошибка загрузки чатов', 'error');
     } finally {
-        if (showLoader) window.hideLoader();
+        window.hideLoader();
     }
 }
 
-// Демо-чаты для тестирования
-function showDemoChats() {
-    const chatsList = document.getElementById('chats-list');
-    if (!chatsList) return;
-    
-    chatsList.innerHTML = '';
-    
-    const demoChats = [
-        { id: 'demo1', name: 'Семейный чат', is_group: true, participants: 5 },
-        { id: 'demo2', name: 'Мама', is_group: false, participants: 2 },
-        { id: 'demo3', name: 'Папа', is_group: false, participants: 2 }
-    ];
-    
-    demoChats.forEach(chat => {
-        const chatItem = document.createElement('div');
-        chatItem.className = 'chat-item';
-        chatItem.dataset.convId = chat.id;
-        
-        const avatarColor = chat.is_group 
-            ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
-            : 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)';
-        
-        chatItem.innerHTML = `
-            <div class="chat-item-content">
-                <div class="chat-avatar" style="background: ${avatarColor};">
-                    ${chat.is_group ? '<i class="fas fa-users"></i>' : chat.name.substring(0, 2).toUpperCase()}
-                </div>
-                <div class="chat-info">
-                    <h4 class="chat-name">${chat.name}</h4>
-                    <p class="chat-participants">Участников: ${chat.participants}</p>
-                </div>
-            </div>
-        `;
-        
-        chatItem.onclick = () => openConversation(chat.id, chat.name);
-        chatsList.appendChild(chatItem);
-    });
-}
-
-// Открытие чата (без лоадера)
+// Открытие чата
 async function openConversation(convId, chatName) {
-    // Убираем активный класс у всех чатов
-    document.querySelectorAll('.chat-item').forEach(item => {
-        item.classList.remove('active');
-    });
-    
-    // Добавляем активный класс к выбранному чату
-    const activeChat = document.querySelector(`.chat-item[data-conv-id="${convId}"]`);
-    if (activeChat) {
-        activeChat.classList.add('active');
-    }
-    
     currentConversationId = convId;
-    currentConversationName = chatName;
     
     const header = document.getElementById('chat-header');
     header.innerHTML = `<h3>${chatName}</h3>`;
     
-    // Показываем "Загрузка..." только в заголовке
-    const messagesContainer = document.getElementById('chat-messages');
-    messagesContainer.innerHTML = '<p class="loading-messages">Загрузка сообщений...</p>';
+    await loadMessages(convId);
     
-    try {
-        await loadMessages(convId);
-    } catch (error) {
-        console.error('Ошибка загрузки сообщений:', error);
-        messagesContainer.innerHTML = '<p class="error-messages">Ошибка загрузки сообщений</p>';
-        showDemoMessages();
-    }
+    const container = document.getElementById('chat-messages');
+    container.scrollTop = container.scrollHeight;
 }
 
-// Загрузка сообщений (без лоадера)
+// Добавление одного сообщения (для realtime и начальной загрузки)
+async function appendMessage(msg) {
+    const container = document.getElementById('chat-messages');
+    if (!container) return;
+
+    let sender = msg.sender || {};
+
+    // Если sender пустой (часто в realtime) — подгружаем по sender_id
+    if (!sender.full_name && msg.sender_id) {
+        console.log('Realtime: подгружаем отправителя по ID', msg.sender_id);
+        const { data: profile } = await window.supabaseClient
+            .from('profiles')
+            .select('full_name, avatar_url, email')
+            .eq('id', msg.sender_id)
+            .single();
+        
+        if (profile) {
+            sender = profile;
+        }
+    }
+
+    const isOwn = msg.sender_id === window.currentUser.id;
+    const senderName = sender.full_name || sender.email?.split('@')[0] || 'Аноним';
+
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = `
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        ${isOwn ? 'flex-direction: row-reverse;' : ''}
+        animation: messageAppear 0.4s ease-out;
+    `;
+
+    if (!isOwn) {
+        const avatar = document.createElement('div');
+        avatar.style.cssText = `
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: ${sender.avatar_url ? `url(${sender.avatar_url}) center/cover` : 'linear-gradient(135deg, #667eea, #764ba2)'};
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+        `;
+        avatar.textContent = !sender.avatar_url ? senderName[0].toUpperCase() : '';
+        wrapper.appendChild(avatar);
+    }
+
+    const msgDiv = document.createElement('div');
+    msgDiv.style.cssText = `
+        max-width: 70%;
+        padding: 12px 16px;
+        border-radius: 18px;
+        background: ${isOwn ? '#667eea' : '#f1f5f9'};
+        color: ${isOwn ? 'white' : '#2d3748'};
+    `;
+    msgDiv.innerHTML = `
+        ${!isOwn ? `<small style="font-size:0.8rem; opacity:0.8; display:block; margin-bottom:4px;">${senderName}</small>` : ''}
+        <p style="margin:0; word-break:break-word;">${msg.content}</p>
+        <small style="font-size:0.75rem; opacity:0.7; display:block; margin-top:6px; text-align:right;">
+            ${new Date(msg.created_at).toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'})}
+        </small>
+    `;
+
+    wrapper.appendChild(msgDiv);
+    container.appendChild(wrapper);
+    
+    container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+}
+
+// Загрузка всех сообщений при открытии чата
 async function loadMessages(convId) {
+    window.showLoader('Загрузка сообщений...');
+    
     try {
         const { data: messages, error } = await window.supabaseClient
             .from('messages')
-            .select(`*, sender:sender_id (full_name, avatar_url)`)
+            .select(`
+                *,
+                sender:sender_id (full_name, avatar_url)
+            `)
             .eq('conversation_id', convId)
             .order('created_at', { ascending: true });
         
@@ -264,249 +205,58 @@ async function loadMessages(convId) {
         const container = document.getElementById('chat-messages');
         container.innerHTML = '';
         
-        if (!messages || messages.length === 0) {
-            container.innerHTML = '<p class="no-messages">Нет сообщений. Будьте первым!</p>';
-            return;
-        }
-        
-        messages.forEach(msg => appendMessage(msg, false));
-        
-        // Прокрутка к последнему сообщению
-        setTimeout(() => {
-            container.scrollTop = container.scrollHeight;
-        }, 100);
+        messages.forEach(msg => appendMessage(msg));
         
     } catch (error) {
-        throw error;
+        console.error('Ошибка загрузки сообщений:', error);
+        window.showNotification('Ошибка загрузки сообщений', 'error');
+    } finally {
+        window.hideLoader();
     }
-}
-
-// Добавление одного сообщения
-async function appendMessage(msg, scrollToBottom = true) {
-    const container = document.getElementById('chat-messages');
-    if (!container) return;
-
-    const isOwn = msg.sender_id === window.currentUser?.id;
-    
-    // Если контейнер показывает "нет сообщений" или загрузку, очищаем его
-    if (container.innerHTML.includes('no-messages') || 
-        container.innerHTML.includes('loading-messages') ||
-        container.innerHTML.includes('error-messages')) {
-        container.innerHTML = '';
-    }
-
-    let senderName = 'Аноним';
-    let senderInitials = 'А';
-    
-    if (msg.sender && msg.sender.full_name) {
-        senderName = msg.sender.full_name;
-        senderInitials = senderName.substring(0, 2).toUpperCase();
-    } else if (msg.sender_id) {
-        // Пробуем получить данные отправителя
-        try {
-            const { data: profile } = await window.supabaseClient
-                .from('profiles')
-                .select('full_name')
-                .eq('id', msg.sender_id)
-                .single();
-            
-            if (profile) {
-                senderName = profile.full_name;
-                senderInitials = senderName.substring(0, 2).toUpperCase();
-            }
-        } catch (error) {
-            console.log('Не удалось получить данные отправителя:', error);
-        }
-    }
-
-    const messageWrapper = document.createElement('div');
-    messageWrapper.className = isOwn ? 'message-wrapper own' : 'message-wrapper other';
-
-    const messageContent = document.createElement('div');
-    messageContent.className = 'message-content';
-
-    // Аватар для чужих сообщений
-    if (!isOwn) {
-        const avatar = document.createElement('div');
-        avatar.className = 'message-avatar';
-        avatar.textContent = senderInitials;
-        messageWrapper.appendChild(avatar);
-        
-        // Имя отправителя для чужих сообщений
-        const senderElement = document.createElement('span');
-        senderElement.className = 'message-sender';
-        senderElement.textContent = senderName;
-        messageContent.appendChild(senderElement);
-    }
-
-    // Текст сообщения
-    const textElement = document.createElement('p');
-    textElement.className = 'message-text';
-    textElement.textContent = msg.content;
-    messageContent.appendChild(textElement);
-
-    // Время отправки
-    const timeElement = document.createElement('span');
-    timeElement.className = 'message-time';
-    timeElement.textContent = new Date(msg.created_at || new Date()).toLocaleTimeString('ru-RU', {
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-    messageContent.appendChild(timeElement);
-
-    messageWrapper.appendChild(messageContent);
-    container.appendChild(messageWrapper);
-    
-    // Прокрутка к последнему сообщению
-    if (scrollToBottom) {
-        setTimeout(() => {
-            container.scrollTop = container.scrollHeight;
-        }, 50);
-    }
-}
-
-// Демо-сообщения для тестирования
-function showDemoMessages() {
-    const container = document.getElementById('chat-messages');
-    if (!container) return;
-    
-    container.innerHTML = '';
-    
-    const demoMessages = [
-        { content: 'Привет! Как дела?', isOwn: false, time: '10:30' },
-        { content: 'Привет! Всё отлично, спасибо!', isOwn: true, time: '10:32' },
-        { content: 'Что нового?', isOwn: false, time: '10:35' },
-        { content: 'Создал наше семейное дерево!', isOwn: true, time: '10:40' }
-    ];
-    
-    demoMessages.forEach(msg => {
-        const messageWrapper = document.createElement('div');
-        messageWrapper.className = msg.isOwn ? 'message-wrapper own' : 'message-wrapper other';
-
-        const messageContent = document.createElement('div');
-        messageContent.className = 'message-content';
-
-        if (!msg.isOwn) {
-            const avatar = document.createElement('div');
-            avatar.className = 'message-avatar';
-            avatar.textContent = 'Д';
-            messageWrapper.appendChild(avatar);
-            
-            const senderElement = document.createElement('span');
-            senderElement.className = 'message-sender';
-            senderElement.textContent = 'Демо Пользователь';
-            messageContent.appendChild(senderElement);
-        }
-
-        const textElement = document.createElement('p');
-        textElement.className = 'message-text';
-        textElement.textContent = msg.content;
-        messageContent.appendChild(textElement);
-
-        const timeElement = document.createElement('span');
-        timeElement.className = 'message-time';
-        timeElement.textContent = msg.time;
-        messageContent.appendChild(timeElement);
-
-        messageWrapper.appendChild(messageContent);
-        container.appendChild(messageWrapper);
-    });
-    
-    // Прокрутка к последнему сообщению
-    setTimeout(() => {
-        container.scrollTop = container.scrollHeight;
-    }, 100);
 }
 
 // Realtime подписки
 function setupRealtimeSubscriptions() {
-    try {
-        // Новые сообщения
-        const messagesChannel = window.supabaseClient
-            .channel('chat-messages')
-            .on('postgres_changes', {
-                event: 'INSERT',
-                schema: 'public',
-                table: 'messages'
-            }, (payload) => {
-                console.log('Realtime: новое сообщение', payload.new);
-                if (payload.new.conversation_id === currentConversationId) {
-                    appendMessage(payload.new);
-                }
-            })
-            .subscribe();
-        
-        realtimeSubscriptions.push(messagesChannel);
-        
-        // Новые чаты
-        const conversationsChannel = window.supabaseClient
-            .channel('chat-conversations')
-            .on('postgres_changes', {
-                event: 'INSERT',
-                schema: 'public',
-                table: 'conversations'
-            }, () => {
-                console.log('Realtime: новый чат');
-                loadConversations();
-            })
-            .subscribe();
-        
-        realtimeSubscriptions.push(conversationsChannel);
-        
-    } catch (error) {
-        console.error('Ошибка настройки realtime:', error);
-    }
+    // Новые чаты
+    window.supabaseClient
+        .channel('conversations')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations' }, () => {
+            console.log('Realtime: обновление списка чатов');
+            loadConversations();
+        })
+        .subscribe();
+
+    // Новые сообщения
+    window.supabaseClient
+        .channel('messages')
+        .on('postgres_changes', {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'messages'
+        }, (payload) => {
+            console.log('Realtime: новое сообщение', payload.new);
+            if (payload.new.conversation_id === currentConversationId) {
+                appendMessage(payload.new);
+            }
+        })
+        .subscribe();
 }
 
 // Обработчики событий
 function setupChatEventListeners() {
-    // Форма отправки сообщений
-    const chatForm = document.getElementById('chat-form');
-    if (chatForm) {
-        chatForm.addEventListener('submit', sendMessage);
-    }
+    document.getElementById('chat-form')?.addEventListener('submit', sendMessage);
+    document.getElementById('create-chat-form')?.addEventListener('submit', createChatFromForm);
     
-    // Форма создания чата
-    const createChatForm = document.getElementById('create-chat-form');
-    if (createChatForm) {
-        createChatForm.addEventListener('submit', createChatFromForm);
-    }
-    
-    // Изменение типа чата
-    const chatTypeSelect = document.getElementById('chat-type');
-    if (chatTypeSelect) {
-        chatTypeSelect.addEventListener('change', (e) => {
-            const groupGroup = document.getElementById('group-name-group');
-            if (e.target.value === 'group') {
-                groupGroup.classList.remove('hidden');
-                document.getElementById('group-name').required = true;
-            } else {
-                groupGroup.classList.add('hidden');
-                document.getElementById('group-name').required = false;
-            }
-        });
-    }
-    
-    // Поиск пользователей
-    const userSearch = document.getElementById('user-search');
-    if (userSearch) {
-        let searchTimeout;
-        userSearch.addEventListener('input', (e) => {
-            clearTimeout(searchTimeout);
-            const query = e.target.value.trim();
-            if (query.length >= 2) {
-                searchTimeout = setTimeout(() => searchUsers(query), 300);
-            } else {
-                document.getElementById('user-search-results').innerHTML = '';
-            }
-        });
-    }
-    
-    // Кнопка выхода
-    const logoutBtn = document.getElementById('logout-btn');
-    if (logoutBtn && window.handleLogout) {
-        logoutBtn.addEventListener('click', window.handleLogout);
-    }
+    document.getElementById('chat-type')?.addEventListener('change', (e) => {
+        const groupGroup = document.getElementById('group-name-group');
+        if (e.target.value === 'group') {
+            groupGroup.classList.remove('hidden');
+            document.getElementById('group-name').required = true;
+        } else {
+            groupGroup.classList.add('hidden');
+            document.getElementById('group-name').required = false;
+        }
+    });
 }
 
 // Поиск пользователей
@@ -521,49 +271,45 @@ async function searchUsers(query) {
         return;
     }
 
-    container.innerHTML = '<p class="search-loading">Поиск...</p>';
+    container.innerHTML = '<p style="text-align:center; color:#718096;">Поиск...</p>';
 
     try {
         const { data: users, error } = await window.supabaseClient
             .from('profiles')
-            .select('id, full_name, email')
+            .select('id, full_name, email, avatar_url')
             .or(`full_name.ilike.%${query}%,email.ilike.%${query}%`)
             .neq('id', window.currentUser?.id || '')
             .limit(8);
+
+        console.log('[searchUsers] Ответ:', users, error);
 
         if (error) throw error;
 
         container.innerHTML = '';
 
         if (!users?.length) {
-            container.innerHTML = '<p class="no-results">Никто не найден</p>';
+            container.innerHTML = '<p style="text-align:center; color:#718096;">Никто не найден</p>';
             return;
         }
 
         users.forEach(user => {
-            const userDiv = document.createElement('div');
-            userDiv.className = 'user-search-item';
-            userDiv.dataset.userId = user.id;
-            
-            const displayName = user.full_name || user.email.split('@')[0];
-            const initials = displayName.substring(0, 2).toUpperCase();
-            
-            userDiv.innerHTML = `
-                <div class="user-avatar">
-                    ${initials}
+            const div = document.createElement('div');
+            div.style.cssText = 'padding:10px 12px; border-bottom:1px solid #eee; cursor:pointer; display:flex; align-items:center; gap:12px;';
+            div.innerHTML = `
+                <div style="width:40px;height:40px;background:#667eea;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;">
+                    ${(user.full_name || user.email)[0].toUpperCase()}
                 </div>
-                <div class="user-info">
-                    <div class="user-name">${displayName}</div>
-                    <div class="user-email">${user.email}</div>
+                <div>
+                    <div style="font-weight:500;">${user.full_name || user.email.split('@')[0]}</div>
+                    <div style="font-size:0.85rem;color:#718096;">${user.email}</div>
                 </div>
             `;
-            
-            userDiv.onclick = () => addSelectedUser(user);
-            container.appendChild(userDiv);
+            div.onclick = () => addSelectedUser(user);
+            container.appendChild(div);
         });
     } catch (err) {
         console.error('[searchUsers] Ошибка:', err);
-        container.innerHTML = '<p class="search-error">Ошибка поиска</p>';
+        container.innerHTML = '<p style="color:red; text-align:center;">Ошибка поиска</p>';
     }
 }
 
@@ -572,30 +318,16 @@ function addSelectedUser(user) {
     const selected = document.getElementById('selected-users');
     if (!selected) return;
 
-    const exists = [...selected.querySelectorAll('.selected-user-tag')]
-        .some(tag => tag.dataset.userId === user.id);
-    
-    if (exists) {
-        window.showNotification('Этот пользователь уже добавлен', 'info');
-        return;
-    }
+    const exists = [...selected.children].some(child => child.dataset.id === user.id);
+    if (exists) return;
 
     const tag = document.createElement('div');
-    tag.className = 'selected-user-tag';
-    tag.dataset.userId = user.id;
-    
-    const displayName = user.full_name || user.email.split('@')[0];
-    
+    tag.dataset.id = user.id;
+    tag.style = 'display: flex; align-items: center; gap: 5px; padding: 5px 10px; background: #e2e8f0; border-radius: 20px; font-size: 0.9rem;';
     tag.innerHTML = `
-        ${displayName}
-        <i class="fas fa-times remove-user"></i>
+        ${user.full_name || user.email}
+        <i class="fas fa-times" style="cursor: pointer;" onclick="this.parentElement.remove()"></i>
     `;
-    
-    tag.querySelector('.remove-user').onclick = (e) => {
-        e.stopPropagation();
-        tag.remove();
-    };
-    
     selected.appendChild(tag);
 }
 
@@ -607,9 +339,8 @@ async function createChatFromForm(e) {
     try {
         const type = document.getElementById('chat-type').value;
         const groupName = document.getElementById('group-name').value.trim();
-        const selectedUsers = [...document.querySelectorAll('.selected-user-tag')]
-            .map(tag => tag.dataset.userId)
-            .filter(id => id);
+        const selectedUsers = [...document.getElementById('selected-users').children]
+            .map(tag => tag.dataset.id);
         
         if (!type) throw new Error('Выберите тип чата');
         if (type === 'group' && !groupName) throw new Error('Введите название группы');
@@ -640,22 +371,9 @@ async function createChatFromForm(e) {
         if (partError) throw partError;
         
         window.showNotification('✅ Чат создан!', 'success');
-        window.closeAllModals();
-        
-        // Сбрасываем форму
-        e.target.reset();
-        document.getElementById('selected-users').innerHTML = '';
-        document.getElementById('user-search-results').innerHTML = '';
-        document.getElementById('group-name-group').classList.add('hidden');
-        
-        // Обновляем список чатов
+        document.getElementById('modal-overlay').style.display = 'none';
+        document.getElementById('create-chat-modal').style.opacity = '0';
         await loadConversations();
-        
-        // Открываем созданный чат
-        setTimeout(() => {
-            const chatName = type === 'group' ? groupName : 'Новый чат';
-            openConversation(conv.id, chatName);
-        }, 500);
         
     } catch (error) {
         console.error('Ошибка создания чата:', error);
@@ -665,215 +383,39 @@ async function createChatFromForm(e) {
     }
 }
 
-// Отправка сообщения (С ИСПРАВЛЕНИЕМ ДЛЯ МГНОВЕННОГО ОТОБРАЖЕНИЯ)
+// Отправка сообщения
 async function sendMessage(e) {
     e.preventDefault();
-    
-    if (!currentConversationId) {
-        window.showNotification('Выберите чат', 'error');
-        return;
-    }
+    if (!currentConversationId) return window.showNotification('Выберите чат', 'error');
     
     const input = document.getElementById('chat-input');
     const content = input.value.trim();
-    
-    if (!content) {
-        window.showNotification('Введите сообщение', 'error');
-        return;
-    }
-    
-    // Создаем временное сообщение для мгновенного отображения
-    const tempMessage = {
-        id: 'temp-' + Date.now(),
-        content: content,
-        sender_id: window.currentUser?.id,
-        conversation_id: currentConversationId,
-        created_at: new Date().toISOString(),
-        sender: {
-            full_name: window.currentUser?.user_metadata?.name || window.currentUser?.email?.split('@')[0]
-        }
-    };
-    
-    // Немедленно показываем сообщение
-    appendMessage(tempMessage);
-    
-    // Очищаем поле ввода
-    input.value = '';
-    input.focus();
+    if (!content) return;
     
     try {
-        // Отправляем на сервер
-        const { data, error } = await window.supabaseClient
+        const { error } = await window.supabaseClient
             .from('messages')
             .insert({
                 conversation_id: currentConversationId,
                 sender_id: window.currentUser.id,
-                content: content
-            })
-            .select(`*, sender:sender_id (full_name, avatar_url)`)
-            .single();
+                content
+            });
         
         if (error) throw error;
         
-        // Удаляем временное сообщение и добавляем настоящее
-        const tempMsgElement = document.querySelector(`[data-temp-id="${tempMessage.id}"]`);
-        if (tempMsgElement) {
-            tempMsgElement.remove();
-        }
-        
-        // Добавляем сообщение с сервера (если realtime не сработало)
-        setTimeout(() => {
-            const existingMsg = document.querySelector(`[data-message-id="${data.id}"]`);
-            if (!existingMsg) {
-                appendMessage(data);
-            }
-        }, 1000);
-        
+        input.value = '';
     } catch (error) {
         console.error('Ошибка отправки:', error);
-        
-        // Показываем ошибку для временного сообщения
-        const tempMsgElement = document.querySelector(`[data-temp-id="${tempMessage.id}"]`);
-        if (tempMsgElement) {
-            tempMsgElement.classList.add('error');
-            const errorSpan = document.createElement('span');
-            errorSpan.className = 'message-error';
-            errorSpan.textContent = ' (не отправлено)';
-            tempMsgElement.querySelector('.message-text').appendChild(errorSpan);
-        }
-        
-        window.showNotification('Ошибка отправки сообщения', 'error');
+        window.showNotification('Ошибка отправки', 'error');
     }
 }
-
-// Обновляем функцию appendMessage для поддержки временных сообщений
-function appendMessageWithTemp(msg, scrollToBottom = true) {
-    const container = document.getElementById('chat-messages');
-    if (!container) return;
-
-    const isOwn = msg.sender_id === window.currentUser?.id;
-    
-    // Если контейнер показывает "нет сообщений" или загрузку, очищаем его
-    if (container.innerHTML.includes('no-messages') || 
-        container.innerHTML.includes('loading-messages') ||
-        container.innerHTML.includes('error-messages')) {
-        container.innerHTML = '';
-    }
-
-    let senderName = 'Аноним';
-    let senderInitials = 'А';
-    
-    if (msg.sender && msg.sender.full_name) {
-        senderName = msg.sender.full_name;
-        senderInitials = senderName.substring(0, 2).toUpperCase();
-    }
-
-    const messageWrapper = document.createElement('div');
-    messageWrapper.className = isOwn ? 'message-wrapper own' : 'message-wrapper other';
-    if (msg.id && msg.id.startsWith('temp-')) {
-        messageWrapper.dataset.tempId = msg.id;
-    } else if (msg.id) {
-        messageWrapper.dataset.messageId = msg.id;
-    }
-
-    const messageContent = document.createElement('div');
-    messageContent.className = 'message-content';
-
-    // Аватар для чужих сообщений
-    if (!isOwn) {
-        const avatar = document.createElement('div');
-        avatar.className = 'message-avatar';
-        avatar.textContent = senderInitials;
-        messageWrapper.appendChild(avatar);
-        
-        // Имя отправителя для чужих сообщений
-        const senderElement = document.createElement('span');
-        senderElement.className = 'message-sender';
-        senderElement.textContent = senderName;
-        messageContent.appendChild(senderElement);
-    }
-
-    // Текст сообщения
-    const textElement = document.createElement('p');
-    textElement.className = 'message-text';
-    textElement.textContent = msg.content;
-    messageContent.appendChild(textElement);
-
-    // Время отправки
-    const timeElement = document.createElement('span');
-    timeElement.className = 'message-time';
-    timeElement.textContent = new Date(msg.created_at || new Date()).toLocaleTimeString('ru-RU', {
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-    messageContent.appendChild(timeElement);
-
-    messageWrapper.appendChild(messageContent);
-    container.appendChild(messageWrapper);
-    
-    // Прокрутка к последнему сообщению
-    if (scrollToBottom) {
-        setTimeout(() => {
-            container.scrollTop = container.scrollHeight;
-        }, 50);
-    }
-}
-
-// Переопределяем appendMessage
-window.appendMessage = appendMessageWithTemp;
-
-// Инициализация при загрузке страницы
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('📄 Страница чатов загружена');
-    
-    // Фикс для шапки - обновляем сразу
-    updateHeader();
-    
-    // Инициализируем чаты
-    setTimeout(() => {
-        if (typeof initChatsPage === 'function') {
-            initChatsPage();
-        } else {
-            console.log('⚠️ Запуск базовой инициализации');
-            
-            // Проверяем авторизацию
-            if (window.supabaseClient) {
-                window.supabaseClient.auth.getUser().then(({ data: { user } }) => {
-                    if (user) {
-                        window.currentUser = user;
-                        updateHeader();
-                        setupChatEventListeners();
-                        showDemoChats();
-                        showDemoMessages();
-                    }
-                });
-            } else {
-                // Демо-режим
-                window.currentUser = {
-                    email: 'demo@example.com',
-                    user_metadata: { name: 'Демо Пользователь' }
-                };
-                updateHeader();
-                setupChatEventListeners();
-                showDemoChats();
-                showDemoMessages();
-            }
-        }
-    }, 100);
-});
 
 // Закрытие подписок
 window.addEventListener('beforeunload', () => {
-    realtimeSubscriptions.forEach(sub => {
-        if (sub && typeof sub.unsubscribe === 'function') {
-            sub.unsubscribe();
-        }
-    });
+    realtimeSubscriptions.forEach(sub => sub.unsubscribe());
 });
 
-// Экспорт функций
+// Экспорт
 window.initChatsPage = initChatsPage;
-window.searchUsers = searchUsers;
-window.addSelectedUser = addSelectedUser;
 
 console.log('✅ Chats.js загружен');
