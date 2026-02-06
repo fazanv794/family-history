@@ -998,6 +998,7 @@ window.showSelectedFiles = function() {
 }
 
 // Загрузка данных пользователя
+// Загрузка данных пользователя
 window.loadUserData = async function() {
     console.log('📦 Загрузка данных пользователя...');
     
@@ -1493,7 +1494,11 @@ window.updateTreeSettings = async function(treeId, settings) {
 window.handleInvitation = async function(token) {
   try {
     window.showLoader('Обработка приглашения...');
-    
+
+    if (!window.currentUser) {
+      throw new Error('Пользователь не авторизован');
+    }
+
     // Получаем информацию о приглашении
     const { data: invitation, error: inviteError } = await window.supabaseClient
       .from('tree_invitations')
@@ -1505,19 +1510,44 @@ window.handleInvitation = async function(token) {
       .eq('token', token)
       .eq('status', 'pending')
       .single();
-    
-    if (inviteError) throw new Error('Приглашение не найдено');
-    
+
+    if (inviteError || !invitation) {
+      throw new Error('Приглашение не найдено или уже обработано');
+    }
+
     // Проверяем срок действия
     if (new Date(invitation.expires_at) < new Date()) {
-      throw new Error('Срок действия приглашения истек');
+      throw new Error('Срок действия приглашения истёк');
     }
-    
+
+    // Формируем понятное сообщение
+    const inviterName = 
+      invitation.inviter?.full_name || 
+      invitation.inviter?.email?.split('@')[0] || 
+      'неизвестным пользователем';
+
+    const treeName = 
+      invitation.family_trees?.name || 
+      'Неизвестное дерево';
+
+    const permissionsText = 
+      invitation.permissions === 'viewer' ? 'Просмотр' :
+      invitation.permissions === 'editor' ? 'Редактирование' :
+      'Администратор';
+
+    const message = 
+      `Вы приглашены ${inviterName} ` +
+      `в дерево "${treeName}".\n` +
+      `Права доступа: ${permissionsText}.\n\n` +
+      `Принять приглашение?`;
+
+    const accept = confirm(message);
+
     if (!accept) {
       window.showNotification('Приглашение отклонено', 'info');
       return;
     }
-    
+
     // Добавляем доступ
     const { error: accessError } = await window.supabaseClient
       .from('tree_access')
@@ -1525,27 +1555,36 @@ window.handleInvitation = async function(token) {
         tree_id: invitation.tree_id,
         user_id: window.currentUser.id,
         permissions: invitation.permissions,
-        granted_by: invitation.inviter_id
+        granted_by: invitation.inviter_id,
+        created_at: new Date().toISOString()
       }]);
-    
+
     if (accessError) throw accessError;
-    
+
     // Обновляем статус приглашения
-    await window.supabaseClient
+    const { error: updateError } = await window.supabaseClient
       .from('tree_invitations')
-      .update({ status: 'accepted' })
+      .update({ 
+        status: 'accepted',
+        accepted_at: new Date().toISOString()
+      })
       .eq('id', invitation.id);
-    
+
+    if (updateError) throw updateError;
+
     window.showNotification('✅ Вы успешно присоединились к дереву!', 'success');
-    
+
     // Перенаправляем на страницу дерева
     setTimeout(() => {
       window.location.href = `tree.html?tree=${invitation.tree_id}`;
     }, 1500);
-    
+
   } catch (error) {
     console.error('Ошибка обработки приглашения:', error);
-    window.showNotification('Ошибка: ' + error.message, 'error');
+    window.showNotification(
+      'Ошибка: ' + (error.message || 'неизвестная ошибка'), 
+      'error'
+    );
   } finally {
     window.hideLoader();
   }
