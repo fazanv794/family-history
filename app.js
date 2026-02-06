@@ -235,18 +235,18 @@ function setupCommonEventListeners() {
         }
     });
     
-    // Сначала настраиваем формы (чтобы они успели зарегистрироваться)
-    setupFormHandlers();
-    
-    // Затем настраиваем закрытие модальных окон
+    // Закрытие модальных окон
     setupModalCloseHandlers();
+    
+    // Формы
+    setupFormHandlers();
     
     // Сохраняем данные при закрытии страницы
     window.addEventListener('beforeunload', () => {
         saveToLocalStorage();
     });
     
-    // Сохраняем данные при изменении дерева
+    // Сохраняем данные при изменении
     window.addEventListener('treeDataChanged', () => {
         saveToLocalStorage();
     });
@@ -440,7 +440,7 @@ window.closeAllModals = function() {
 };
 
 // Выход из системы
-window.handleLogout = async function() {
+async function handleLogout() {
     console.log('🚪 Выход из системы');
     
     try {
@@ -481,7 +481,7 @@ window.handleLogout = async function() {
 }
 
 // Добавление человека
-window.handleAddPerson = async function(e) {
+async function handleAddPerson(e) {
     console.log('👤 Добавление человека');
     e.preventDefault();
     
@@ -593,7 +593,7 @@ window.handleAddPerson = async function(e) {
 }
 
 // Добавление события
-window.handleAddEvent = async function(e) {
+async function handleAddEvent(e) {
     console.log('📅 Добавление события');
     e.preventDefault();
     
@@ -717,7 +717,7 @@ window.handleAddEvent = async function(e) {
 }
 
 // Загрузка медиа
-window.handleUploadMedia = async function(e) {
+async function handleUploadMedia(e) {
     console.log('📁 Загрузка медиа');
     e.preventDefault();
     
@@ -842,7 +842,7 @@ window.handleUploadMedia = async function(e) {
 }
 
 // Чтение файла как Data URL
-window.readFileAsDataURL = function(file) {
+function readFileAsDataURL(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result);
@@ -852,7 +852,7 @@ window.readFileAsDataURL = function(file) {
 }
 
 // Определение типа медиа по URL
-window.getMediaTypeFromUrl = function(url) {
+function getMediaTypeFromUrl(url) {
     if (!url) return 'link';
     
     const lowerUrl = url.toLowerCase();
@@ -876,7 +876,7 @@ window.getMediaTypeFromUrl = function(url) {
 }
 
 // Приглашение родственника
-window.handleInvite = async function(e) {
+async function handleInvite(e) {
     console.log('📨 Приглашение родственника');
     e.preventDefault();
     
@@ -906,7 +906,7 @@ window.handleInvite = async function(e) {
 }
 
 // Редактирование профиля
-window.handleEditProfile = async function(e) {
+async function handleEditProfile(e) {
     console.log('✏️ Редактирование профиля');
     e.preventDefault();
     
@@ -972,7 +972,7 @@ window.handleEditProfile = async function(e) {
 }
 
 // Показать выбранные файлы
-window.showSelectedFiles = function() {
+function showSelectedFiles() {
     const filesInput = document.getElementById('upload-files');
     const fileList = document.getElementById('file-list');
     const listContainer = document.getElementById('selected-files-list');
@@ -998,8 +998,7 @@ window.showSelectedFiles = function() {
 }
 
 // Загрузка данных пользователя
-// Загрузка данных пользователя
-window.loadUserData = async function() {
+async function loadUserData() {
     console.log('📦 Загрузка данных пользователя...');
     
     try {
@@ -1172,7 +1171,7 @@ window.loadUserData = async function() {
 }
 
 // Функции для обновления статистики (для главной страницы)
-window.updateStats = function() {
+function updateStats() {
     console.log('📊 Обновление статистики');
     
     const peopleCount = window.people?.length || 0;
@@ -1192,7 +1191,7 @@ window.updateStats = function() {
     if (statGenerations) statGenerations.textContent = calculateGenerations();
 }
 
-window.calculateGenerations = function() {
+function calculateGenerations() {
     const treeRelatives = window.treeData?.relatives || [];
     if (treeRelatives.length === 0) {
         const people = window.people || [];
@@ -1221,7 +1220,7 @@ window.calculateGenerations = function() {
     return generations;
 }
 
-window.updateRecentEvents = function() {
+function updateRecentEvents() {
     console.log('📅 Обновление последних событий');
     
     const container = document.getElementById('recent-events-list');
@@ -1287,7 +1286,7 @@ window.updateRecentEvents = function() {
     console.log('✅ События обновлены');
 }
 
-window.getEventIcon = function(eventType) {
+function getEventIcon(eventType) {
     const icons = {
         'birthday': 'fas fa-birthday-cake',
         'wedding': 'fas fa-ring',
@@ -1300,7 +1299,7 @@ window.getEventIcon = function(eventType) {
 }
 
 // Функция уведомлений
-window.showNotification = function(message, type = 'info') {
+function showNotification(message, type = 'info') {
     console.log(`🔔 ${type.toUpperCase()}: ${message}`);
     
     try {
@@ -1352,7 +1351,7 @@ window.showNotification = function(message, type = 'info') {
 }
 
 // Функции загрузчика
-window.showLoader = function(text = 'Загрузка...') {
+function showLoader(text = 'Загрузка...') {
     console.log(`⏳ ${text}`);
     
     try {
@@ -1383,7 +1382,7 @@ window.showLoader = function(text = 'Загрузка...') {
     }
 }
 
-window.hideLoader = function() {
+function hideLoader() {
     try {
         const loader = document.getElementById('loader');
         if (loader) {
@@ -1397,203 +1396,23 @@ window.hideLoader = function() {
     }
 }
 
-window.createNewTree = async function(treeName, description = '') {
-  try {
-    if (!window.currentUser) {
-      throw new Error('Пользователь не авторизован');
-    }
-    
-    window.showLoader('Создание нового дерева...');
-    
-    const treeData = {
-      name: treeName,
-      description: description,
-      user_id: window.currentUser.id,
-      is_public: false,
-      settings: {
-        theme: 'default',
-        show_living: true,
-        show_dates: true,
-        show_photos: true
-      }
-    };
-    
-    const { data, error } = await window.supabaseClient
-      .from('family_trees')
-      .insert([treeData])
-      .select();
-    
-    if (error) throw error;
-    
-    window.showNotification(`✅ Дерево "${treeName}" создано!`, 'success');
-    
-    // Сохраняем в localStorage
-    window.treeData = {
-      id: data[0].id,
-      name: treeName,
-      description: description,
-      created: new Date().toISOString(),
-      relatives: []
-    };
-    
-    localStorage.setItem('family_tree_data', JSON.stringify(window.treeData));
-    
-    return data[0];
-  } catch (error) {
-    console.error('Ошибка создания дерева:', error);
-    window.showNotification('Ошибка создания дерева: ' + error.message, 'error');
-    return null;
-  } finally {
-    window.hideLoader();
-  }
-}
-
-window.loadUserTrees = async function() {
-  try {
-    if (!window.currentUser) {
-      console.log('Пользователь не авторизован');
-      return [];
-    }
-    
-    const { data, error } = await window.supabaseClient
-      .from('family_trees')
-      .select('*')
-      .eq('user_id', window.currentUser.id)
-      .order('created_at', { ascending: false });
-    
-    if (error) throw error;
-    
-    console.log('Загружено деревьев:', data?.length || 0);
-    return data || [];
-  } catch (error) {
-    console.error('Ошибка загрузки деревьев:', error);
-    return [];
-  }
-}
-
-window.updateTreeSettings = async function(treeId, settings) {
-  try {
-    const { error } = await window.supabaseClient
-      .from('family_trees')
-      .update({ 
-        settings: settings,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', treeId);
-    
-    if (error) throw error;
-    
-    return true;
-  } catch (error) {
-    console.error('Ошибка обновления настроек:', error);
-    return false;
-  }
-}
-
-// Функция для обработки приглашений
-window.handleInvitation = async function(token) {
-  try {
-    window.showLoader('Обработка приглашения...');
-
-    if (!window.currentUser) {
-      throw new Error('Пользователь не авторизован');
-    }
-
-    // Получаем информацию о приглашении
-    const { data: invitation, error: inviteError } = await window.supabaseClient
-      .from('tree_invitations')
-      .select(`
-        *,
-        family_trees (*),
-        inviter:profiles (full_name, email)
-      `)
-      .eq('token', token)
-      .eq('status', 'pending')
-      .single();
-
-    if (inviteError || !invitation) {
-      throw new Error('Приглашение не найдено или уже обработано');
-    }
-
-    // Проверяем срок действия
-    if (new Date(invitation.expires_at) < new Date()) {
-      throw new Error('Срок действия приглашения истёк');
-    }
-
-    // Формируем понятное сообщение
-    const inviterName = 
-      invitation.inviter?.full_name || 
-      invitation.inviter?.email?.split('@')[0] || 
-      'неизвестным пользователем';
-
-    const treeName = 
-      invitation.family_trees?.name || 
-      'Неизвестное дерево';
-
-    const permissionsText = 
-      invitation.permissions === 'viewer' ? 'Просмотр' :
-      invitation.permissions === 'editor' ? 'Редактирование' :
-      'Администратор';
-
-    const message = 
-      `Вы приглашены ${inviterName} ` +
-      `в дерево "${treeName}".\n` +
-      `Права доступа: ${permissionsText}.\n\n` +
-      `Принять приглашение?`;
-
-    const accept = confirm(message);
-
-    if (!accept) {
-      window.showNotification('Приглашение отклонено', 'info');
-      return;
-    }
-
-    // Добавляем доступ
-    const { error: accessError } = await window.supabaseClient
-      .from('tree_access')
-      .insert([{
-        tree_id: invitation.tree_id,
-        user_id: window.currentUser.id,
-        permissions: invitation.permissions,
-        granted_by: invitation.inviter_id,
-        created_at: new Date().toISOString()
-      }]);
-
-    if (accessError) throw accessError;
-
-    // Обновляем статус приглашения
-    const { error: updateError } = await window.supabaseClient
-      .from('tree_invitations')
-      .update({ 
-        status: 'accepted',
-        accepted_at: new Date().toISOString()
-      })
-      .eq('id', invitation.id);
-
-    if (updateError) throw updateError;
-
-    window.showNotification('✅ Вы успешно присоединились к дереву!', 'success');
-
-    // Перенаправляем на страницу дерева
-    setTimeout(() => {
-      window.location.href = `tree.html?tree=${invitation.tree_id}`;
-    }, 1500);
-
-  } catch (error) {
-    console.error('Ошибка обработки приглашения:', error);
-    window.showNotification(
-      'Ошибка: ' + (error.message || 'неизвестная ошибка'), 
-      'error'
-    );
-  } finally {
-    window.hideLoader();
-  }
-}
-
+// Экспортируем функции
+window.updateStats = updateStats;
+window.updateRecentEvents = updateRecentEvents;
+window.getEventIcon = getEventIcon;
+window.calculateGenerations = calculateGenerations;
 window.toggleMobileMenu = toggleMobileMenu;
-window.updateUserUI = updateUserUI;
+window.handleLogout = handleLogout;
 window.getUserInitials = getUserInitials;
+window.updateUserUI = updateUserUI;
+window.showNotification = showNotification;
+window.showLoader = showLoader;
+window.hideLoader = hideLoader;
+window.loadUserData = loadUserData;
 window.saveToLocalStorage = saveToLocalStorage;
 window.loadFromLocalStorage = loadFromLocalStorage;
+window.getMediaTypeFromUrl = getMediaTypeFromUrl;
+window.readFileAsDataURL = readFileAsDataURL;
+window.showSelectedFiles = showSelectedFiles;
 
 console.log('✅ App.js загружен');
