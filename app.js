@@ -440,7 +440,7 @@ window.closeAllModals = function() {
 };
 
 // Выход из системы
-async function handleLogout() {
+window.handleLogout = async function() {
     console.log('🚪 Выход из системы');
     
     try {
@@ -481,7 +481,7 @@ async function handleLogout() {
 }
 
 // Добавление человека
-async function handleAddPerson(e) {
+window.handleAddPerson = async function(e) {
     console.log('👤 Добавление человека');
     e.preventDefault();
     
@@ -593,7 +593,7 @@ async function handleAddPerson(e) {
 }
 
 // Добавление события
-async function handleAddEvent(e) {
+window.handleAddEvent = async function(e) {
     console.log('📅 Добавление события');
     e.preventDefault();
     
@@ -717,7 +717,7 @@ async function handleAddEvent(e) {
 }
 
 // Загрузка медиа
-async function handleUploadMedia(e) {
+window.handleUploadMedia = async function(e) {
     console.log('📁 Загрузка медиа');
     e.preventDefault();
     
@@ -842,7 +842,7 @@ async function handleUploadMedia(e) {
 }
 
 // Чтение файла как Data URL
-function readFileAsDataURL(file) {
+window.readFileAsDataURL = function(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result);
@@ -852,7 +852,7 @@ function readFileAsDataURL(file) {
 }
 
 // Определение типа медиа по URL
-function getMediaTypeFromUrl(url) {
+window.getMediaTypeFromUrl = function(url) {
     if (!url) return 'link';
     
     const lowerUrl = url.toLowerCase();
@@ -876,7 +876,7 @@ function getMediaTypeFromUrl(url) {
 }
 
 // Приглашение родственника
-async function handleInvite(e) {
+window.handleInvite = async function(e) {
     console.log('📨 Приглашение родственника');
     e.preventDefault();
     
@@ -906,7 +906,7 @@ async function handleInvite(e) {
 }
 
 // Редактирование профиля
-async function handleEditProfile(e) {
+window.handleEditProfile = async function(e) {
     console.log('✏️ Редактирование профиля');
     e.preventDefault();
     
@@ -972,7 +972,7 @@ async function handleEditProfile(e) {
 }
 
 // Показать выбранные файлы
-function showSelectedFiles() {
+window.showSelectedFiles = function() {
     const filesInput = document.getElementById('upload-files');
     const fileList = document.getElementById('file-list');
     const listContainer = document.getElementById('selected-files-list');
@@ -998,7 +998,7 @@ function showSelectedFiles() {
 }
 
 // Загрузка данных пользователя
-async function loadUserData() {
+window.loadUserData = async function() {
     console.log('📦 Загрузка данных пользователя...');
     
     try {
@@ -1171,7 +1171,7 @@ async function loadUserData() {
 }
 
 // Функции для обновления статистики (для главной страницы)
-function updateStats() {
+window.updateStats = function() {
     console.log('📊 Обновление статистики');
     
     const peopleCount = window.people?.length || 0;
@@ -1191,7 +1191,7 @@ function updateStats() {
     if (statGenerations) statGenerations.textContent = calculateGenerations();
 }
 
-function calculateGenerations() {
+window.calculateGenerations = function() {
     const treeRelatives = window.treeData?.relatives || [];
     if (treeRelatives.length === 0) {
         const people = window.people || [];
@@ -1220,7 +1220,7 @@ function calculateGenerations() {
     return generations;
 }
 
-function updateRecentEvents() {
+window.updateRecentEvents = function() {
     console.log('📅 Обновление последних событий');
     
     const container = document.getElementById('recent-events-list');
@@ -1286,7 +1286,7 @@ function updateRecentEvents() {
     console.log('✅ События обновлены');
 }
 
-function getEventIcon(eventType) {
+window.getEventIcon = function(eventType) {
     const icons = {
         'birthday': 'fas fa-birthday-cake',
         'wedding': 'fas fa-ring',
@@ -1299,7 +1299,7 @@ function getEventIcon(eventType) {
 }
 
 // Функция уведомлений
-function showNotification(message, type = 'info') {
+window.showNotification = function(message, type = 'info') {
     console.log(`🔔 ${type.toUpperCase()}: ${message}`);
     
     try {
@@ -1351,7 +1351,7 @@ function showNotification(message, type = 'info') {
 }
 
 // Функции загрузчика
-function showLoader(text = 'Загрузка...') {
+window.showLoader = function(text = 'Загрузка...') {
     console.log(`⏳ ${text}`);
     
     try {
@@ -1382,7 +1382,7 @@ function showLoader(text = 'Загрузка...') {
     }
 }
 
-function hideLoader() {
+window.hideLoader = function() {
     try {
         const loader = document.getElementById('loader');
         if (loader) {
@@ -1396,7 +1396,7 @@ function hideLoader() {
     }
 }
 
-async function createNewTree(treeName, description = '') {
+window.createNewTree = async function(treeName, description = '') {
   try {
     if (!window.currentUser) {
       throw new Error('Пользователь не авторизован');
@@ -1447,7 +1447,7 @@ async function createNewTree(treeName, description = '') {
   }
 }
 
-async function loadUserTrees() {
+window.loadUserTrees = async function() {
   try {
     if (!window.currentUser) {
       console.log('Пользователь не авторизован');
@@ -1470,7 +1470,7 @@ async function loadUserTrees() {
   }
 }
 
-async function updateTreeSettings(treeId, settings) {
+window.updateTreeSettings = async function(treeId, settings) {
   try {
     const { error } = await window.supabaseClient
       .from('family_trees')
@@ -1490,7 +1490,7 @@ async function updateTreeSettings(treeId, settings) {
 }
 
 // Функция для обработки приглашений
-async function handleInvitation(token) {
+window.handleInvitation = async function(token) {
   try {
     window.showLoader('Обработка приглашения...');
     
@@ -1559,26 +1559,10 @@ async function handleInvitation(token) {
   }
 }
 
-console.log('✅ App.js загружен');
-
-window.updateStats = updateStats;
-window.updateRecentEvents = updateRecentEvents;
-window.getEventIcon = getEventIcon;
-window.calculateGenerations = calculateGenerations;
 window.toggleMobileMenu = toggleMobileMenu;
-window.handleLogout = handleLogout;
-window.getUserInitials = getUserInitials;
 window.updateUserUI = updateUserUI;
-window.showNotification = showNotification;
-window.showLoader = showLoader;
-window.hideLoader = hideLoader;
-window.loadUserData = loadUserData;
+window.getUserInitials = getUserInitials;
 window.saveToLocalStorage = saveToLocalStorage;
 window.loadFromLocalStorage = loadFromLocalStorage;
-window.getMediaTypeFromUrl = getMediaTypeFromUrl;
-window.readFileAsDataURL = readFileAsDataURL;
-window.showSelectedFiles = showSelectedFiles;
-window.createNewTree = createNewTree;
-window.loadUserTrees = loadUserTrees;
-window.updateTreeSettings = updateTreeSettings;
-window.handleInvitation = handleInvitation;
+
+console.log('✅ App.js загружен');
