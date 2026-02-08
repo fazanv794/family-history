@@ -115,7 +115,7 @@ async function createUserProfile() {
     }
 }
 
-// Обновление UI профиля
+
 function updateProfileUI() {
     console.log('🎨 Обновление UI профиля...');
     
@@ -130,12 +130,21 @@ function updateProfileUI() {
     const createdAt = window.currentUser.created_at || 
                      window.currentUser.profile?.created_at || 
                      new Date().toISOString();
-    const fullName = window.currentUser.user_metadata?.name || 
-                    window.currentUser.profile?.full_name || 
+    
+    const birthDate = profileData.birth_date;
+    const location = profileData.location;
+    const phone = profileData.phone;
+    const website = profileData.website;
+    const profileData = window.currentUser.profile || {};
+    const fullName = profileData.full_name || 
+                    window.currentUser.user_metadata?.name || 
+                    window.currentUser.user_metadata?.full_name || 
                     email.split('@')[0];
     
+    const bio = profileData.bio || 'Информация о себе не указана...';
+    
     // Проверяем наличие аватара
-    const avatarUrl = window.currentUser.profile?.avatar_url;
+    const avatarUrl = profileData.avatar_url;
     const avatarElement = document.getElementById('profile-avatar');
     
     // Форматируем дату регистрации
@@ -151,13 +160,19 @@ function updateProfileUI() {
     const infoEmail = document.getElementById('info-email');
     const infoUserId = document.getElementById('info-user-id');
     const infoRegDate = document.getElementById('info-reg-date');
+    const profileBioText = document.getElementById('profile-bio-text');
     const usernameElements = document.querySelectorAll('#username, .user-name');
+    const infoBirthDate = document.getElementById('info-birth-date');
+    const infoLocation = document.getElementById('info-location');
+    const infoPhone = document.getElementById('info-phone');
+    const infoWebsite = document.getElementById('info-website');
     
     if (profileName) profileName.textContent = fullName;
     if (profileEmail) profileEmail.textContent = email;
     if (infoEmail) infoEmail.textContent = email;
     if (infoUserId) infoUserId.textContent = userId.substring(0, 8) + '...';
     if (infoRegDate) infoRegDate.textContent = regDate;
+    if (profileBioText) profileBioText.textContent = bio;
     
     // Обновляем аватар
     if (avatarElement) {
@@ -174,6 +189,25 @@ function updateProfileUI() {
             avatarElement.textContent = initials;
         }
     }
+
+     if (infoBirthDate) {
+        if (birthDate) {
+            const formattedDate = new Date(birthDate).toLocaleDateString('ru-RU');
+            infoBirthDate.textContent = formattedDate;
+        } else {
+            infoBirthDate.textContent = 'Не указана';
+        }
+    }
+    
+    if (infoLocation) infoLocation.textContent = location || 'Не указано';
+    if (infoPhone) infoPhone.textContent = phone || 'Не указан';
+    if (infoWebsite) {
+        if (website) {
+            infoWebsite.innerHTML = `<a href="${website}" target="_blank">${website}</a>`;
+        } else {
+            infoWebsite.textContent = 'Не указан';
+        }
+    }
     
     // Обновляем имя в хедере
     usernameElements.forEach(el => {
@@ -182,7 +216,7 @@ function updateProfileUI() {
         }
     });
     
-    console.log('✅ UI профиля обновлен:', { fullName, email, avatarUrl: !!avatarUrl });
+    console.log('✅ UI профиля обновлен:', { fullName, email, bio, avatarUrl: !!avatarUrl });
 }
 
 // Функция для получения инициалов

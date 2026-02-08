@@ -53,50 +53,72 @@
         </button>
     </div>
     
-    <div class="profile-info">
-        <h3>Информация об аккаунте</h3>
-        <div class="info-grid">
-            <div class="info-item">
-                <i class="fas fa-envelope"></i>
-                <span>Email: <span id="info-email">Загрузка...</span></span>
-            </div>
-            <div class="info-item">
-                <i class="fas fa-user"></i>
-                <span>ID пользователя: <span id="info-user-id">Загрузка...</span></span>
-            </div>
-            <div class="info-item">
-                <i class="fas fa-calendar"></i>
-                <span>Регистрация: <span id="info-reg-date">Загрузка...</span></span>
-            </div>
-            <div class="info-item">
-                <i class="fas fa-tree"></i>
-                <span>Людей в древе: <span id="info-people-count">0</span></span>
-            </div>
-        </div>
-        
-        <!-- Добавим секцию для дерева -->
-        <h3 style="margin-top: 25px;">Мое дерево</h3>
-        <div id="tree-info-section" style="margin-bottom: 20px;">
-            <!-- Информация о дереве будет здесь -->
-        </div>
-        
-        <h3>Настройки</h3>
-        <button class="btn full-width" id="edit-profile-btn">
-            <i class="fas fa-edit"></i> Редактировать профиль
-        </button>
-        <button class="btn btn-secondary full-width" id="invite-btn">
-            <i class="fas fa-user-plus"></i> Пригласить родственника
-        </button>
-        <button class="btn btn-secondary full-width" id="notifications-settings-btn">
-            <i class="fas fa-bell"></i> Настройки уведомлений
-        </button>
-        <button class="btn btn-outline full-width" id="export-data-btn">
-            <i class="fas fa-download"></i> Экспорт данных
-        </button>
-        <button class="btn btn-danger full-width" id="logout-profile-btn">
-            <i class="fas fa-sign-out-alt"></i> Выйти из аккаунта
-        </button>
+<div class="info-grid">
+    <div class="info-item">
+        <i class="fas fa-envelope"></i>
+        <span>Email: <span id="info-email">Загрузка...</span></span>
     </div>
+    <div class="info-item">
+        <i class="fas fa-user"></i>
+        <span>ID пользователя: <span id="info-user-id">Загрузка...</span></span>
+    </div>
+    <div class="info-item">
+        <i class="fas fa-calendar"></i>
+        <span>Регистрация: <span id="info-reg-date">Загрузка...</span></span>
+    </div>
+    <div class="info-item">
+        <i class="fas fa-tree"></i>
+        <span>Людей в древе: <span id="info-people-count">0</span></span>
+    </div>
+    <!-- Дополнительные поля -->
+    <div class="info-item">
+        <i class="fas fa-birthday-cake"></i>
+        <span>Дата рождения: <span id="info-birth-date">Не указана</span></span>
+    </div>
+    <div class="info-item">
+        <i class="fas fa-map-marker-alt"></i>
+        <span>Местоположение: <span id="info-location">Не указано</span></span>
+    </div>
+    <div class="info-item">
+        <i class="fas fa-phone"></i>
+        <span>Телефон: <span id="info-phone">Не указан</span></span>
+    </div>
+    <div class="info-item">
+        <i class="fas fa-globe"></i>
+        <span>Веб-сайт: <span id="info-website">Не указан</span></span>
+    </div>
+</div>
+    
+    <!-- Раздел "О себе" -->
+    <h3 style="margin-top: 25px;">О себе</h3>
+    <div id="profile-bio-section" style="margin-bottom: 20px; padding: 15px; background: #f7fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+        <p id="profile-bio-text" style="margin: 0; color: #4a5568; font-style: italic;">
+            Информация о себе не указана...
+        </p>
+    </div>
+    
+    <!-- Добавим секцию для дерева -->
+    <h3 style="margin-top: 25px;">Мое дерево</h3>
+    <div id="tree-info-section" style="margin-bottom: 20px;">
+        <!-- Информация о дереве будет здесь -->
+    </div>
+    
+    <h3>Настройки</h3>
+    <button class="btn full-width" id="edit-profile-btn">
+        <i class="fas fa-edit"></i> Редактировать профиль
+    </button>
+    <button class="btn btn-secondary full-width" id="invite-btn">
+        <i class="fas fa-user-plus"></i> Пригласить родственника
+    </button>
+    <button class="btn btn-secondary full-width" id="notifications-settings-btn">
+        <i class="fas fa-bell"></i> Настройки уведомлений
+    </button>
+    <button class="btn btn-outline full-width" id="export-data-btn">
+        <i class="fas fa-download"></i> Экспорт данных
+    </button>
+    <button class="btn btn-danger full-width" id="logout-profile-btn">
+        <i class="fas fa-sign-out-alt"></i> Выйти из аккаунта
+    </button>
 </div>
             </div>
         </section>
