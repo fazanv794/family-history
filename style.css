@@ -2558,3 +2558,45 @@ select {
 #chat-messages div[style*="flex-direction: row"] > div {
     border-bottom-left-radius: 4px;
 }
+
+/* Стили для аватара с фото */
+.avatar {
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+}
+
+.avatar.large {
+    width: 150px !important;
+    height: 150px !important;
+    font-size: 3rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: white !important;
+}
+
+/* Стили для превью аватара */
+.avatar-preview {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin: 0 auto 20px;
+    border: 4px solid #667eea;
+}
+
+.avatar-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Адаптивные стили для аватара */
+@media (max-width: 768px) {
+    .avatar.large {
+        width: 120px !important;
+        height: 120px !important;
+        font-size: 2.5rem !important;
+    }
+}

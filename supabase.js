@@ -1,5 +1,3 @@
-// supabase.js - Клиент для работы с Supabase
-
 console.log('🔧 Supabase.js загружается...');
 
 // Базовый клиент Supabase
@@ -67,6 +65,31 @@ function createFallbackClient() {
             updateUser: async (updates) => ({ 
                 data: { user: updates }, 
                 error: null 
+            })
+        },
+        storage: {
+            from: (bucket) => ({
+                upload: async (path, file, options) => {
+                    console.log(`📁 Загрузка в ${bucket}:`, path);
+                    // Для демо-режима возвращаем фейковый URL
+                    return { 
+                        data: { path }, 
+                        error: null 
+                    };
+                },
+                getPublicUrl: (path) => {
+                    console.log(`🔗 Получение URL из ${bucket}:`, path);
+                    // Для демо-режима возвращаем фейковый URL
+                    return { 
+                        data: { 
+                            publicUrl: `https://example.com/${bucket}/${path}`
+                        } 
+                    };
+                },
+                remove: async (paths) => {
+                    console.log(`🗑️ Удаление из ${bucket}:`, paths);
+                    return { data: null, error: null };
+                }
             })
         },
         from: (tableName) => ({
@@ -140,6 +163,55 @@ function createFallbackClient() {
             })
         })
     };
+}
+
+// Функция для загрузки фото профиля
+async function uploadProfilePhoto(file, userId) {
+    console.log(`📸 Загрузка фото профиля для пользователя ${userId}`);
+    
+    try {
+        if (!supabaseClient || !supabaseClient.storage) {
+            console.log('⚠️ Storage не доступен, используем Data URL');
+            return await readFileAsDataURL(file);
+        }
+        
+        // Генерируем уникальное имя файла
+        const fileExt = file.name.split('.').pop();
+        const fileName = `avatar_${userId}_${Date.now()}.${fileExt}`;
+        
+        // Загружаем файл
+        const { data: uploadData, error: uploadError } = await supabaseClient.storage
+            .from('avatars')
+            .upload(fileName, file, {
+                cacheControl: '3600',
+                upsert: true
+            });
+        
+        if (uploadError) throw uploadError;
+        
+        // Получаем публичный URL
+        const { data: urlData } = supabaseClient.storage
+            .from('avatars')
+            .getPublicUrl(fileName);
+        
+        console.log('✅ Фото загружено:', urlData.publicUrl);
+        return urlData.publicUrl;
+        
+    } catch (error) {
+        console.error('❌ Ошибка загрузки фото в Storage:', error);
+        // В случае ошибки используем Data URL
+        return await readFileAsDataURL(file);
+    }
+}
+
+// Функция для чтения файла как Data URL
+function readFileAsDataURL(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
 }
 
 // Функция уведомлений
@@ -240,5 +312,7 @@ window.supabaseClient = supabaseClient;
 window.showNotification = showNotification;
 window.showLoader = showLoader;
 window.hideLoader = hideLoader;
+window.uploadProfilePhoto = uploadProfilePhoto;
+window.readFileAsDataURL = readFileAsDataURL;
 
 console.log('✅ Supabase модуль загружен');
