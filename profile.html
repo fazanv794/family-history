@@ -53,72 +53,50 @@
         </button>
     </div>
     
-<div class="info-grid">
-    <div class="info-item">
-        <i class="fas fa-envelope"></i>
-        <span>Email: <span id="info-email">Загрузка...</span></span>
+    <div class="profile-info">
+        <h3>Информация об аккаунте</h3>
+        <div class="info-grid">
+            <div class="info-item">
+                <i class="fas fa-envelope"></i>
+                <span>Email: <span id="info-email">Загрузка...</span></span>
+            </div>
+            <div class="info-item">
+                <i class="fas fa-user"></i>
+                <span>ID пользователя: <span id="info-user-id">Загрузка...</span></span>
+            </div>
+            <div class="info-item">
+                <i class="fas fa-calendar"></i>
+                <span>Регистрация: <span id="info-reg-date">Загрузка...</span></span>
+            </div>
+            <div class="info-item">
+                <i class="fas fa-tree"></i>
+                <span>Людей в древе: <span id="info-people-count">0</span></span>
+            </div>
+        </div>
+        
+        <!-- Добавим секцию для дерева -->
+        <h3 style="margin-top: 25px;">Мое дерево</h3>
+        <div id="tree-info-section" style="margin-bottom: 20px;">
+            <!-- Информация о дереве будет здесь -->
+        </div>
+        
+        <h3>Настройки</h3>
+        <button class="btn full-width" id="edit-profile-btn">
+            <i class="fas fa-edit"></i> Редактировать профиль
+        </button>
+        <button class="btn btn-secondary full-width" id="invite-btn">
+            <i class="fas fa-user-plus"></i> Пригласить родственника
+        </button>
+        <button class="btn btn-secondary full-width" id="notifications-settings-btn">
+            <i class="fas fa-bell"></i> Настройки уведомлений
+        </button>
+        <button class="btn btn-outline full-width" id="export-data-btn">
+            <i class="fas fa-download"></i> Экспорт данных
+        </button>
+        <button class="btn btn-danger full-width" id="logout-profile-btn">
+            <i class="fas fa-sign-out-alt"></i> Выйти из аккаунта
+        </button>
     </div>
-    <div class="info-item">
-        <i class="fas fa-user"></i>
-        <span>ID пользователя: <span id="info-user-id">Загрузка...</span></span>
-    </div>
-    <div class="info-item">
-        <i class="fas fa-calendar"></i>
-        <span>Регистрация: <span id="info-reg-date">Загрузка...</span></span>
-    </div>
-    <div class="info-item">
-        <i class="fas fa-tree"></i>
-        <span>Людей в древе: <span id="info-people-count">0</span></span>
-    </div>
-    <!-- Дополнительные поля -->
-    <div class="info-item">
-        <i class="fas fa-birthday-cake"></i>
-        <span>Дата рождения: <span id="info-birth-date">Не указана</span></span>
-    </div>
-    <div class="info-item">
-        <i class="fas fa-map-marker-alt"></i>
-        <span>Местоположение: <span id="info-location">Не указано</span></span>
-    </div>
-    <div class="info-item">
-        <i class="fas fa-phone"></i>
-        <span>Телефон: <span id="info-phone">Не указан</span></span>
-    </div>
-    <div class="info-item">
-        <i class="fas fa-globe"></i>
-        <span>Веб-сайт: <span id="info-website">Не указан</span></span>
-    </div>
-</div>
-    
-    <!-- Раздел "О себе" -->
-    <h3 style="margin-top: 25px;">О себе</h3>
-    <div id="profile-bio-section" style="margin-bottom: 20px; padding: 15px; background: #f7fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
-        <p id="profile-bio-text" style="margin: 0; color: #4a5568; font-style: italic;">
-            Информация о себе не указана...
-        </p>
-    </div>
-    
-    <!-- Добавим секцию для дерева -->
-    <h3 style="margin-top: 25px;">Мое дерево</h3>
-    <div id="tree-info-section" style="margin-bottom: 20px;">
-        <!-- Информация о дереве будет здесь -->
-    </div>
-    
-    <h3>Настройки</h3>
-    <button class="btn full-width" id="edit-profile-btn">
-        <i class="fas fa-edit"></i> Редактировать профиль
-    </button>
-    <button class="btn btn-secondary full-width" id="invite-btn">
-        <i class="fas fa-user-plus"></i> Пригласить родственника
-    </button>
-    <button class="btn btn-secondary full-width" id="notifications-settings-btn">
-        <i class="fas fa-bell"></i> Настройки уведомлений
-    </button>
-    <button class="btn btn-outline full-width" id="export-data-btn">
-        <i class="fas fa-download"></i> Экспорт данных
-    </button>
-    <button class="btn btn-danger full-width" id="logout-profile-btn">
-        <i class="fas fa-sign-out-alt"></i> Выйти из аккаунта
-    </button>
 </div>
             </div>
         </section>
@@ -178,60 +156,45 @@
         </div>
     </div>
     
-<!-- Замените форму редактирования профиля на эту: -->
-<form id="edit-profile-form-modal">
-    <div class="form-row">
-        <div class="form-group">
-            <label for="edit-profile-name">Имя *</label>
-            <input type="text" id="edit-profile-name" placeholder="Имя" required>
-        </div>
-        <div class="form-group">
-            <label for="edit-profile-last-name">Фамилия</label>
-            <input type="text" id="edit-profile-last-name" placeholder="Фамилия">
-        </div>
-    </div>
-    
-    <div class="form-group">
-        <label for="edit-profile-email">Email *</label>
-        <input type="email" id="edit-profile-email" placeholder="email@example.com" required>
-    </div>
-    
-    <div class="form-row">
-        <div class="form-group">
-            <label for="edit-profile-birth-date">Дата рождения</label>
-            <input type="date" id="edit-profile-birth-date">
-        </div>
-        <div class="form-group">
-            <label for="edit-profile-location">Местоположение</label>
-            <input type="text" id="edit-profile-location" placeholder="Город, страна">
-        </div>
-    </div>
-    
-    <div class="form-row">
-        <div class="form-group">
-            <label for="edit-profile-phone">Телефон</label>
-            <input type="tel" id="edit-profile-phone" placeholder="+7 (999) 999-99-99">
-        </div>
-        <div class="form-group">
-            <label for="edit-profile-website">Веб-сайт</label>
-            <input type="url" id="edit-profile-website" placeholder="https://example.com">
-        </div>
-    </div>
-    
-    <div class="form-group">
-        <label for="edit-profile-bio">О себе</label>
-        <textarea id="edit-profile-bio" rows="4" placeholder="Расскажите о себе..."></textarea>
-    </div>
-    
-    <div class="modal-footer">
-        <button type="button" class="btn btn-secondary cancel-btn">
-            Отмена
-        </button>
-        <button type="submit" class="btn">
-            Сохранить изменения
-        </button>
-    </div>
-</form>
+    <!-- Модальное окно редактирования профиля -->
+    <div id="edit-profile-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Редактировать профиль</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-profile-form-modal">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="edit-profile-name">Имя *</label>
+                            <input type="text" id="edit-profile-name" placeholder="Имя" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-profile-last-name">Фамилия</label>
+                            <input type="text" id="edit-profile-last-name" placeholder="Фамилия">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-profile-email">Email *</label>
+                        <input type="email" id="edit-profile-email" placeholder="email@example.com" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-profile-bio">О себе</label>
+                        <textarea id="edit-profile-bio" rows="4" placeholder="Расскажите о себе..."></textarea>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary cancel-btn">
+                            Отмена
+                        </button>
+                        <button type="submit" class="btn">
+                            Сохранить изменения
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -258,6 +221,7 @@
     <script src="app.js"></script>
     <script src="profile.js"></script>
     
+<!-- В конце profile.html, перед закрывающим тегом body -->
 <script>
     // Инициализация профиля
     document.addEventListener('DOMContentLoaded', async () => {
@@ -273,39 +237,30 @@
             window.initProfilePage();
         } else {
             // Запасной вариант
-            console.log('⚠️ initProfilePage не найдена, используем запасной вариант');
             setTimeout(() => {
                 if (window.currentUser) {
-                    console.log('👤 Обновляем UI профиля (запасной вариант)');
-                    
-                    // Простая функция для обновления UI
-                    function updateProfileUI() {
-                        if (!window.currentUser) return;
-                        
-                        const name = window.currentUser.user_metadata?.name || 
-                                    window.currentUser.email?.split('@')[0] || 
-                                    'Пользователь';
-                        const email = window.currentUser.email || 'Не указан';
-                        const initials = window.getUserInitials ? window.getUserInitials(name) : name.substring(0, 2);
-                        
-                        // Обновляем элементы
-                        const profileName = document.getElementById('profile-name');
-                        const profileEmail = document.getElementById('profile-email');
-                        const profileAvatar = document.getElementById('profile-avatar');
-                        const infoEmail = document.getElementById('info-email');
-                        const infoUserId = document.getElementById('info-user-id');
-                        
-                        if (profileName) profileName.textContent = name;
-                        if (profileEmail) profileEmail.textContent = email;
-                        if (profileAvatar) profileAvatar.textContent = initials;
-                        if (infoEmail) infoEmail.textContent = email;
-                        if (infoUserId) infoUserId.textContent = 
-                            window.currentUser.id ? window.currentUser.id.substring(0, 8) + '...' : 'Не указан';
-                    }
-                    
                     updateProfileUI();
                 }
             }, 1000);
+        }
+        
+        // Функция для обновления UI (запасная)
+        function updateProfileUI() {
+            if (!window.currentUser) return;
+            
+            const name = window.currentUser.user_metadata?.name || 
+                        window.currentUser.email?.split('@')[0] || 
+                        'Пользователь';
+            const email = window.currentUser.email || 'Не указан';
+            const initials = window.getUserInitials ? window.getUserInitials(name) : name.substring(0, 2);
+            
+            // Обновляем элементы
+            document.getElementById('profile-name')?.textContent = name;
+            document.getElementById('profile-email')?.textContent = email;
+            document.getElementById('profile-avatar')?.textContent = initials;
+            document.getElementById('info-email')?.textContent = email;
+            document.getElementById('info-user-id')?.textContent = 
+                window.currentUser.id ? window.currentUser.id.substring(0, 8) + '...' : 'Не указан';
         }
     });
 </script>
