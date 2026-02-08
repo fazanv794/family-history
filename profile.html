@@ -178,45 +178,60 @@
         </div>
     </div>
     
-    <!-- Модальное окно редактирования профиля -->
-    <div id="edit-profile-modal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Редактировать профиль</h3>
-                <button class="modal-close">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="edit-profile-form-modal">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="edit-profile-name">Имя *</label>
-                            <input type="text" id="edit-profile-name" placeholder="Имя" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="edit-profile-last-name">Фамилия</label>
-                            <input type="text" id="edit-profile-last-name" placeholder="Фамилия">
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="edit-profile-email">Email *</label>
-                        <input type="email" id="edit-profile-email" placeholder="email@example.com" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="edit-profile-bio">О себе</label>
-                        <textarea id="edit-profile-bio" rows="4" placeholder="Расскажите о себе..."></textarea>
-                    </div>
-                    
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary cancel-btn">
-                            Отмена
-                        </button>
-                        <button type="submit" class="btn">
-                            Сохранить изменения
-                        </button>
-                    </div>
-                </form>
+<!-- Замените форму редактирования профиля на эту: -->
+<form id="edit-profile-form-modal">
+    <div class="form-row">
+        <div class="form-group">
+            <label for="edit-profile-name">Имя *</label>
+            <input type="text" id="edit-profile-name" placeholder="Имя" required>
+        </div>
+        <div class="form-group">
+            <label for="edit-profile-last-name">Фамилия</label>
+            <input type="text" id="edit-profile-last-name" placeholder="Фамилия">
+        </div>
+    </div>
+    
+    <div class="form-group">
+        <label for="edit-profile-email">Email *</label>
+        <input type="email" id="edit-profile-email" placeholder="email@example.com" required>
+    </div>
+    
+    <div class="form-row">
+        <div class="form-group">
+            <label for="edit-profile-birth-date">Дата рождения</label>
+            <input type="date" id="edit-profile-birth-date">
+        </div>
+        <div class="form-group">
+            <label for="edit-profile-location">Местоположение</label>
+            <input type="text" id="edit-profile-location" placeholder="Город, страна">
+        </div>
+    </div>
+    
+    <div class="form-row">
+        <div class="form-group">
+            <label for="edit-profile-phone">Телефон</label>
+            <input type="tel" id="edit-profile-phone" placeholder="+7 (999) 999-99-99">
+        </div>
+        <div class="form-group">
+            <label for="edit-profile-website">Веб-сайт</label>
+            <input type="url" id="edit-profile-website" placeholder="https://example.com">
+        </div>
+    </div>
+    
+    <div class="form-group">
+        <label for="edit-profile-bio">О себе</label>
+        <textarea id="edit-profile-bio" rows="4" placeholder="Расскажите о себе..."></textarea>
+    </div>
+    
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary cancel-btn">
+            Отмена
+        </button>
+        <button type="submit" class="btn">
+            Сохранить изменения
+        </button>
+    </div>
+</form>
             </div>
         </div>
     </div>

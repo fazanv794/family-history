@@ -478,7 +478,6 @@ function updateAvatarInUI(avatarUrl) {
     }
 }
 
-// Открытие модального окна редактирования профиля
 function openEditProfileModal() {
     if (!window.currentUser) {
         window.showNotification('Пожалуйста, войдите в систему', 'error');
@@ -488,28 +487,42 @@ function openEditProfileModal() {
     console.log('📝 Заполнение формы редактирования профиля');
     
     // Получаем текущие данные
-    const name = window.currentUser.user_metadata?.name || 
-                window.currentUser.profile?.full_name || 
+    const profileData = window.currentUser.profile || {};
+    const name = profileData.full_name || 
+                window.currentUser.user_metadata?.name || 
                 '';
     const email = window.currentUser.email || '';
+    const bio = profileData.bio || '';
+    const birthDate = profileData.birth_date || '';
+    const location = profileData.location || '';
+    const phone = profileData.phone || '';
+    const website = profileData.website || '';
     
     // Разбиваем имя на части
     const nameParts = name.split(' ');
     const firstName = nameParts[0] || '';
     const lastName = nameParts.slice(1).join(' ') || '';
     
-    console.log('Данные для формы:', { firstName, lastName, email });
+    console.log('Данные для формы:', { firstName, lastName, email, bio, birthDate, location, phone, website });
     
     // Заполняем форму
     const nameInput = document.getElementById('edit-profile-name');
     const lastNameInput = document.getElementById('edit-profile-last-name');
     const emailInput = document.getElementById('edit-profile-email');
     const bioInput = document.getElementById('edit-profile-bio');
+    const birthDateInput = document.getElementById('edit-profile-birth-date');
+    const locationInput = document.getElementById('edit-profile-location');
+    const phoneInput = document.getElementById('edit-profile-phone');
+    const websiteInput = document.getElementById('edit-profile-website');
     
     if (nameInput) nameInput.value = firstName;
     if (lastNameInput) lastNameInput.value = lastName;
     if (emailInput) emailInput.value = email;
-    if (bioInput) bioInput.value = window.currentUser.profile?.bio || '';
+    if (bioInput) bioInput.value = bio;
+    if (birthDateInput) birthDateInput.value = birthDate;
+    if (locationInput) locationInput.value = location;
+    if (phoneInput) phoneInput.value = phone;
+    if (websiteInput) websiteInput.value = website;
     
     // Показываем модальное окно
     const modal = window.showModal('edit-profile-modal');
