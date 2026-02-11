@@ -305,7 +305,53 @@ function hideLoader() {
     } catch (e) {
         console.error('Ошибка скрытия загрузчика:', e);
     }
-}
+}   
+
+// ================ ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ SUPABASE ================
+
+// Загрузка семейного дерева (заглушка, будет переопределена в tree-engine.js)
+window.loadFamilyTreeFromSupabase = async function() {
+    console.log('⚠️ Функция loadFamilyTreeFromSupabase будет загружена из tree-engine.js');
+    return false;
+};
+
+// Сохранение члена семьи (заглушка, будет переопределена в tree-engine.js)
+window.saveFamilyMemberToSupabase = async function(personData) {
+    console.log('⚠️ Функция saveFamilyMemberToSupabase будет загружена из tree-engine.js');
+    return null;
+};
+
+// Загрузка фото в Supabase Storage (заглушка, будет переопределена в tree-engine.js)
+window.uploadPhotoToSupabase = async function(file, personId) {
+    console.log('⚠️ Функция uploadPhotoToSupabase будет загружена из tree-engine.js');
+    return await window.readFileAsDataURL(file);
+};
+
+// Экспорт дерева в JSON (заглушка, будет переопределена в tree-engine.js)
+window.exportTreeAsJson = function() {
+    console.log('⚠️ Функция exportTreeAsJson будет загружена из tree-engine.js');
+    window.showNotification('Функция экспорта загружается...', 'info');
+};
+
+// Сохранение дерева как изображение (заглушка, будет переопределена в tree-engine.js)
+window.saveTreeAsImage = function() {
+    console.log('⚠️ Функция saveTreeAsImage будет загружена из tree-engine.js');
+    window.showNotification('Функция сохранения загружается...', 'info');
+};
+
+// Печать дерева (заглушка, будет переопределена в tree-engine.js)
+window.printTree = function() {
+    console.log('⚠️ Функция printTree будет загружена из tree-engine.js');
+    window.showNotification('Функция печати загружается...', 'info');
+};
+
+// Построитель дерева (заглушка, будет переопределена в tree-engine.js)
+window.startTreeBuilder = function(mode) {
+    console.log('⚠️ Функция startTreeBuilder будет загружена из tree-engine.js');
+    window.showNotification('Построитель дерева загружается...', 'info');
+};
+
+console.log('✅ Дополнительные функции Supabase загружены');
 
 // Экспортируем
 window.supabaseClient = supabaseClient;

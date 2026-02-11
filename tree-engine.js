@@ -1,9 +1,6 @@
-// tree-engine.js - Полный движок для работы с генеалогическим деревом
-// Включает построитель, визуализацию, сохранение в Supabase и все функции
-
 console.log('🌳 Tree Engine загружается...');
 
-// ================ ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ================
+
 window.treeBuilder = window.treeBuilder || {
     currentStep: 1,
     totalSteps: 5,
@@ -17,35 +14,34 @@ window.treeBuilder = window.treeBuilder || {
         grandchildren: [],
         other: []
     },
-    mode: 'auto' // 'auto' или 'manual'
+    mode: 'auto' 
 };
 
-// ================ ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ ================
+
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('🌳 Инициализация Tree Engine...');
     
-    // Загружаем данные из Supabase если пользователь авторизован
+    
     if (window.currentUser && window.supabaseClient) {
         await loadFamilyTreeFromSupabase();
     }
     
-    // Загружаем данные из localStorage как резервное копирование
+
     loadFromLocalStorage();
     
-    // Обновляем интерфейс если есть данные
+ 
     if (window.treeData && window.treeData.relatives && window.treeData.relatives.length > 0) {
         updateTreeInterface(window.treeData.relatives, window.treeData.name);
         updateTreeStats();
     }
     
-    // Добавляем обработчики для страницы дерева
+   
     setupTreePageHandlers();
 });
 
-// ================ РАБОТА С SUPABASE ================
 
-// Загрузка семейного дерева из Supabase
-async function loadFamilyTreeFromSupabase() {
+
+window.loadFamilyTreeFromSupabase = async function() {
     if (!window.currentUser || !window.supabaseClient) {
         console.log('⚠️ Пользователь не авторизован или Supabase не доступен');
         return false;
@@ -98,7 +94,9 @@ async function loadFamilyTreeFromSupabase() {
         window.familyMedia = media || [];
         
         // Преобразуем в формат для дерева
-        convertToTreeFormat();
+        if (typeof convertToTreeFormat === 'function') {
+            convertToTreeFormat();
+        }
         
         console.log('✅ Семейное дерево загружено из Supabase:', {
             members: window.familyMembers.length,
@@ -116,7 +114,7 @@ async function loadFamilyTreeFromSupabase() {
         window.showNotification('Ошибка загрузки данных', 'error');
         return false;
     }
-}
+};
 
 // Сохранение члена семьи в Supabase
 async function saveFamilyMemberToSupabase(personData) {
