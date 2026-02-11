@@ -2600,3 +2600,354 @@ select {
         font-size: 2.5rem !important;
     }
 }
+
+.file-upload-area {
+    border: 2px dashed #cbd5e0;
+    border-radius: 8px;
+    padding: 30px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: #f8fafc;
+}
+
+.file-upload-area:hover {
+    border-color: #667eea;
+    background: #f0f4f8;
+}
+
+.file-upload-area i {
+    font-size: 2.5rem;
+    color: #a0aec0;
+    margin-bottom: 10px;
+}
+
+/* Превью фото */
+#self-photo-preview,
+#father-photo-preview,
+#mother-photo-preview,
+#spouse-photo-preview {
+    text-align: center;
+    margin-top: 15px;
+}
+
+#self-photo-preview img,
+#father-photo-preview img,
+#mother-photo-preview img,
+#spouse-photo-preview img {
+    max-width: 150px;
+    max-height: 150px;
+    border-radius: 50%;
+    border: 4px solid #667eea;
+    object-fit: cover;
+}
+
+
+.progress-bar {
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 10px 0;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    transition: width 0.3s ease;
+}
+
+.action-card {
+    transition: all 0.3s;
+}
+
+.action-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+}
+
+
+.hidden {
+    display: none !important;
+}
+
+
+.modal-overlay {
+    z-index: 10000 !important;
+}
+
+.modal {
+    z-index: 10001 !important;
+}
+
+@media (max-width: 768px) {
+    .modal {
+        width: 95%;
+        max-height: 90vh;
+    }
+    
+    .modal-body {
+        padding: 20px;
+    }
+    
+    .modal-footer {
+        flex-direction: column-reverse;
+        gap: 10px;
+    }
+    
+    .modal-footer .btn {
+        width: 100%;
+    }
+    
+    #tree-builder-modal .modal-footer {
+        flex-direction: column;
+    }
+    
+    #tree-builder-modal .modal-footer div {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+    }
+    
+    #builder-skip-btn {
+        margin-right: 0 !important;
+    }
+}
+
+/* ========== ИСПРАВЛЕННЫЕ МОДАЛЬНЫЕ ОКНА ========== */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    backdrop-filter: blur(5px);
+}
+
+.modal-overlay.active {
+    display: flex !important;
+    opacity: 1;
+}
+
+.modal-overlay:not(.hidden) {
+    display: flex !important;
+}
+
+.modal {
+    background: white;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 85vh;
+    overflow-y: auto;
+    transform: scale(0.9);
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    position: relative;
+    display: block !important;
+    visibility: visible !important;
+}
+
+.modal.active {
+    transform: scale(1);
+    opacity: 1;
+}
+
+.modal.hidden {
+    display: none !important;
+}
+
+.modal-content {
+    padding: 0;
+    width: 100%;
+}
+
+.modal-header {
+    padding: 20px 25px;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 16px 16px 0 0;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: white;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.modal-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.3s;
+    padding: 0;
+    line-height: 1;
+}
+
+.modal-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.modal-body {
+    padding: 25px;
+}
+
+.modal-footer {
+    padding: 20px 25px;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    background: #f8fafc;
+    border-radius: 0 0 16px 16px;
+}
+
+/* Убеждаемся что скрытые элементы не видны */
+.hidden {
+    display: none !important;
+}
+
+/* Специально для модальных окон в overlay */
+.modal-overlay .modal {
+    display: block !important;
+}
+/* ========== УЛУЧШЕНИЯ ДЛЯ МОДАЛЬНЫХ ОКОН ПОСТРОИТЕЛЯ ========== */
+
+/* Стили для загрузки фото */
+.file-upload-area {
+    border: 2px dashed #cbd5e0;
+    border-radius: 8px;
+    padding: 30px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: #f8fafc;
+}
+
+.file-upload-area:hover {
+    border-color: #667eea;
+    background: #f0f4f8;
+}
+
+.file-upload-area i {
+    font-size: 2.5rem;
+    color: #a0aec0;
+    margin-bottom: 10px;
+}
+
+/* Превью фото */
+#self-photo-preview,
+#father-photo-preview,
+#mother-photo-preview,
+#spouse-photo-preview {
+    text-align: center;
+    margin-top: 15px;
+}
+
+#self-photo-preview img,
+#father-photo-preview img,
+#mother-photo-preview img,
+#spouse-photo-preview img {
+    max-width: 150px;
+    max-height: 150px;
+    border-radius: 50%;
+    border: 4px solid #667eea;
+    object-fit: cover;
+}
+
+/* Прогресс-бар */
+.progress-bar {
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 10px 0;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    transition: width 0.3s ease;
+}
+
+/* Карточки действий */
+.action-card {
+    transition: all 0.3s;
+}
+
+.action-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+}
+
+/* Исправление для hidden класса */
+.hidden {
+    display: none !important;
+}
+
+/* Гарантия что модальные окна поверх всего */
+.modal-overlay {
+    z-index: 10000 !important;
+}
+
+.modal {
+    z-index: 10001 !important;
+}
+
+/* Адаптация для мобильных */
+@media (max-width: 768px) {
+    .modal {
+        width: 95%;
+        max-height: 90vh;
+    }
+    
+    .modal-body {
+        padding: 20px;
+    }
+    
+    .modal-footer {
+        flex-direction: column-reverse;
+        gap: 10px;
+    }
+    
+    .modal-footer .btn {
+        width: 100%;
+    }
+    
+    #tree-builder-modal .modal-footer {
+        flex-direction: column;
+    }
+    
+    #tree-builder-modal .modal-footer div {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+    }
+    
+    #builder-skip-btn {
+        margin-right: 0 !important;
+    }
+}

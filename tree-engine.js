@@ -432,7 +432,6 @@ function organizeRelativesByType(relatives) {
     });
 }
 
-// ================ ПОСТРОИТЕЛЬ ДЕРЕВА ================
 
 // Запуск построителя дерева
 window.startTreeBuilder = function(mode = 'auto') {
@@ -441,53 +440,89 @@ window.startTreeBuilder = function(mode = 'auto') {
     window.treeBuilder.mode = mode;
     window.treeBuilder.currentStep = 1;
     
-    // Создаем модальное окно построителя
-    showTreeBuilderModal();
-};
-
-// Показать модальное окно построителя
 function showTreeBuilderModal() {
-    // Создаем модальное окно для построителя
-    const modalHTML = `
-        <div id="tree-builder-modal" class="modal" style="max-width: 800px;">
-            <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                <h3 style="color: white; margin: 0;">
-                    <i class="fas fa-tree"></i> 
-                    ${window.treeBuilder.mode === 'auto' ? 'Автоматическое построение дерева' : 'Ручное построение дерева'}
-                </h3>
-                <button class="modal-close" style="color: white;">&times;</button>
-            </div>
-            <div class="modal-body" style="padding: 25px;">
-                <div id="tree-builder-progress" style="margin-bottom: 30px;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                        <span style="color: #718096;">Шаг ${window.treeBuilder.currentStep} из ${window.treeBuilder.totalSteps}</span>
-                        <span style="color: #667eea; font-weight: 600;" id="builder-step-name">Начало</span>
-                    </div>
-                    <div class="progress-bar" style="height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
-                        <div class="progress-fill" style="width: ${(window.treeBuilder.currentStep / window.treeBuilder.totalSteps) * 100}%; height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); transition: width 0.3s;"></div>
-                    </div>
+    console.log('🏗️ Открытие построителя дерева');
+    
+    // Проверяем существование модального окна
+    let builderModal = document.getElementById('tree-builder-modal');
+    
+    // Если модальное окно уже существует, удаляем его
+    if (builderModal) {
+        builderModal.remove();
+    }
+    
+    // Создаем новое модальное окно
+    builderModal = document.createElement('div');
+    builderModal.id = 'tree-builder-modal';
+    builderModal.className = 'modal hidden';
+    builderModal.style.maxWidth = '800px';
+    
+    // Заполняем содержимое
+    builderModal.innerHTML = `
+        <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <h3 style="color: white; margin: 0;">
+                <i class="fas fa-tree"></i> 
+                ${window.treeBuilder?.mode === 'auto' ? 'Автоматическое построение дерева' : 'Ручное построение дерева'}
+            </h3>
+            <button class="modal-close" style="color: white;">&times;</button>
+        </div>
+        <div class="modal-body" style="padding: 25px;">
+            <div id="tree-builder-progress" style="margin-bottom: 30px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <span style="color: #718096;">Шаг ${window.treeBuilder?.currentStep || 1} из ${window.treeBuilder?.totalSteps || 5}</span>
+                    <span style="color: #667eea; font-weight: 600;" id="builder-step-name">Начало</span>
                 </div>
-                
-                <div id="tree-builder-content" style="min-height: 400px;">
-                    ${renderBuilderStep()}
+                <div class="progress-bar" style="height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                    <div class="progress-fill" style="width: ${((window.treeBuilder?.currentStep || 1) / (window.treeBuilder?.totalSteps || 5)) * 100}%; height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); transition: width 0.3s;"></div>
                 </div>
             </div>
-            <div class="modal-footer" style="display: flex; justify-content: space-between; padding: 20px 25px;">
-                <button class="btn btn-secondary" id="builder-prev-btn" ${window.treeBuilder.currentStep === 1 ? 'disabled' : ''}>
-                    <i class="fas fa-arrow-left"></i> Назад
+            
+            <div id="tree-builder-content" style="min-height: 400px;">
+                <!-- Контент будет загружен динамически -->
+            </div>
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: space-between; padding: 20px 25px;">
+            <button class="btn btn-secondary" id="builder-prev-btn" ${window.treeBuilder?.currentStep === 1 ? 'disabled' : ''}>
+                <i class="fas fa-arrow-left"></i> Назад
+            </button>
+            <div>
+                <button class="btn btn-outline" id="builder-skip-btn" style="margin-right: 10px;">
+                    Пропустить
                 </button>
-                <div>
-                    <button class="btn btn-outline" id="builder-skip-btn" style="margin-right: 10px;">
-                        Пропустить
-                    </button>
-                    <button class="btn" id="builder-next-btn">
-                        ${window.treeBuilder.currentStep === window.treeBuilder.totalSteps ? 'Завершить' : 'Далее'} 
-                        <i class="fas fa-arrow-right"></i>
-                    </button>
-                </div>
+                <button class="btn" id="builder-next-btn">
+                    ${window.treeBuilder?.currentStep === window.treeBuilder?.totalSteps ? 'Завершить' : 'Далее'} 
+                    <i class="fas fa-arrow-right"></i>
+                </button>
             </div>
         </div>
     `;
+    
+    // Добавляем модальное окно в body
+    document.body.appendChild(builderModal);
+    
+    // Рендерим содержимое шага
+    const content = builderModal.querySelector('#tree-builder-content');
+    if (content) {
+        content.innerHTML = renderBuilderStep();
+    }
+    
+    // Показываем модальное окно через глобальную функцию
+    if (typeof window.showModal === 'function') {
+        window.showModal('tree-builder-modal');
+    } else {
+        // Fallback если функция showModal не доступна
+        console.error('❌ Функция showModal не найдена');
+        alert('Ошибка открытия построителя. Пожалуйста, обновите страницу.');
+    }
+    
+    // Добавляем обработчики после показа модального окна
+    setTimeout(() => {
+        const modal = document.getElementById('tree-builder-modal');
+        if (modal) {
+            setupBuilderModalHandlers(modal);
+        }
+    }, 100);
+}
     
     // Показываем модальное окно
     const overlay = document.getElementById('modal-overlay');

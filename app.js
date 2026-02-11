@@ -353,91 +353,204 @@ function setupFormHandlers() {
     }
 }
 
-// Показать модальное окно - ПРОСТАЯ РАБОЧАЯ ВЕРСИЯ
+// Показать модальное окно - ПОЛНОСТЬЮ ПЕРЕРАБОТАННАЯ ВЕРСИЯ
 window.showModal = function(modalId) {
     console.log('📂 Показать модальное окно:', modalId);
     
     const modal = document.getElementById(modalId);
     const overlay = document.getElementById('modal-overlay');
     
-    if (!modal || !overlay) {
-        console.error('Модальное окно или оверлей не найдены');
+    if (!modal) {
+        console.error('❌ Модальное окно не найдено:', modalId);
         return;
     }
     
-    // Клонируем модальное окно и добавляем в overlay
-    const modalClone = modal.cloneNode(true);
-    modalClone.id = modalId + '-clone';
-    modalClone.classList.remove('hidden');
-    
-    // Очищаем overlay и добавляем клон
-    overlay.innerHTML = '';
-    overlay.appendChild(modalClone);
-    
-    // Показываем overlay и модальное окно
-    overlay.classList.remove('hidden');
-    setTimeout(() => {
-        overlay.classList.add('active');
-        modalClone.classList.add('active');
-    }, 10);
-    
-    document.body.style.overflow = 'hidden';
-    
-    // Добавляем обработчики для кнопок закрытия внутри этого модального окна
-    const closeBtn = modalClone.querySelector('.modal-close');
-    if (closeBtn) {
-        closeBtn.addEventListener('click', closeAllModals);
+    if (!overlay) {
+        console.error('❌ Оверлей не найден');
+        return;
     }
     
-    const cancelBtns = modalClone.querySelectorAll('.cancel-btn');
-    cancelBtns.forEach(btn => {
-        btn.addEventListener('click', closeAllModals);
+    // Скрываем все другие модальные окна
+    document.querySelectorAll('.modal').forEach(m => {
+        m.classList.add('hidden');
+        m.classList.remove('active');
     });
+    
+    // Подготавливаем модальное окно
+    modal.classList.remove('hidden');
+    modal.classList.remove('active');
+    
+    // Подготавливаем оверлей
+    overlay.classList.remove('hidden');
+    overlay.classList.remove('active');
+    overlay.innerHTML = ''; // Очищаем оверлей
+    
+    // Перемещаем модальное окно в оверлей
+    overlay.appendChild(modal);
+    
+    // Показываем с анимацией
+    setTimeout(() => {
+        overlay.classList.add('active');
+        modal.classList.add('active');
+    }, 10);
+    
+    // Блокируем скролл body
+    document.body.style.overflow = 'hidden';
+    
+    // Добавляем обработчики для кнопок закрытия
+    setupModalCloseHandlers(modal, overlay);
     
     // Заполняем данные если нужно
     if (modalId === 'edit-profile-modal' && window.currentUser) {
-        const nameParts = (window.currentUser.user_metadata?.name || '').split(' ');
-        const nameInput = modalClone.querySelector('#edit-profile-name');
-        const lastNameInput = modalClone.querySelector('#edit-profile-last-name');
-        const emailInput = modalClone.querySelector('#edit-profile-email');
-        
-        if (nameInput) nameInput.value = nameParts[0] || '';
-        if (lastNameInput) lastNameInput.value = nameParts.slice(1).join(' ') || '';
-        if (emailInput) emailInput.value = window.currentUser.email || '';
+        populateEditProfileForm(modal);
     }
     
-    return modalClone;
+    return modal;
 };
 
-// Закрыть все модальные окна
+// Закрыть все модальные окна - ПОЛНОСТЬЮ ПЕРЕРАБОТАННАЯ ВЕРСИЯ
 window.closeAllModals = function() {
     console.log('❌ Закрыть все модальные окна');
     
     const overlay = document.getElementById('modal-overlay');
+    
     if (overlay) {
+        // Убираем активный класс
         overlay.classList.remove('active');
+        
+        // Находим все модальные окна внутри оверлея
+        const modals = overlay.querySelectorAll('.modal');
+        modals.forEach(modal => {
+            modal.classList.remove('active');
+        });
+        
+        // Возвращаем модальные окна обратно в body
         setTimeout(() => {
+            modals.forEach(modal => {
+                // Возвращаем модальное окно в body
+                document.body.appendChild(modal);
+                modal.classList.add('hidden');
+            });
+            
             overlay.classList.add('hidden');
-            overlay.innerHTML = '';
+            overlay.innerHTML = ''; // Очищаем оверлей
         }, 300);
     }
     
+    // Разблокируем скролл body
     document.body.style.overflow = '';
     
-    // Сбрасываем основные формы (но не формы шагов)
+    // Сбрасываем формы
+    resetForms();
+};
+
+// Настройка обработчиков закрытия модального окна
+function setupModalCloseHandlers(modal, overlay) {
+    // Кнопка закрытия в шапке
+    const closeBtn = modal.querySelector('.modal-close');
+    if (closeBtn) {
+        // Удаляем старые обработчики
+        closeBtn.removeEventListener('click', window.closeAllModals);
+        // Добавляем новый
+        closeBtn.addEventListener('click', window.closeAllModals);
+    }
+    
+    // Кнопки отмены
+    const cancelBtns = modal.querySelectorAll('.cancel-btn');
+    cancelBtns.forEach(btn => {
+        btn.removeEventListener('click', window.closeAllModals);
+        btn.addEventListener('click', window.closeAllModals);
+    });
+    
+    // Закрытие по клику на overlay
+    overlay.removeEventListener('click', handleOverlayClick);
+    overlay.addEventListener('click', handleOverlayClick);
+}
+
+// Обработчик клика по оверлею
+function handleOverlayClick(e) {
+    const overlay = document.getElementById('modal-overlay');
+    if (e.target === overlay) {
+        window.closeAllModals();
+    }
+}
+
+// Сброс форм
+function resetForms() {
     document.querySelectorAll('form').forEach(form => {
         if (form.id && !form.id.includes('step') && !form.id.includes('add-person-step')) {
             form.reset();
         }
     });
     
-    // Очищаем список файлов
+    // Очищаем файловые инпуты
+    const fileInputs = document.querySelectorAll('input[type="file"]');
+    fileInputs.forEach(input => {
+        input.value = '';
+    });
+    
+    // Скрываем превью файлов
     const fileList = document.getElementById('file-list');
     if (fileList) fileList.style.display = 'none';
     
     const filesList = document.getElementById('selected-files-list');
     if (filesList) filesList.innerHTML = '';
+    
+    // Скрываем превью фото
+    const photoPreview = document.getElementById('self-photo-preview');
+    if (photoPreview) {
+        photoPreview.style.display = 'none';
+    }
+    
+    const photoUpload = document.getElementById('self-photo-upload');
+    if (photoUpload) {
+        photoUpload.style.display = 'block';
+    }
+}
+
+// Заполнение формы редактирования профиля
+function populateEditProfileForm(modal) {
+    const nameParts = (window.currentUser.user_metadata?.name || '').split(' ');
+    const nameInput = modal.querySelector('#edit-profile-name');
+    const lastNameInput = modal.querySelector('#edit-profile-last-name');
+    const emailInput = modal.querySelector('#edit-profile-email');
+    const bioInput = modal.querySelector('#edit-profile-bio');
+    
+    if (nameInput) nameInput.value = nameParts[0] || '';
+    if (lastNameInput) lastNameInput.value = nameParts.slice(1).join(' ') || '';
+    if (emailInput) emailInput.value = window.currentUser.email || '';
+    if (bioInput) bioInput.value = window.currentUser.user_metadata?.bio || '';
+}
+
+// Переопределяем старую функцию setupModalCloseHandlers
+window.setupModalCloseHandlers = function() {
+    // Делегирование событий для закрытия модальных окон
+    document.addEventListener('click', (e) => {
+        // Закрытие по клику на крестик
+        if (e.target.classList.contains('modal-close') || 
+            e.target.closest('.modal-close')) {
+            window.closeAllModals();
+        }
+        
+        // Закрытие по клику на кнопку отмены
+        if (e.target.classList.contains('cancel-btn') ||
+            e.target.closest('.cancel-btn')) {
+            window.closeAllModals();
+        }
+    });
+    
+    // Закрытие по ESC
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            window.closeAllModals();
+        }
+    });
 };
+
+// Инициализируем обработчики при загрузке
+document.addEventListener('DOMContentLoaded', function() {
+    window.setupModalCloseHandlers();
+});
 
 // Выход из системы
 async function handleLogout() {
