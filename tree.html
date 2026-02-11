@@ -120,7 +120,7 @@
                 </div>
                 
                 <!-- Контейнер для дерева -->
-                <div class="tree-container" id="tree-visualization-container" style="background: white; border-radius: 12px; padding: 20px; min-height: 400px; position: relative; overflow: auto; box-shadow: 0 5px 15px rgba(0,0,0,0.1); border: 2px solid #e2e8f0;">
+                <div class="tree-visualization-container" id="tree-visualization-container" style="background: white; border-radius: 12px; padding: 20px; min-height: 500px; position: relative; overflow: auto; box-shadow: 0 5px 15px rgba(0,0,0,0.1); border: 2px solid #e2e8f0;">
                     <div class="tree-empty-state" id="tree-empty-state" style="text-align: center; padding: 100px 20px; color: #718096;">
                         <i class="fas fa-tree" style="font-size: 4rem; color: #cbd5e0; margin-bottom: 20px;"></i>
                         <h3 style="margin-bottom: 10px; color: #4a5568;">Дерево еще не создано</h3>
@@ -132,7 +132,7 @@
                 </div>
                 
                 <!-- Контролы для дерева -->
-                <div class="tree-controls" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); display: none;" id="tree-controls-panel">
+                <div class="tree-controls" id="tree-controls-panel" style="display: none; flex-wrap: wrap; gap: 10px; margin-top: 20px; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05);">
                     <button class="btn btn-small" onclick="window.saveTreeAsImage()">
                         <i class="fas fa-camera"></i> Сохранить как изображение
                     </button>
@@ -142,9 +142,39 @@
                     <button class="btn btn-small" id="add-person-to-tree-btn">
                         <i class="fas fa-user-plus"></i> Добавить родственника
                     </button>
-                    <button class="btn btn-small btn-secondary" onclick="window.exportTreeAsJson ? window.exportTreeAsJson() : alert('Функция экспорта JSON доступна после загрузки страницы')">
+                    <button class="btn btn-small btn-secondary" onclick="window.exportTreeAsJson()">
                         <i class="fas fa-code"></i> Экспорт JSON
                     </button>
+                    <button class="btn btn-small" onclick="window.location.href='timeline.html'" style="margin-left: auto;">
+                        <i class="fas fa-calendar"></i> События
+                    </button>
+                </div>
+                
+                <!-- Информационная панель -->
+                <div id="tree-info-panel" style="margin-top: 30px; display: none; background: #f7fafc; border-radius: 12px; padding: 25px; border: 1px solid #e2e8f0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="color: #2d3748; display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-info-circle" style="color: #667eea;"></i>
+                            Информация о дереве
+                        </h3>
+                        <button class="btn btn-small btn-outline" id="edit-tree-info-btn">
+                            <i class="fas fa-edit"></i> Редактировать
+                        </button>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                        <div>
+                            <div style="color: #718096; font-size: 0.9rem; margin-bottom: 5px;">Название</div>
+                            <div style="font-weight: 600; color: #2d3748;" id="tree-name-display">Мое семейное дерево</div>
+                        </div>
+                        <div>
+                            <div style="color: #718096; font-size: 0.9rem; margin-bottom: 5px;">Дата создания</div>
+                            <div style="font-weight: 500; color: #4a5568;" id="tree-created-display">—</div>
+                        </div>
+                        <div>
+                            <div style="color: #718096; font-size: 0.9rem; margin-bottom: 5px;">Последнее изменение</div>
+                            <div style="font-weight: 500; color: #4a5568;" id="tree-updated-display">—</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -208,21 +238,24 @@
                             <option value="">Выберите родство</option>
                             <option value="self">Я</option>
                             <option value="spouse">Супруг/а</option>
-                            <option value="parent">Родитель</option>
-                            <option value="child">Ребенок</option>
-                            <option value="sibling">Брат/сестра</option>
-                            <option value="grandparent">Дедушка/бабушка</option>
-                            <option value="grandchild">Внук/внучка</option>
-                            <option value="aunt_uncle">Тетя/дядя</option>
-                            <option value="cousin">Двоюродный брат/сестра</option>
+                            <option value="father">Отец</option>
+                            <option value="mother">Мать</option>
+                            <option value="son">Сын</option>
+                            <option value="daughter">Дочь</option>
+                            <option value="brother">Брат</option>
+                            <option value="sister">Сестра</option>
+                            <option value="grandfather">Дедушка</option>
+                            <option value="grandmother">Бабушка</option>
+                            <option value="grandson">Внук</option>
+                            <option value="granddaughter">Внучка</option>
                             <option value="other">Другой родственник</option>
                         </select>
                     </div>
                     
                     <div class="form-group">
-                        <label for="person-photo-url">Фото (URL)</label>
-                        <input type="url" id="person-photo-url" placeholder="https://example.com/photo.jpg">
-                        <small style="color: #718096;">Или загрузите после создания</small>
+                        <label for="person-photo">Фото</label>
+                        <input type="file" id="person-photo" accept="image/*">
+                        <small style="color: #718096; display: block; margin-top: 5px;">Поддерживаются JPG, PNG, GIF</small>
                     </div>
                     
                     <div class="form-group">
@@ -259,22 +292,20 @@
 
     <!-- Подключаем библиотеки -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <!-- Библиотека для сохранения как изображение -->
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     
     <!-- Подключаем наши файлы -->
     <script src="supabase.js"></script>
     <script src="app.js"></script>
-    <script src="tree-builder-simple.js"></script>
     <script src="tree-engine.js"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', async function() {
             console.log('🌳 Страница дерева загружается...');
             
-            // Загружаем данные из localStorage
-            if (typeof window.loadFromLocalStorage === 'function') {
-                window.loadFromLocalStorage();
+            // Загружаем данные из Supabase если пользователь авторизован
+            if (window.currentUser && window.supabaseClient && typeof window.loadFamilyTreeFromSupabase === 'function') {
+                await window.loadFamilyTreeFromSupabase();
             }
             
             // Проверяем есть ли сохраненное дерево
@@ -284,9 +315,6 @@
                 // Создаем интерактивное дерево
                 if (typeof window.createInteractiveTree === 'function') {
                     window.createInteractiveTree(window.treeData.relatives, 'tree-visualization-container');
-                } else if (typeof window.updateTreeInterface === 'function') {
-                    // Используем старую версию для совместимости
-                    window.updateTreeInterface(window.treeData.relatives, window.treeData.name);
                 }
                 
                 // Обновляем статистику
@@ -295,33 +323,127 @@
                 }
                 
                 // Показываем контролы
-                document.getElementById('tree-controls-panel').style.display = 'flex';
+                const controlsPanel = document.getElementById('tree-controls-panel');
+                if (controlsPanel) controlsPanel.style.display = 'flex';
+                
+                // Обновляем информационную панель
+                const infoPanel = document.getElementById('tree-info-panel');
+                const treeNameDisplay = document.getElementById('tree-name-display');
+                const treeCreatedDisplay = document.getElementById('tree-created-display');
+                
+                if (infoPanel) infoPanel.style.display = 'block';
+                if (treeNameDisplay) treeNameDisplay.textContent = window.treeData.name || 'Мое семейное дерево';
+                if (treeCreatedDisplay && window.treeData.created) {
+                    treeCreatedDisplay.textContent = new Date(window.treeData.created).toLocaleDateString('ru-RU');
+                }
             }
             
-            // Обработчики кнопок
-            document.getElementById('start-builder-btn')?.addEventListener('click', function(e) {
-                e.preventDefault();
-                if (typeof window.startTreeBuilder === 'function') {
-                    window.startTreeBuilder('auto');
-                } else {
-                    window.showNotification('Построитель дерева не загружен', 'error');
-                }
-            });
-            
-            document.getElementById('add-person-to-tree-btn')?.addEventListener('click', function(e) {
-                e.preventDefault();
-                window.showModal('add-person-modal');
-            });
-            
-            // Карточки действий
-            const actionCards = document.querySelectorAll('.action-card');
-            actionCards.forEach(card => {
-                card.addEventListener('click', function(e) {
-                    if (this.getAttribute('onclick')) return;
+            // Обработчик формы добавления человека
+            const addPersonForm = document.getElementById('add-person-form-modal');
+            if (addPersonForm) {
+                addPersonForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    const firstName = document.getElementById('person-first-name').value;
+                    const lastName = document.getElementById('person-last-name').value;
+                    const birthDate = document.getElementById('person-birth-date').value;
+                    const deathDate = document.getElementById('person-death-date').value;
+                    const gender = document.getElementById('person-gender').value;
+                    const relation = document.getElementById('person-relation').value;
+                    const bio = document.getElementById('person-bio').value;
+                    const photoInput = document.getElementById('person-photo');
+                    
+                    if (!firstName || !lastName || !gender || !relation) {
+                        window.showNotification('Заполните обязательные поля', 'error');
+                        return;
+                    }
+                    
+                    window.showLoader('Добавление человека...');
+                    
+                    try {
+                        const newPerson = {
+                            id: Date.now(),
+                            firstName: firstName,
+                            lastName: lastName,
+                            birthDate: birthDate,
+                            deathDate: deathDate,
+                            gender: gender,
+                            relation: relation,
+                            biography: bio
+                        };
+                        
+                        // Загружаем фото если есть
+                        if (photoInput.files && photoInput.files[0]) {
+                            if (window.currentUser && window.supabaseClient && typeof window.uploadPhotoToSupabase === 'function') {
+                                const uploadedUrl = await window.uploadPhotoToSupabase(photoInput.files[0], 'new-' + Date.now());
+                                if (uploadedUrl) {
+                                    newPerson.photoUrl = uploadedUrl;
+                                }
+                            } else {
+                                const reader = await window.readFileAsDataURL(photoInput.files[0]);
+                                newPerson.photoUrl = reader;
+                            }
+                        }
+                        
+                        // Сохраняем в Supabase
+                        if (window.currentUser && window.supabaseClient && typeof window.saveFamilyMemberToSupabase === 'function') {
+                            const savedMember = await window.saveFamilyMemberToSupabase(newPerson);
+                            if (savedMember) {
+                                newPerson.id = savedMember.id;
+                            }
+                        }
+                        
+                        // Добавляем в дерево
+                        if (!window.treeData) {
+                            window.treeData = {
+                                name: 'Мое семейное дерево',
+                                created: new Date().toISOString(),
+                                relatives: []
+                            };
+                        }
+                        
+                        if (!window.treeData.relatives) {
+                            window.treeData.relatives = [];
+                        }
+                        
+                        window.treeData.relatives.push(newPerson);
+                        
+                        // Сохраняем в localStorage
+                        if (typeof window.saveToLocalStorage === 'function') {
+                            window.saveToLocalStorage();
+                        }
+                        
+                        // Обновляем дерево
+                        if (typeof window.updateTreeInterface === 'function') {
+                            window.updateTreeInterface(window.treeData.relatives, window.treeData.name);
+                        }
+                        
+                        if (typeof window.updateTreeStats === 'function') {
+                            window.updateTreeStats();
+                        }
+                        
+                        window.closeAllModals();
+                        window.showNotification('✅ Человек успешно добавлен!', 'success');
+                        
+                    } catch (error) {
+                        console.error('Ошибка добавления человека:', error);
+                        window.showNotification('Ошибка при добавлении', 'error');
+                    } finally {
+                        window.hideLoader();
+                    }
                 });
-            });
+            }
             
-            console.log('✅ Страница дерева инициализирована');
+            // Обработчик кнопки "Создать дерево"
+            const startBuilderBtn = document.getElementById('start-builder-btn');
+            if (startBuilderBtn) {
+                startBuilderBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (typeof window.startTreeBuilder === 'function') {
+                        window.startTreeBuilder('auto');
+                    }
+                });
+            }
         });
     </script>
 </body>
