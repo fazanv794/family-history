@@ -161,7 +161,169 @@
     <script src="app.js"></script>
     
 <script>
-    // ПРОСТЫЕ ФУНКЦИИ ДЛЯ РАБОТЫ С СОБЫТИЯМИ
+    // ПЕРЕМЕННЫЕ ДЛЯ РАБОТЫ С SUPABASE
+    const SUPABASE_URL = 'https://szwsvtxkhlacrarplgtn.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6d3N2dHhraGxhY3JhcnBsZ3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxMzA1NjAsImV4cCI6MjA4MTcwNjU2MH0.dcRnrqlA4Iz1RthtFT7wL_KGorGz4lHnMMsWCP8i-ns';
+    
+    // СОЗДАЕМ КЛИЕНТ SUPABASE (если еще не создан)
+    if (!window.supabaseClient) {
+        try {
+            window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            console.log('✅ Supabase клиент создан');
+        } catch (error) {
+            console.error('❌ Ошибка создания Supabase клиента:', error);
+        }
+    }
+    
+    // ЗАГРУЗКА СОБЫТИЙ ИЗ SUPABASE
+    async function loadEventsFromSupabase() {
+        console.log('📦 Загрузка событий из Supabase...');
+        
+        try {
+            // Проверяем авторизацию
+            const { data: { user } } = await window.supabaseClient.auth.getUser();
+            
+            if (!user) {
+                console.log('👤 Пользователь не авторизован, загружаем из localStorage');
+                loadEventsFromLocalStorage();
+                return;
+            }
+            
+            console.log('👤 Загружаем события для пользователя:', user.id);
+            
+            // Загружаем события
+            const { data, error } = await window.supabaseClient
+                .from('events')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('date', { ascending: false });
+            
+            if (error) {
+                console.error('❌ Ошибка загрузки из Supabase:', error);
+                loadEventsFromLocalStorage();
+                return;
+            }
+            
+            if (data && data.length > 0) {
+                console.log('✅ Загружено событий из Supabase:', data.length);
+                window.events = data;
+                
+                // Сохраняем в localStorage как резервную копию
+                localStorage.setItem('family_tree_events', JSON.stringify(data));
+            } else {
+                console.log('📭 Нет событий в Supabase, проверяем localStorage');
+                loadEventsFromLocalStorage();
+            }
+            
+        } catch (error) {
+            console.error('❌ Ошибка при загрузке из Supabase:', error);
+            loadEventsFromLocalStorage();
+        }
+    }
+    
+    // ЗАГРУЗКА ИЗ LOCALSTORAGE (резервный вариант)
+    function loadEventsFromLocalStorage() {
+        try {
+            const savedEvents = localStorage.getItem('family_tree_events');
+            if (savedEvents) {
+                window.events = JSON.parse(savedEvents);
+                console.log('✅ Загружено событий из localStorage:', window.events.length);
+            } else {
+                window.events = [];
+                console.log('📭 Нет событий в localStorage');
+            }
+        } catch (error) {
+            console.error('❌ Ошибка загрузки из localStorage:', error);
+            window.events = [];
+        }
+    }
+    
+    // СОХРАНЕНИЕ СОБЫТИЯ В SUPABASE
+    async function saveEventToSupabase(eventData) {
+        console.log('💾 Сохранение события в Supabase:', eventData);
+        
+        try {
+            // Проверяем авторизацию
+            const { data: { user } } = await window.supabaseClient.auth.getUser();
+            
+            if (!user) {
+                console.log('👤 Пользователь не авторизован, сохраняем только в localStorage');
+                return false;
+            }
+            
+            // Добавляем user_id к данным
+            const eventWithUser = {
+                ...eventData,
+                user_id: user.id,
+                updated_at: new Date().toISOString()
+            };
+            
+            // Если есть id, обновляем существующее событие
+            if (eventData.id && !eventData.id.toString().startsWith('local-')) {
+                const { error } = await window.supabaseClient
+                    .from('events')
+                    .update(eventWithUser)
+                    .eq('id', eventData.id);
+                
+                if (error) throw error;
+                console.log('✅ Событие обновлено в Supabase');
+            } else {
+                // Создаем новое событие
+                const { data, error } = await window.supabaseClient
+                    .from('events')
+                    .insert([eventWithUser])
+                    .select();
+                
+                if (error) throw error;
+                
+                if (data && data[0]) {
+                    console.log('✅ Событие создано в Supabase, новый ID:', data[0].id);
+                    return data[0];
+                }
+            }
+            
+            return true;
+            
+        } catch (error) {
+            console.error('❌ Ошибка сохранения в Supabase:', error);
+            return false;
+        }
+    }
+    
+    // УДАЛЕНИЕ СОБЫТИЯ ИЗ SUPABASE
+    async function deleteEventFromSupabase(eventId) {
+        console.log('🗑️ Удаление события из Supabase:', eventId);
+        
+        try {
+            // Проверяем авторизацию
+            const { data: { user } } = await window.supabaseClient.auth.getUser();
+            
+            if (!user) {
+                console.log('👤 Пользователь не авторизован');
+                return false;
+            }
+            
+            // Не удаляем локальные события (с префиксом local-)
+            if (eventId.toString().startsWith('local-')) {
+                console.log('📝 Это локальное событие, пропускаем удаление из Supabase');
+                return true;
+            }
+            
+            const { error } = await window.supabaseClient
+                .from('events')
+                .delete()
+                .eq('id', eventId);
+            
+            if (error) throw error;
+            
+            console.log('✅ Событие удалено из Supabase');
+            return true;
+            
+        } catch (error) {
+            console.error('❌ Ошибка удаления из Supabase:', error);
+            return false;
+        }
+    }
     
     // Обновление ленты событий
     function updateTimeline() {
@@ -169,13 +331,9 @@
         const container = document.getElementById('timeline-container');
         if (!container) return;
         
-        // Фильтруем события
-        let filteredEvents = window.events || [];
+        const events = window.events || [];
         
-        // Сортируем по дате
-        filteredEvents.sort((a, b) => new Date(b.date) - new Date(a.date));
-        
-        if (filteredEvents.length === 0) {
+        if (events.length === 0) {
             container.innerHTML = `
                 <div style="text-align: center; padding: 60px 20px; color: #718096; background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
                     <i class="fas fa-calendar" style="font-size: 4rem; margin-bottom: 20px; color: #cbd5e0;"></i>
@@ -190,7 +348,7 @@
         }
         
         let html = '';
-        filteredEvents.forEach(event => {
+        events.forEach(event => {
             const date = new Date(event.date);
             const formattedDate = date.toLocaleDateString('ru-RU', {
                 day: 'numeric',
@@ -211,6 +369,14 @@
                             <i class="far fa-calendar-alt" style="margin-right: 5px;"></i>${formattedDate}
                         </div>
                         ${event.description ? `<p style="color: #4a5568; margin-bottom: 15px;">${escapeHtml(event.description)}</p>` : ''}
+                        
+                        ${event.media_url ? `
+                            <div style="margin: 10px 0;">
+                                <a href="${event.media_url}" target="_blank" class="btn btn-small btn-outline">
+                                    <i class="fas fa-external-link-alt"></i> Просмотреть медиа
+                                </a>
+                            </div>
+                        ` : ''}
                         
                         <div style="margin-top: 15px; display: flex; gap: 10px;">
                             <button class="btn btn-small" onclick="window.editEvent('${event.id}')">
@@ -254,7 +420,6 @@
     window.openAddEventModal = function() {
         console.log('📝 Открытие формы добавления события');
         
-        // Создаем простое модальное окно прямо здесь
         const modalHtml = `
             <div class="modal" id="simple-event-modal" style="max-width: 500px;">
                 <div class="modal-content">
@@ -266,7 +431,7 @@
                         <form id="simple-event-form" onsubmit="return false;">
                             <div class="form-group">
                                 <label>Название события *</label>
-                                <input type="text" id="simple-event-title" class="form-control" required>
+                                <input type="text" id="simple-event-title" class="form-control" placeholder="Например: День рождения мамы" required>
                             </div>
                             
                             <div class="form-group">
@@ -287,12 +452,12 @@
                             
                             <div class="form-group">
                                 <label>Описание</label>
-                                <textarea id="simple-event-description" class="form-control" rows="3"></textarea>
+                                <textarea id="simple-event-description" class="form-control" rows="3" placeholder="Расскажите о событии..."></textarea>
                             </div>
                             
                             <div class="form-group">
                                 <label>Ссылка на медиа (URL)</label>
-                                <input type="url" id="simple-event-media" class="form-control">
+                                <input type="url" id="simple-event-media" class="form-control" placeholder="https://example.com/photo.jpg">
                             </div>
                             
                             <div class="modal-footer" style="padding: 20px 0 0 0;">
@@ -418,8 +583,11 @@
         window.showLoader('Сохранение...');
         
         try {
+            // Создаем временный ID для локального использования
+            const tempId = 'local-' + Date.now();
+            
             const newEvent = {
-                id: Date.now(),
+                id: tempId,
                 title: title,
                 date: date,
                 event_type: type,
@@ -428,12 +596,20 @@
                 created_at: new Date().toISOString()
             };
             
-            // Добавляем в массив
+            // Сначала сохраняем в Supabase
+            const savedEvent = await saveEventToSupabase(newEvent);
+            
+            if (savedEvent && savedEvent.id) {
+                // Если успешно сохранили в Supabase, используем реальный ID
+                newEvent.id = savedEvent.id;
+            }
+            
+            // Добавляем в локальный массив
             if (!window.events) window.events = [];
             window.events.unshift(newEvent);
             
-            // Сохраняем в localStorage
-            window.saveToLocalStorage();
+            // Сохраняем в localStorage как резервную копию
+            localStorage.setItem('family_tree_events', JSON.stringify(window.events));
             
             window.showNotification('✅ Событие добавлено!', 'success');
             window.closeSimpleModal();
@@ -466,22 +642,30 @@
         window.showLoader('Сохранение...');
         
         try {
-            // Находим и обновляем событие
+            const updatedEvent = {
+                id: eventId,
+                title: title,
+                date: date,
+                event_type: type,
+                description: description,
+                media_url: mediaUrl,
+                updated_at: new Date().toISOString()
+            };
+            
+            // Обновляем в Supabase
+            await saveEventToSupabase(updatedEvent);
+            
+            // Обновляем в локальном массиве
             const index = window.events.findIndex(e => e.id == eventId);
             if (index !== -1) {
                 window.events[index] = {
                     ...window.events[index],
-                    title: title,
-                    date: date,
-                    event_type: type,
-                    description: description,
-                    media_url: mediaUrl,
-                    updated_at: new Date().toISOString()
+                    ...updatedEvent
                 };
             }
             
             // Сохраняем в localStorage
-            window.saveToLocalStorage();
+            localStorage.setItem('family_tree_events', JSON.stringify(window.events));
             
             window.showNotification('✅ Событие обновлено!', 'success');
             window.closeSimpleModal();
@@ -504,11 +688,14 @@
         window.showLoader('Удаление...');
         
         try {
-            // Удаляем из массива
+            // Удаляем из Supabase
+            await deleteEventFromSupabase(eventId);
+            
+            // Удаляем из локального массива
             window.events = window.events.filter(e => e.id != eventId);
             
             // Сохраняем в localStorage
-            window.saveToLocalStorage();
+            localStorage.setItem('family_tree_events', JSON.stringify(window.events));
             
             window.showNotification('✅ Событие удалено!', 'success');
             updateTimeline();
@@ -525,8 +712,8 @@
     document.addEventListener('DOMContentLoaded', async () => {
         console.log('📅 Загрузка страницы событий...');
         
-        // Загружаем данные
-        await window.loadUserData();
+        // Загружаем данные из Supabase
+        await loadEventsFromSupabase();
         
         // Обновляем ленту
         updateTimeline();
@@ -539,6 +726,18 @@
                 window.openAddEventModal();
                 return false;
             };
+        }
+        
+        // Обработчики фильтров (можно добавить позже)
+        const filterYear = document.getElementById('filter-year');
+        const filterType = document.getElementById('filter-type');
+        
+        if (filterYear) {
+            filterYear.addEventListener('change', updateTimeline);
+        }
+        
+        if (filterType) {
+            filterType.addEventListener('change', updateTimeline);
         }
     });
 </script>
