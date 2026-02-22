@@ -153,342 +153,539 @@
     <script src="supabase.js"></script>
     <script src="app.js"></script>
     
-    <script>
-        // Функции для страницы медиатеки
-        function updateMediaGrid() {
-            const container = document.getElementById('media-grid');
-            if (!container) return;
+   <script>
+    if (!window.supabaseClient) {
+        console.error('Supabase клиент не найден');
+    }
+    
+    let currentMediaSearch = '';
+    let currentMediaSort = 'newest';
+    let currentMediaTypeFilter = 'all';
+    
+    async function loadMediaFromSupabase() {
+        try {
+            const { data: { user } } = await window.supabaseClient.auth.getUser();
             
-            const searchText = document.getElementById('media-search')?.value.toLowerCase() || '';
-            const sortBy = document.getElementById('media-sort')?.value || 'newest';
-            const typeFilter = document.getElementById('media-type-filter')?.value || 'all';
-            
-            let filteredMedia = window.media || [];
-            
-            // Поиск по тексту
-            if (searchText) {
-                filteredMedia = filteredMedia.filter(item => 
-                    (item.description?.toLowerCase().includes(searchText)) ||
-                    (item.file_name?.toLowerCase().includes(searchText))
-                );
-            }
-            
-            // Фильтр по типу
-            if (typeFilter !== 'all') {
-                filteredMedia = filteredMedia.filter(item => 
-                    item.file_type === typeFilter
-                );
-            }
-            
-            // Сортировка
-            filteredMedia.sort((a, b) => {
-                if (sortBy === 'newest') {
-                    return new Date(b.created_at) - new Date(a.created_at);
-                } else if (sortBy === 'oldest') {
-                    return new Date(a.created_at) - new Date(b.created_at);
-                } else if (sortBy === 'name') {
-                    return (a.description || a.file_name || '').localeCompare(b.description || b.file_name || '');
-                }
-                return 0;
-            });
-            
-            if (filteredMedia.length === 0) {
-                container.innerHTML = `
-                    <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: #718096; background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
-                        <i class="fas fa-images" style="font-size: 4rem; margin-bottom: 20px; color: #cbd5e0;"></i>
-                        <h3 style="margin-bottom: 10px; color: #4a5568;">Медиафайлов пока нет</h3>
-                        <p style="margin-bottom: 25px;">Загрузите первое фото или видео в ваш семейный архив</p>
-                        <button class="btn" id="upload-first-media-btn">
-                            <i class="fas fa-upload"></i> Загрузить первое медиа
-                        </button>
-                    </div>
-                `;
-                
-                document.getElementById('upload-first-media-btn')?.addEventListener('click', () => {
-                    window.showModal('upload-modal');
-                });
-                
+            if (!user) {
+                window.media = [];
+                updateMediaGrid();
                 return;
             }
             
-            let html = '';
-            filteredMedia.forEach(item => {
-                const isImage = item.file_type === 'image';
-                const isVideo = item.file_type === 'video';
-                const isExternal = item.is_external === true;
-                const createdDate = new Date(item.created_at).toLocaleDateString('ru-RU');
-                
-                let mediaPreview = '';
-                if (isImage) {
-                    mediaPreview = `
-                        <img src="${item.file_url}" 
-                             alt="${item.description || 'Фото'}" 
-                             style="width: 100%; height: 180px; object-fit: cover; border-radius: 8px 8px 0 0;"
-                             onerror="this.onerror=null; this.src='https://via.placeholder.com/300/667eea/ffffff?text=Фото';">
-                    `;
-                } else if (isVideo) {
-                    mediaPreview = `
-                        <div style="width: 100%; height: 180px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px 8px 0 0; display: flex; align-items: center; justify-content: center; color: white; font-size: 3rem;">
-                            <i class="fas fa-play-circle"></i>
-                        </div>
-                    `;
-                } else {
-                    mediaPreview = `
-                        <div style="width: 100%; height: 180px; background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); border-radius: 8px 8px 0 0; display: flex; align-items: center; justify-content: center; color: white; font-size: 3rem;">
-                            <i class="fas fa-file"></i>
-                        </div>
-                    `;
-                }
-                
-                html += `
-                    <div class="media-item" style="border-radius: 8px; overflow: hidden; box-shadow: 0 3px 15px rgba(0,0,0,0.08); background: white; transition: all 0.3s; border: 1px solid #e2e8f0;">
-                        ${mediaPreview}
-                        <div class="media-description" style="padding: 20px;">
-                            <div style="margin-bottom: 10px; font-weight: 500; color: #2d3748; height: 50px; overflow: hidden; text-overflow: ellipsis;">
-                                ${item.description || 'Без описания'}
-                            </div>
-                            <div style="font-size: 0.85rem; color: #718096; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
-                                <span>${createdDate}</span>
-                                ${isExternal ? '<span style="background: #e6fffa; color: #234e52; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem;">Ссылка</span>' : ''}
-                            </div>
-                            <div style="display: flex; gap: 8px;">
-                                <button class="btn btn-small view-media-btn" data-id="${item.id}" style="flex: 1;">
-                                    <i class="fas fa-eye"></i> Просмотр
-                                </button>
-                                ${!isExternal ? `
-                                    <button class="btn btn-small" onclick="downloadMedia('${item.id}')">
-                                        <i class="fas fa-download"></i>
-                                    </button>
-                                ` : ''}
-                                <button class="btn btn-small btn-danger delete-media-btn" data-id="${item.id}">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
+            const { data, error } = await window.supabaseClient
+                .from('media')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('created_at', { ascending: false });
             
-            container.innerHTML = html;
+            if (error) {
+                window.media = [];
+                updateMediaGrid();
+                return;
+            }
             
-            // Добавляем обработчики
-            document.querySelectorAll('.view-media-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const mediaId = e.target.closest('button').dataset.id;
-                    viewMedia(mediaId);
-                });
-            });
+            if (data && data.length > 0) {
+                window.media = data;
+            } else {
+                window.media = [];
+            }
             
-            document.querySelectorAll('.delete-media-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const mediaId = e.target.closest('button').dataset.id;
-                    deleteMedia(mediaId);
-                });
-            });
+            applyMediaFilters();
+            
+        } catch (error) {
+            window.media = [];
+            updateMediaGrid();
+        }
+    }
+    
+    function applyMediaFilters() {
+        const container = document.getElementById('media-grid');
+        if (!container) return;
+        
+        let filteredMedia = window.media || [];
+        
+        if (currentMediaSearch) {
+            const searchLower = currentMediaSearch.toLowerCase();
+            filteredMedia = filteredMedia.filter(item => 
+                (item.description && item.description.toLowerCase().includes(searchLower)) ||
+                (item.file_name && item.file_name.toLowerCase().includes(searchLower))
+            );
         }
         
-        function viewMedia(mediaId) {
-            const item = (window.media || []).find(m => m.id === mediaId);
-            if (!item) return;
-            
+        if (currentMediaTypeFilter !== 'all') {
+            filteredMedia = filteredMedia.filter(item => 
+                item.file_type === currentMediaTypeFilter
+            );
+        }
+        
+        filteredMedia.sort((a, b) => {
+            if (currentMediaSort === 'newest') {
+                return new Date(b.created_at) - new Date(a.created_at);
+            } else if (currentMediaSort === 'oldest') {
+                return new Date(a.created_at) - new Date(b.created_at);
+            } else if (currentMediaSort === 'name') {
+                const nameA = (a.description || a.file_name || '').toLowerCase();
+                const nameB = (b.description || b.file_name || '').toLowerCase();
+                return nameA.localeCompare(nameB);
+            }
+            return 0;
+        });
+        
+        displayMediaItems(filteredMedia);
+    }
+    
+    function displayMediaItems(mediaItems) {
+        const container = document.getElementById('media-grid');
+        if (!container) return;
+        
+        if (mediaItems.length === 0) {
+            container.innerHTML = `
+                <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: #718096; background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                    <i class="fas fa-images" style="font-size: 4rem; margin-bottom: 20px; color: #cbd5e0;"></i>
+                    <h3 style="margin-bottom: 10px; color: #4a5568;">Медиафайлов пока нет</h3>
+                    <p style="margin-bottom: 25px;">Загрузите первое фото или видео в ваш семейный архив</p>
+                    <button class="btn" onclick="window.openUploadModal()">
+                        <i class="fas fa-upload"></i> Загрузить медиа
+                    </button>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '';
+        mediaItems.forEach(item => {
             const isImage = item.file_type === 'image';
             const isVideo = item.file_type === 'video';
+            const isExternal = item.is_external === true;
+            const createdDate = new Date(item.created_at).toLocaleDateString('ru-RU');
             
-            let mediaContent = '';
+            let mediaPreview = '';
             if (isImage) {
-                mediaContent = `
-                    <img src="${item.file_url}" alt="${item.description || 'Фото'}" 
-                         style="width: 100%; max-height: 400px; object-fit: contain; border-radius: 8px; margin-bottom: 20px;">
+                mediaPreview = `
+                    <img src="${item.file_url}" 
+                         alt="${item.description || 'Фото'}" 
+                         style="width: 100%; height: 180px; object-fit: cover; border-radius: 8px 8px 0 0;"
+                         onerror="this.onerror=null; this.src='https://via.placeholder.com/300/667eea/ffffff?text=Фото';">
                 `;
             } else if (isVideo) {
-                mediaContent = `
-                    <video controls style="width: 100%; max-height: 400px; border-radius: 8px; margin-bottom: 20px;">
-                        <source src="${item.file_url}" type="video/mp4">
-                        Ваш браузер не поддерживает видео.
-                    </video>
+                mediaPreview = `
+                    <div style="width: 100%; height: 180px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px 8px 0 0; display: flex; align-items: center; justify-content: center; color: white; font-size: 3rem;">
+                        <i class="fas fa-play-circle"></i>
+                    </div>
                 `;
             } else {
-                mediaContent = `
-                    <div style="background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); width: 100%; height: 200px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 4rem; margin-bottom: 20px;">
+                mediaPreview = `
+                    <div style="width: 100%; height: 180px; background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); border-radius: 8px 8px 0 0; display: flex; align-items: center; justify-content: center; color: white; font-size: 3rem;">
                         <i class="fas fa-file"></i>
                     </div>
                 `;
             }
             
-            // Создаем модальное окно для просмотра
-            const modalHtml = `
-                <div class="modal" id="view-media-modal" style="max-width: 700px;">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h3>Просмотр медиа</h3>
-                            <button class="modal-close">&times;</button>
+            html += `
+                <div class="media-item" style="border-radius: 8px; overflow: hidden; box-shadow: 0 3px 15px rgba(0,0,0,0.08); background: white; transition: all 0.3s; border: 1px solid #e2e8f0;">
+                    ${mediaPreview}
+                    <div class="media-description" style="padding: 20px;">
+                        <div style="margin-bottom: 10px; font-weight: 500; color: #2d3748; height: 50px; overflow: hidden; text-overflow: ellipsis;">
+                            ${escapeHtml(item.description || 'Без описания')}
                         </div>
-                        <div class="modal-body">
-                            ${mediaContent}
-                            <h4 style="margin-bottom: 10px; color: #2d3748;">${item.description || 'Без описания'}</h4>
-                            <div style="color: #718096; margin-bottom: 10px;">
-                                <div><strong>Тип:</strong> ${item.file_type === 'image' ? 'Изображение' : item.file_type === 'video' ? 'Видео' : 'Документ'}</div>
-                                <div><strong>Загружено:</strong> ${new Date(item.created_at).toLocaleDateString('ru-RU')}</div>
-                                ${item.file_name ? `<div><strong>Имя файла:</strong> ${item.file_name}</div>` : ''}
-                                ${item.file_size ? `<div><strong>Размер:</strong> ${(item.file_size / 1024 / 1024).toFixed(2)} MB</div>` : ''}
-                            </div>
-                            <div style="margin-top: 20px; display: flex; gap: 10px;">
-                                <a href="${item.file_url}" target="_blank" class="btn" style="flex: 1;">
-                                    <i class="fas fa-external-link-alt"></i> Открыть в новой вкладке
-                                </a>
-                                ${!item.is_external ? `
-                                    <button class="btn btn-secondary" onclick="downloadMedia('${item.id}')" style="flex: 1;">
-                                        <i class="fas fa-download"></i> Скачать
-                                    </button>
-                                ` : ''}
-                            </div>
+                        <div style="font-size: 0.85rem; color: #718096; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                            <span>${createdDate}</span>
+                            ${isExternal ? '<span style="background: #e6fffa; color: #234e52; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem;">Ссылка</span>' : ''}
                         </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary cancel-btn">
-                                Закрыть
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-small" onclick="window.viewMedia('${item.id}')" style="flex: 1;">
+                                <i class="fas fa-eye"></i> Просмотр
+                            </button>
+                            ${!isExternal ? `
+                                <button class="btn btn-small" onclick="window.downloadMedia('${item.id}')">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                            ` : ''}
+                            <button class="btn btn-small btn-danger" onclick="window.deleteMedia('${item.id}')">
+                                <i class="fas fa-trash"></i>
                             </button>
                         </div>
                     </div>
                 </div>
             `;
-            
-            const overlay = document.getElementById('modal-overlay');
-            overlay.innerHTML = modalHtml;
-            overlay.classList.remove('hidden');
-            document.getElementById('view-media-modal').classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-            
-            // Закрытие модального окна
-            document.querySelector('#view-media-modal .modal-close')?.addEventListener('click', window.closeAllModals);
-            document.querySelector('#view-media-modal .cancel-btn')?.addEventListener('click', window.closeAllModals);
-        }
-        
-        function downloadMedia(mediaId) {
-            const item = (window.media || []).find(m => m.id === mediaId);
-            if (!item || item.is_external) return;
-            
-            const link = document.createElement('a');
-            link.href = item.file_url;
-            link.download = item.file_name || `media-${mediaId}`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            window.showNotification('✅ Скачивание началось', 'success');
-        }
-        
-        async function deleteMedia(mediaId) {
-            if (!confirm('Удалить этот медиафайл?')) return;
-            
-            window.showLoader('Удаление медиафайла...');
-            
-            try {
-                // Если пользователь авторизован, удаляем из Supabase
-                if (window.currentUser && window.supabaseClient) {
-                    try {
-                        const { error } = await window.supabaseClient
-                            .from('media')
-                            .delete()
-                            .eq('id', mediaId);
-                        
-                        if (error) throw error;
-                    } catch (supabaseError) {
-                        console.warn('Не удалось удалить из Supabase:', supabaseError);
-                    }
-                }
-                
-                // Удаляем из локального массива
-                const index = window.media.findIndex(m => m.id === mediaId);
-                if (index !== -1) {
-                    window.media.splice(index, 1);
-                }
-                
-                window.showNotification('✅ Медиафайл удален!', 'success');
-                
-                // Сохраняем в localStorage
-                window.saveToLocalStorage();
-                
-                updateMediaGrid();
-                
-            } catch (error) {
-                console.error('Ошибка удаления медиафайла:', error);
-                window.showNotification('Ошибка удаления медиафайла', 'error');
-            } finally {
-                window.hideLoader();
-            }
-        }
-        
-        function showSelectedFiles() {
-            const filesInput = document.getElementById('upload-files');
-            const fileList = document.getElementById('file-list');
-            const listContainer = document.getElementById('selected-files-list');
-            
-            if (!filesInput || !fileList || !listContainer) return;
-            
-            const files = filesInput.files;
-            
-            if (!files || files.length === 0) {
-                fileList.style.display = 'none';
-                return;
-            }
-            
-            listContainer.innerHTML = '';
-            
-            Array.from(files).forEach((file, index) => {
-                const li = document.createElement('li');
-                li.style.padding = '8px 12px';
-                li.style.background = '#f7fafc';
-                li.style.borderRadius = '6px';
-                li.style.marginBottom = '8px';
-                li.style.border = '1px solid #e2e8f0';
-                li.style.fontSize = '0.9rem';
-                li.style.color = '#4a5568';
-                li.textContent = `${index + 1}. ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
-                listContainer.appendChild(li);
-            });
-            
-            fileList.style.display = 'block';
-        }
-        
-        // Инициализация страницы
-        document.addEventListener('DOMContentLoaded', async () => {
-            // Загружаем данные
-            await window.loadUserData();
-            
-            // Обновляем медиатеку
-            updateMediaGrid();
-            
-            // Обработчик кнопки загрузки медиа
-            document.getElementById('upload-media-btn')?.addEventListener('click', () => {
-                // Сбрасываем форму
-                const form = document.getElementById('upload-form-modal');
-                if (form) {
-                    form.reset();
-                    const fileList = document.getElementById('file-list');
-                    if (fileList) fileList.style.display = 'none';
-                }
-                
-                window.showModal('upload-modal');
-            });
-            
-            // Обработчики поиска и сортировки
-            document.getElementById('media-search')?.addEventListener('input', updateMediaGrid);
-            document.getElementById('media-sort')?.addEventListener('change', updateMediaGrid);
-            document.getElementById('media-type-filter')?.addEventListener('change', updateMediaGrid);
-            
-            // Обработчик выбора файлов
-            document.getElementById('browse-files-btn')?.addEventListener('click', () => {
-                document.getElementById('upload-files').click();
-            });
-            
-            document.getElementById('upload-files')?.addEventListener('change', showSelectedFiles);
         });
         
-        // Экспортируем функции
-        window.updateMediaGrid = updateMediaGrid;
-        window.viewMedia = viewMedia;
-        window.deleteMedia = deleteMedia;
-        window.showSelectedFiles = showSelectedFiles;
-    </script>
+        container.innerHTML = html;
+    }
+    
+    function updateMediaGrid() {
+        applyMediaFilters();
+    }
+    
+    function escapeHtml(text) {
+        if (!text) return '';
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+    
+    function getMediaTypeFromUrl(url) {
+        if (!url) return 'link';
+        
+        const lowerUrl = url.toLowerCase();
+        if (lowerUrl.match(/\.(jpg|jpeg|png|gif|bmp|webp|svg)$/) || 
+            lowerUrl.includes('image/') || 
+            lowerUrl.startsWith('data:image/')) {
+            return 'image';
+        } else if (lowerUrl.match(/\.(mp4|avi|mov|wmv|flv|webm|mkv)$/) || 
+                   lowerUrl.includes('video/') || 
+                   lowerUrl.startsWith('data:video/')) {
+            return 'video';
+        } else if (lowerUrl.match(/\.(mp3|wav|ogg|flac|aac)$/) || 
+                   lowerUrl.includes('audio/') || 
+                   lowerUrl.startsWith('data:audio/')) {
+            return 'audio';
+        } else if (lowerUrl.match(/\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt)$/)) {
+            return 'document';
+        } else {
+            return 'link';
+        }
+    }
+    
+    function readFileAsDataURL(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+    
+    async function saveMediaToSupabase(mediaData) {
+        try {
+            const { data: { user } } = await window.supabaseClient.auth.getUser();
+            
+            if (!user) {
+                window.showNotification('Необходимо авторизоваться', 'error');
+                return null;
+            }
+            
+            const mediaForDb = {
+                file_url: mediaData.file_url,
+                file_type: mediaData.file_type,
+                description: mediaData.description || '',
+                file_name: mediaData.file_name || '',
+                file_size: mediaData.file_size || null,
+                file_type_mime: mediaData.file_type_mime || null,
+                is_external: mediaData.is_external || false,
+                user_id: user.id,
+                created_at: new Date().toISOString()
+            };
+            
+            const { data, error } = await window.supabaseClient
+                .from('media')
+                .insert([mediaForDb])
+                .select();
+            
+            if (error) throw error;
+            
+            if (data && data[0]) {
+                return data[0];
+            }
+            
+            return null;
+            
+        } catch (error) {
+            window.showNotification('Ошибка сохранения в базу данных', 'error');
+            return null;
+        }
+    }
+    
+    async function deleteMediaFromSupabase(mediaId) {
+        try {
+            const { data: { user } } = await window.supabaseClient.auth.getUser();
+            
+            if (!user) {
+                window.showNotification('Необходимо авторизоваться', 'error');
+                return false;
+            }
+            
+            if (mediaId.toString().startsWith('local-')) {
+                return true;
+            }
+            
+            const { error } = await window.supabaseClient
+                .from('media')
+                .delete()
+                .eq('id', mediaId);
+            
+            if (error) throw error;
+            
+            return true;
+            
+        } catch (error) {
+            window.showNotification('Ошибка удаления из базы данных', 'error');
+            return false;
+        }
+    }
+    
+    window.openUploadModal = function() {
+        const modalHtml = `
+            <div class="modal" id="upload-media-modal" style="max-width: 500px;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Загрузить медиа</h3>
+                        <button class="modal-close" onclick="window.closeUploadModal()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="upload-media-form" onsubmit="return false;">
+                            <div class="form-group">
+                                <label>Ссылка на медиа (URL)</label>
+                                <input type="url" id="upload-media-url" class="form-control" placeholder="https://example.com/photo.jpg">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Или выберите файл</label>
+                                <input type="file" id="upload-media-file" class="form-control" accept="image/*,video/*,audio/*,.pdf,.doc,.docx">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Описание</label>
+                                <input type="text" id="upload-media-description" class="form-control" placeholder="Что изображено на фото?">
+                            </div>
+                            
+                            <div class="modal-footer" style="padding: 20px 0 0 0;">
+                                <button type="button" class="btn btn-secondary" onclick="window.closeUploadModal()">
+                                    Отмена
+                                </button>
+                                <button type="button" class="btn" onclick="window.saveNewMedia()">
+                                    <i class="fas fa-upload"></i> Загрузить
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        const overlay = document.getElementById('modal-overlay');
+        overlay.innerHTML = modalHtml;
+        overlay.classList.remove('hidden');
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    };
+    
+    window.closeUploadModal = function() {
+        const overlay = document.getElementById('modal-overlay');
+        overlay.classList.remove('active');
+        setTimeout(() => {
+            overlay.classList.add('hidden');
+            overlay.innerHTML = '';
+        }, 300);
+        document.body.style.overflow = '';
+    };
+    
+    window.saveNewMedia = async function() {
+        const url = document.getElementById('upload-media-url').value;
+        const file = document.getElementById('upload-media-file').files[0];
+        const description = document.getElementById('upload-media-description').value;
+        
+        if (!url && !file) {
+            window.showNotification('Введите URL или выберите файл', 'error');
+            return;
+        }
+        
+        window.showLoader('Загрузка...');
+        
+        try {
+            let mediaData;
+            
+            if (file) {
+                const fileUrl = await readFileAsDataURL(file);
+                mediaData = {
+                    file_url: fileUrl,
+                    file_type: file.type.startsWith('image/') ? 'image' : 
+                               file.type.startsWith('video/') ? 'video' : 
+                               file.type.startsWith('audio/') ? 'audio' : 'document',
+                    description: description || file.name,
+                    file_name: file.name,
+                    file_size: file.size,
+                    file_type_mime: file.type,
+                    is_external: false
+                };
+            } else {
+                mediaData = {
+                    file_url: url,
+                    file_type: getMediaTypeFromUrl(url),
+                    description: description || 'Ссылка на медиа',
+                    is_external: true
+                };
+            }
+            
+            const savedMedia = await saveMediaToSupabase(mediaData);
+            
+            if (savedMedia) {
+                if (!window.media) window.media = [];
+                window.media.unshift(savedMedia);
+                
+                window.showNotification('✅ Медиа загружено!', 'success');
+                window.closeUploadModal();
+                applyMediaFilters();
+            } else {
+                window.showNotification('Не удалось загрузить медиа', 'error');
+            }
+            
+        } catch (error) {
+            window.showNotification('Ошибка загрузки', 'error');
+        } finally {
+            window.hideLoader();
+        }
+    };
+    
+    window.viewMedia = function(mediaId) {
+        const item = (window.media || []).find(m => m.id == mediaId);
+        if (!item) return;
+        
+        const isImage = item.file_type === 'image';
+        const isVideo = item.file_type === 'video';
+        
+        let mediaContent = '';
+        if (isImage) {
+            mediaContent = `
+                <img src="${item.file_url}" alt="${item.description || 'Фото'}" 
+                     style="width: 100%; max-height: 400px; object-fit: contain; border-radius: 8px; margin-bottom: 20px;">
+            `;
+        } else if (isVideo) {
+            mediaContent = `
+                <video controls style="width: 100%; max-height: 400px; border-radius: 8px; margin-bottom: 20px;">
+                    <source src="${item.file_url}" type="video/mp4">
+                    Ваш браузер не поддерживает видео.
+                </video>
+            `;
+        } else {
+            mediaContent = `
+                <div style="background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); width: 100%; height: 200px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 4rem; margin-bottom: 20px;">
+                    <i class="fas fa-file"></i>
+                </div>
+            `;
+        }
+        
+        const modalHtml = `
+            <div class="modal" id="view-media-modal" style="max-width: 700px;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Просмотр медиа</h3>
+                        <button class="modal-close" onclick="window.closeViewModal()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        ${mediaContent}
+                        <h4 style="margin-bottom: 10px; color: #2d3748;">${escapeHtml(item.description || 'Без описания')}</h4>
+                        <div style="color: #718096; margin-bottom: 10px;">
+                            <div><strong>Тип:</strong> ${item.file_type === 'image' ? 'Изображение' : item.file_type === 'video' ? 'Видео' : 'Документ'}</div>
+                            <div><strong>Загружено:</strong> ${new Date(item.created_at).toLocaleDateString('ru-RU')}</div>
+                            ${item.file_name ? `<div><strong>Имя файла:</strong> ${escapeHtml(item.file_name)}</div>` : ''}
+                        </div>
+                        <div style="margin-top: 20px; display: flex; gap: 10px;">
+                            <a href="${item.file_url}" target="_blank" class="btn" style="flex: 1;">
+                                <i class="fas fa-external-link-alt"></i> Открыть
+                            </a>
+                            <button type="button" class="btn btn-secondary" onclick="window.closeViewModal()" style="flex: 1;">
+                                Закрыть
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        const overlay = document.getElementById('modal-overlay');
+        overlay.innerHTML = modalHtml;
+        overlay.classList.remove('hidden');
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    };
+    
+    window.closeViewModal = function() {
+        const overlay = document.getElementById('modal-overlay');
+        overlay.classList.remove('active');
+        setTimeout(() => {
+            overlay.classList.add('hidden');
+            overlay.innerHTML = '';
+        }, 300);
+        document.body.style.overflow = '';
+    };
+    
+    window.downloadMedia = function(mediaId) {
+        const item = (window.media || []).find(m => m.id == mediaId);
+        if (!item || item.is_external) return;
+        
+        const link = document.createElement('a');
+        link.href = item.file_url;
+        link.download = item.file_name || `media-${mediaId}`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        window.showNotification('✅ Скачивание началось', 'success');
+    };
+    
+    window.deleteMedia = async function(mediaId) {
+        if (!confirm('Удалить этот медиафайл?')) return;
+        
+        window.showLoader('Удаление...');
+        
+        try {
+            const deleted = await deleteMediaFromSupabase(mediaId);
+            
+            if (deleted) {
+                window.media = window.media.filter(m => m.id != mediaId);
+                
+                window.showNotification('✅ Медиафайл удален!', 'success');
+                applyMediaFilters();
+            }
+            
+        } catch (error) {
+            window.showNotification('Ошибка удаления', 'error');
+        } finally {
+            window.hideLoader();
+        }
+    };
+    
+    document.addEventListener('DOMContentLoaded', async () => {
+        await loadMediaFromSupabase();
+        
+        const uploadBtn = document.getElementById('upload-media-btn');
+        if (uploadBtn) {
+            uploadBtn.onclick = function(e) {
+                e.preventDefault();
+                window.openUploadModal();
+                return false;
+            };
+        }
+        
+        const searchInput = document.getElementById('media-search');
+        const sortSelect = document.getElementById('media-sort');
+        const typeFilter = document.getElementById('media-type-filter');
+        
+        if (searchInput) {
+            searchInput.addEventListener('input', function(e) {
+                currentMediaSearch = e.target.value;
+                applyMediaFilters();
+            });
+        }
+        
+        if (sortSelect) {
+            sortSelect.addEventListener('change', function(e) {
+                currentMediaSort = e.target.value;
+                applyMediaFilters();
+            });
+        }
+        
+        if (typeFilter) {
+            typeFilter.addEventListener('change', function(e) {
+                currentMediaTypeFilter = e.target.value;
+                applyMediaFilters();
+            });
+        }
+    });
+</script>
 </body>
 </html>
