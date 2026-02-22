@@ -184,12 +184,7 @@
                 return;
             }
             
-            if (data && data.length > 0) {
-                window.media = data;
-            } else {
-                window.media = [];
-            }
-            
+            window.media = data || [];
             applyMediaFilters();
             
         } catch (error) {
@@ -207,7 +202,7 @@
         if (currentMediaSearch) {
             const searchLower = currentMediaSearch.toLowerCase();
             filteredMedia = filteredMedia.filter(item => 
-                (item.description && item.description.toLowerCase().includes(searchLower))
+                item.description && item.description.toLowerCase().includes(searchLower)
             );
         }
         
@@ -223,9 +218,7 @@
             } else if (currentMediaSort === 'oldest') {
                 return new Date(a.created_at) - new Date(b.created_at);
             } else if (currentMediaSort === 'name') {
-                const nameA = (a.description || '').toLowerCase();
-                const nameB = (b.description || '').toLowerCase();
-                return nameA.localeCompare(nameB);
+                return (a.description || '').localeCompare(b.description || '');
             }
             return 0;
         });
@@ -295,11 +288,6 @@
                             <button class="btn btn-small" onclick="window.viewMedia('${item.id}')" style="flex: 1;">
                                 <i class="fas fa-eye"></i> Просмотр
                             </button>
-                            ${!isExternal ? `
-                                <button class="btn btn-small" onclick="window.downloadMedia('${item.id}')">
-                                    <i class="fas fa-download"></i>
-                                </button>
-                            ` : ''}
                             <button class="btn btn-small btn-danger" onclick="window.deleteMedia('${item.id}')">
                                 <i class="fas fa-trash"></i>
                             </button>
@@ -328,25 +316,12 @@
     
     function getMediaTypeFromUrl(url) {
         if (!url) return 'link';
-        
         const lowerUrl = url.toLowerCase();
-        if (lowerUrl.match(/\.(jpg|jpeg|png|gif|bmp|webp|svg)$/) || 
-            lowerUrl.includes('image/') || 
-            lowerUrl.startsWith('data:image/')) {
-            return 'image';
-        } else if (lowerUrl.match(/\.(mp4|avi|mov|wmv|flv|webm|mkv)$/) || 
-                   lowerUrl.includes('video/') || 
-                   lowerUrl.startsWith('data:video/')) {
-            return 'video';
-        } else if (lowerUrl.match(/\.(mp3|wav|ogg|flac|aac)$/) || 
-                   lowerUrl.includes('audio/') || 
-                   lowerUrl.startsWith('data:audio/')) {
-            return 'audio';
-        } else if (lowerUrl.match(/\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt)$/)) {
-            return 'document';
-        } else {
-            return 'link';
-        }
+        if (lowerUrl.match(/\.(jpg|jpeg|png|gif|bmp|webp|svg)$/)) return 'image';
+        if (lowerUrl.match(/\.(mp4|avi|mov|wmv|flv|webm|mkv)$/)) return 'video';
+        if (lowerUrl.match(/\.(mp3|wav|ogg|flac|aac)$/)) return 'audio';
+        if (lowerUrl.match(/\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt)$/)) return 'document';
+        return 'link';
     }
     
     function readFileAsDataURL(file) {
@@ -367,33 +342,41 @@
                 return null;
             }
             
-            // Отправляем только те поля, которые точно есть в таблице
+            // Максимально простой объект для вставки
             const mediaForDb = {
                 file_url: mediaData.file_url,
                 file_type: mediaData.file_type,
                 description: mediaData.description || '',
-                file_size: mediaData.file_size || null,
-                file_type_mime: mediaData.file_type_mime || null,
                 is_external: mediaData.is_external || false,
                 user_id: user.id
             };
             
-            const { data, error } = await window.supabaseClient
-                .from('media')
-                .insert([mediaForDb])
-                .select();
-            
-            if (error) throw error;
-            
-            if (data && data[0]) {
-                return data[0];
+            // Добавляем размер если есть
+            if (mediaData.file_size) {
+                mediaForDb.file_size = mediaData.file_size;
             }
             
-            return null;
+            // Добавляем MIME тип если есть
+            if (mediaData.file_type_mime) {
+                mediaForDb.file_type_mime = mediaData.file_type_mime;
+            }
+            
+            const { data, error } = await window.supabaseClient
+                .from('media')
+                .insert(mediaForDb)
+                .select();
+            
+            if (error) {
+                console.error('Supabase insert error:', error);
+                window.showNotification('Ошибка: ' + error.message, 'error');
+                return null;
+            }
+            
+            return data?.[0] || null;
             
         } catch (error) {
-            console.error('Supabase error:', error);
-            window.showNotification('Ошибка сохранения в базу данных', 'error');
+            console.error('Save error:', error);
+            window.showNotification('Ошибка сохранения', 'error');
             return null;
         }
     }
@@ -412,12 +395,15 @@
                 .delete()
                 .eq('id', mediaId);
             
-            if (error) throw error;
+            if (error) {
+                console.error('Delete error:', error);
+                return false;
+            }
             
             return true;
             
         } catch (error) {
-            window.showNotification('Ошибка удаления из базы данных', 'error');
+            console.error('Delete error:', error);
             return false;
         }
     }
@@ -495,11 +481,14 @@
             
             if (file) {
                 const fileUrl = await readFileAsDataURL(file);
+                let fileType = 'document';
+                if (file.type.startsWith('image/')) fileType = 'image';
+                else if (file.type.startsWith('video/')) fileType = 'video';
+                else if (file.type.startsWith('audio/')) fileType = 'audio';
+                
                 mediaData = {
                     file_url: fileUrl,
-                    file_type: file.type.startsWith('image/') ? 'image' : 
-                               file.type.startsWith('video/') ? 'video' : 
-                               file.type.startsWith('audio/') ? 'audio' : 'document',
+                    file_type: fileType,
                     description: description || file.name,
                     file_size: file.size,
                     file_type_mime: file.type,
@@ -523,8 +512,6 @@
                 window.showNotification('✅ Медиа загружено!', 'success');
                 window.closeUploadModal();
                 applyMediaFilters();
-            } else {
-                window.showNotification('Не удалось загрузить медиа', 'error');
             }
             
         } catch (error) {
@@ -536,32 +523,8 @@
     };
     
     window.viewMedia = function(mediaId) {
-        const item = (window.media || []).find(m => m.id == mediaId);
+        const item = window.media.find(m => m.id == mediaId);
         if (!item) return;
-        
-        const isImage = item.file_type === 'image';
-        const isVideo = item.file_type === 'video';
-        
-        let mediaContent = '';
-        if (isImage) {
-            mediaContent = `
-                <img src="${item.file_url}" alt="${item.description || 'Фото'}" 
-                     style="width: 100%; max-height: 400px; object-fit: contain; border-radius: 8px; margin-bottom: 20px;">
-            `;
-        } else if (isVideo) {
-            mediaContent = `
-                <video controls style="width: 100%; max-height: 400px; border-radius: 8px; margin-bottom: 20px;">
-                    <source src="${item.file_url}" type="video/mp4">
-                    Ваш браузер не поддерживает видео.
-                </video>
-            `;
-        } else {
-            mediaContent = `
-                <div style="background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); width: 100%; height: 200px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 4rem; margin-bottom: 20px;">
-                    <i class="fas fa-file"></i>
-                </div>
-            `;
-        }
         
         const modalHtml = `
             <div class="modal" id="view-media-modal" style="max-width: 700px;">
@@ -571,20 +534,20 @@
                         <button class="modal-close" onclick="window.closeViewModal()">&times;</button>
                     </div>
                     <div class="modal-body">
-                        ${mediaContent}
-                        <h4 style="margin-bottom: 10px; color: #2d3748;">${escapeHtml(item.description || 'Без описания')}</h4>
-                        <div style="color: #718096; margin-bottom: 10px;">
-                            <div><strong>Тип:</strong> ${item.file_type === 'image' ? 'Изображение' : item.file_type === 'video' ? 'Видео' : 'Документ'}</div>
-                            <div><strong>Загружено:</strong> ${new Date(item.created_at).toLocaleDateString('ru-RU')}</div>
+                        ${item.file_type === 'image' ? 
+                            `<img src="${item.file_url}" style="width: 100%; max-height: 400px; object-fit: contain; border-radius: 8px; margin-bottom: 20px;">` :
+                            `<a href="${item.file_url}" target="_blank" class="btn" style="display: block; text-align: center;">Открыть файл</a>`
+                        }
+                        <h4 style="margin: 20px 0 10px;">${escapeHtml(item.description || 'Без описания')}</h4>
+                        <div style="color: #718096;">
+                            <div>Тип: ${item.file_type}</div>
+                            <div>Загружено: ${new Date(item.created_at).toLocaleDateString('ru-RU')}</div>
                         </div>
-                        <div style="margin-top: 20px; display: flex; gap: 10px;">
-                            <a href="${item.file_url}" target="_blank" class="btn" style="flex: 1;">
-                                <i class="fas fa-external-link-alt"></i> Открыть
-                            </a>
-                            <button type="button" class="btn btn-secondary" onclick="window.closeViewModal()" style="flex: 1;">
-                                Закрыть
-                            </button>
-                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="window.closeViewModal()">
+                            Закрыть
+                        </button>
                     </div>
                 </div>
             </div>
@@ -607,20 +570,6 @@
         document.body.style.overflow = '';
     };
     
-    window.downloadMedia = function(mediaId) {
-        const item = (window.media || []).find(m => m.id == mediaId);
-        if (!item || item.is_external) return;
-        
-        const link = document.createElement('a');
-        link.href = item.file_url;
-        link.download = `media-${mediaId}`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        window.showNotification('✅ Скачивание началось', 'success');
-    };
-    
     window.deleteMedia = async function(mediaId) {
         if (!confirm('Удалить этот медиафайл?')) return;
         
@@ -631,7 +580,6 @@
             
             if (deleted) {
                 window.media = window.media.filter(m => m.id != mediaId);
-                
                 window.showNotification('✅ Медиафайл удален!', 'success');
                 applyMediaFilters();
             }
