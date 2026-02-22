@@ -207,8 +207,7 @@
         if (currentMediaSearch) {
             const searchLower = currentMediaSearch.toLowerCase();
             filteredMedia = filteredMedia.filter(item => 
-                (item.description && item.description.toLowerCase().includes(searchLower)) ||
-                (item.file_name && item.file_name.toLowerCase().includes(searchLower))
+                (item.description && item.description.toLowerCase().includes(searchLower))
             );
         }
         
@@ -224,8 +223,8 @@
             } else if (currentMediaSort === 'oldest') {
                 return new Date(a.created_at) - new Date(b.created_at);
             } else if (currentMediaSort === 'name') {
-                const nameA = (a.description || a.file_name || '').toLowerCase();
-                const nameB = (b.description || b.file_name || '').toLowerCase();
+                const nameA = (a.description || '').toLowerCase();
+                const nameB = (b.description || '').toLowerCase();
                 return nameA.localeCompare(nameB);
             }
             return 0;
@@ -368,11 +367,11 @@
                 return null;
             }
             
+            // Отправляем только те поля, которые точно есть в таблице
             const mediaForDb = {
                 file_url: mediaData.file_url,
                 file_type: mediaData.file_type,
                 description: mediaData.description || '',
-                file_name: mediaData.file_name || null,
                 file_size: mediaData.file_size || null,
                 file_type_mime: mediaData.file_type_mime || null,
                 is_external: mediaData.is_external || false,
@@ -502,7 +501,6 @@
                                file.type.startsWith('video/') ? 'video' : 
                                file.type.startsWith('audio/') ? 'audio' : 'document',
                     description: description || file.name,
-                    file_name: file.name,
                     file_size: file.size,
                     file_type_mime: file.type,
                     is_external: false
@@ -578,7 +576,6 @@
                         <div style="color: #718096; margin-bottom: 10px;">
                             <div><strong>Тип:</strong> ${item.file_type === 'image' ? 'Изображение' : item.file_type === 'video' ? 'Видео' : 'Документ'}</div>
                             <div><strong>Загружено:</strong> ${new Date(item.created_at).toLocaleDateString('ru-RU')}</div>
-                            ${item.file_name ? `<div><strong>Имя файла:</strong> ${escapeHtml(item.file_name)}</div>` : ''}
                         </div>
                         <div style="margin-top: 20px; display: flex; gap: 10px;">
                             <a href="${item.file_url}" target="_blank" class="btn" style="flex: 1;">
@@ -616,7 +613,7 @@
         
         const link = document.createElement('a');
         link.href = item.file_url;
-        link.download = item.file_name || `media-${mediaId}`;
+        link.download = `media-${mediaId}`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
