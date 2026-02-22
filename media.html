@@ -162,6 +162,7 @@
     let currentMediaSort = 'newest';
     let currentMediaTypeFilter = 'all';
     
+    // ЗАГРУЗКА МЕДИА ИЗ SUPABASE
     async function loadMediaFromSupabase() {
         try {
             const { data: { user } } = await window.supabaseClient.auth.getUser();
@@ -190,6 +191,52 @@
         } catch (error) {
             window.media = [];
             updateMediaGrid();
+        }
+    }
+    
+    // ЗАГРУЗКА ФАЙЛА В STORAGE
+    async function uploadFileToStorage(file, userId) {
+        try {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${userId}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+            
+            const { data, error } = await window.supabaseClient.storage
+                .from('media')
+                .upload(fileName, file);
+            
+            if (error) throw error;
+            
+            // Получаем публичный URL
+            const { data: { publicUrl } } = window.supabaseClient.storage
+                .from('media')
+                .getPublicUrl(fileName);
+            
+            return publicUrl;
+            
+        } catch (error) {
+            console.error('Upload to storage error:', error);
+            throw error;
+        }
+    }
+    
+    // УДАЛЕНИЕ ФАЙЛА ИЗ STORAGE
+    async function deleteFileFromStorage(fileUrl) {
+        try {
+            // Извлекаем путь из URL
+            const urlParts = fileUrl.split('/');
+            const fileName = urlParts.slice(urlParts.indexOf('media') + 1).join('/');
+            
+            const { error } = await window.supabaseClient.storage
+                .from('media')
+                .remove([fileName]);
+            
+            if (error) throw error;
+            
+            return true;
+            
+        } catch (error) {
+            console.error('Delete from storage error:', error);
+            return false;
         }
     }
     
@@ -248,7 +295,6 @@
         mediaItems.forEach(item => {
             const isImage = item.file_type === 'image';
             const isVideo = item.file_type === 'video';
-            const isExternal = item.is_external === true;
             const createdDate = new Date(item.created_at).toLocaleDateString('ru-RU');
             
             let mediaPreview = '';
@@ -280,9 +326,8 @@
                         <div style="margin-bottom: 10px; font-weight: 500; color: #2d3748; height: 50px; overflow: hidden; text-overflow: ellipsis;">
                             ${escapeHtml(item.description || 'Без описания')}
                         </div>
-                        <div style="font-size: 0.85rem; color: #718096; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                        <div style="font-size: 0.85rem; color: #718096; margin-bottom: 15px;">
                             <span>${createdDate}</span>
-                            ${isExternal ? '<span style="background: #e6fffa; color: #234e52; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem;">Ссылка</span>' : ''}
                         </div>
                         <div style="display: flex; gap: 8px;">
                             <button class="btn btn-small" onclick="window.viewMedia('${item.id}')" style="flex: 1;">
@@ -324,15 +369,6 @@
         return 'link';
     }
     
-    function readFileAsDataURL(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-        });
-    }
-    
     async function saveMediaToSupabase(mediaData) {
         try {
             const { data: { user } } = await window.supabaseClient.auth.getUser();
@@ -342,12 +378,11 @@
                 return null;
             }
             
-            // Только те поля, которые точно есть в таблице
+            // Только поля, которые есть в таблице
             const mediaForDb = {
                 file_url: mediaData.file_url,
                 file_type: mediaData.file_type,
                 description: mediaData.description || '',
-                is_external: mediaData.is_external || false,
                 user_id: user.id
             };
             
@@ -371,7 +406,7 @@
         }
     }
     
-    async function deleteMediaFromSupabase(mediaId) {
+    async function deleteMediaFromSupabase(mediaId, fileUrl) {
         try {
             const { data: { user } } = await window.supabaseClient.auth.getUser();
             
@@ -380,14 +415,17 @@
                 return false;
             }
             
-            const { error } = await window.supabaseClient
+            // Удаляем из базы данных
+            const { error: dbError } = await window.supabaseClient
                 .from('media')
                 .delete()
                 .eq('id', mediaId);
             
-            if (error) {
-                console.error('Delete error:', error);
-                return false;
+            if (dbError) throw dbError;
+            
+            // Если это файл из Storage, удаляем его
+            if (fileUrl && fileUrl.includes('supabase.co/storage')) {
+                await deleteFileFromStorage(fileUrl);
             }
             
             return true;
@@ -411,10 +449,11 @@
                             <div class="form-group">
                                 <label>Ссылка на медиа (URL)</label>
                                 <input type="url" id="upload-media-url" class="form-control" placeholder="https://example.com/photo.jpg">
+                                <small style="color: #718096;">Или загрузите файл ниже</small>
                             </div>
                             
                             <div class="form-group">
-                                <label>Или выберите файл</label>
+                                <label>Выберите файл</label>
                                 <input type="file" id="upload-media-file" class="form-control" accept="image/*,video/*,audio/*,.pdf,.doc,.docx">
                             </div>
                             
@@ -467,29 +506,36 @@
         window.showLoader('Загрузка...');
         
         try {
-            let mediaData;
+            const { data: { user } } = await window.supabaseClient.auth.getUser();
+            
+            if (!user) {
+                window.showNotification('Необходимо авторизоваться', 'error');
+                return;
+            }
+            
+            let fileUrl;
+            let fileType;
             
             if (file) {
-                const fileUrl = await readFileAsDataURL(file);
-                let fileType = 'document';
+                // Загружаем файл в Storage
+                fileUrl = await uploadFileToStorage(file, user.id);
+                
+                // Определяем тип файла
                 if (file.type.startsWith('image/')) fileType = 'image';
                 else if (file.type.startsWith('video/')) fileType = 'video';
                 else if (file.type.startsWith('audio/')) fileType = 'audio';
-                
-                mediaData = {
-                    file_url: fileUrl,
-                    file_type: fileType,
-                    description: description || file.name,
-                    is_external: false
-                };
+                else fileType = 'document';
             } else {
-                mediaData = {
-                    file_url: url,
-                    file_type: getMediaTypeFromUrl(url),
-                    description: description || 'Ссылка на медиа',
-                    is_external: true
-                };
+                // Используем URL
+                fileUrl = url;
+                fileType = getMediaTypeFromUrl(url);
             }
+            
+            const mediaData = {
+                file_url: fileUrl,
+                file_type: fileType,
+                description: description || (file ? file.name : 'Ссылка на медиа')
+            };
             
             const savedMedia = await saveMediaToSupabase(mediaData);
             
@@ -504,7 +550,7 @@
             
         } catch (error) {
             console.error('Upload error:', error);
-            window.showNotification('Ошибка загрузки', 'error');
+            window.showNotification('Ошибка загрузки: ' + error.message, 'error');
         } finally {
             window.hideLoader();
         }
@@ -515,6 +561,24 @@
         if (!item) return;
         
         const isImage = item.file_type === 'image';
+        const isVideo = item.file_type === 'video';
+        
+        let mediaContent = '';
+        if (isImage) {
+            mediaContent = `<img src="${item.file_url}" style="width: 100%; max-height: 400px; object-fit: contain; border-radius: 8px;">`;
+        } else if (isVideo) {
+            mediaContent = `
+                <video controls style="width: 100%; max-height: 400px; border-radius: 8px;">
+                    <source src="${item.file_url}" type="video/mp4">
+                </video>
+            `;
+        } else {
+            mediaContent = `
+                <div style="text-align: center; padding: 40px;">
+                    <i class="fas fa-file" style="font-size: 4rem; color: #667eea;"></i>
+                </div>
+            `;
+        }
         
         const modalHtml = `
             <div class="modal" id="view-media-modal" style="max-width: 700px;">
@@ -524,27 +588,15 @@
                         <button class="modal-close" onclick="window.closeViewModal()">&times;</button>
                     </div>
                     <div class="modal-body">
-                        ${isImage ? 
-                            `<img src="${item.file_url}" alt="${item.description || 'Фото'}" 
-                                  style="width: 100%; max-height: 400px; object-fit: contain; border-radius: 8px; margin-bottom: 20px;">` :
-                            `<div style="text-align: center; padding: 40px; background: #f7fafc; border-radius: 8px; margin-bottom: 20px;">
-                                <i class="fas fa-file" style="font-size: 4rem; color: #667eea;"></i>
-                                <p style="margin-top: 10px;">${item.file_type === 'video' ? 'Видеофайл' : 'Документ'}</p>
-                             </div>`
-                        }
-                        <h4 style="margin: 20px 0 10px; color: #2d3748;">${escapeHtml(item.description || 'Без описания')}</h4>
-                        <div style="color: #718096; margin-bottom: 20px;">
-                            <div>Тип: ${item.file_type === 'image' ? 'Изображение' : item.file_type === 'video' ? 'Видео' : 'Документ'}</div>
-                            <div>Загружено: ${new Date(item.created_at).toLocaleDateString('ru-RU')}</div>
-                        </div>
-                        <a href="${item.file_url}" target="_blank" class="btn" style="display: block; text-align: center;">
-                            <i class="fas fa-external-link-alt"></i> Открыть в новой вкладке
+                        ${mediaContent}
+                        <h4 style="margin: 20px 0 10px;">${escapeHtml(item.description || 'Без описания')}</h4>
+                        <p style="color: #718096;">Загружено: ${new Date(item.created_at).toLocaleDateString('ru-RU')}</p>
+                        <a href="${item.file_url}" target="_blank" class="btn" style="margin-top: 20px; display: block; text-align: center;">
+                            <i class="fas fa-external-link-alt"></i> Открыть
                         </a>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" onclick="window.closeViewModal()">
-                            Закрыть
-                        </button>
+                        <button class="btn btn-secondary" onclick="window.closeViewModal()">Закрыть</button>
                     </div>
                 </div>
             </div>
@@ -573,7 +625,10 @@
         window.showLoader('Удаление...');
         
         try {
-            const deleted = await deleteMediaFromSupabase(mediaId);
+            const item = window.media.find(m => m.id == mediaId);
+            if (!item) return;
+            
+            const deleted = await deleteMediaFromSupabase(mediaId, item.file_url);
             
             if (deleted) {
                 window.media = window.media.filter(m => m.id != mediaId);
