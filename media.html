@@ -342,7 +342,7 @@
                 return null;
             }
             
-            // Максимально простой объект для вставки
+            // Только те поля, которые точно есть в таблице
             const mediaForDb = {
                 file_url: mediaData.file_url,
                 file_type: mediaData.file_type,
@@ -351,23 +351,13 @@
                 user_id: user.id
             };
             
-            // Добавляем размер если есть
-            if (mediaData.file_size) {
-                mediaForDb.file_size = mediaData.file_size;
-            }
-            
-            // Добавляем MIME тип если есть
-            if (mediaData.file_type_mime) {
-                mediaForDb.file_type_mime = mediaData.file_type_mime;
-            }
-            
             const { data, error } = await window.supabaseClient
                 .from('media')
                 .insert(mediaForDb)
                 .select();
             
             if (error) {
-                console.error('Supabase insert error:', error);
+                console.error('Supabase error:', error);
                 window.showNotification('Ошибка: ' + error.message, 'error');
                 return null;
             }
@@ -490,8 +480,6 @@
                     file_url: fileUrl,
                     file_type: fileType,
                     description: description || file.name,
-                    file_size: file.size,
-                    file_type_mime: file.type,
                     is_external: false
                 };
             } else {
@@ -526,6 +514,8 @@
         const item = window.media.find(m => m.id == mediaId);
         if (!item) return;
         
+        const isImage = item.file_type === 'image';
+        
         const modalHtml = `
             <div class="modal" id="view-media-modal" style="max-width: 700px;">
                 <div class="modal-content">
@@ -534,15 +524,22 @@
                         <button class="modal-close" onclick="window.closeViewModal()">&times;</button>
                     </div>
                     <div class="modal-body">
-                        ${item.file_type === 'image' ? 
-                            `<img src="${item.file_url}" style="width: 100%; max-height: 400px; object-fit: contain; border-radius: 8px; margin-bottom: 20px;">` :
-                            `<a href="${item.file_url}" target="_blank" class="btn" style="display: block; text-align: center;">Открыть файл</a>`
+                        ${isImage ? 
+                            `<img src="${item.file_url}" alt="${item.description || 'Фото'}" 
+                                  style="width: 100%; max-height: 400px; object-fit: contain; border-radius: 8px; margin-bottom: 20px;">` :
+                            `<div style="text-align: center; padding: 40px; background: #f7fafc; border-radius: 8px; margin-bottom: 20px;">
+                                <i class="fas fa-file" style="font-size: 4rem; color: #667eea;"></i>
+                                <p style="margin-top: 10px;">${item.file_type === 'video' ? 'Видеофайл' : 'Документ'}</p>
+                             </div>`
                         }
-                        <h4 style="margin: 20px 0 10px;">${escapeHtml(item.description || 'Без описания')}</h4>
-                        <div style="color: #718096;">
-                            <div>Тип: ${item.file_type}</div>
+                        <h4 style="margin: 20px 0 10px; color: #2d3748;">${escapeHtml(item.description || 'Без описания')}</h4>
+                        <div style="color: #718096; margin-bottom: 20px;">
+                            <div>Тип: ${item.file_type === 'image' ? 'Изображение' : item.file_type === 'video' ? 'Видео' : 'Документ'}</div>
                             <div>Загружено: ${new Date(item.created_at).toLocaleDateString('ru-RU')}</div>
                         </div>
+                        <a href="${item.file_url}" target="_blank" class="btn" style="display: block; text-align: center;">
+                            <i class="fas fa-external-link-alt"></i> Открыть в новой вкладке
+                        </a>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" onclick="window.closeViewModal()">
