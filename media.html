@@ -153,7 +153,7 @@
     <script src="supabase.js"></script>
     <script src="app.js"></script>
     
-   <script>
+<script>
     if (!window.supabaseClient) {
         console.error('Supabase клиент не найден');
     }
@@ -372,12 +372,11 @@
                 file_url: mediaData.file_url,
                 file_type: mediaData.file_type,
                 description: mediaData.description || '',
-                file_name: mediaData.file_name || '',
+                file_name: mediaData.file_name || null,
                 file_size: mediaData.file_size || null,
                 file_type_mime: mediaData.file_type_mime || null,
                 is_external: mediaData.is_external || false,
-                user_id: user.id,
-                created_at: new Date().toISOString()
+                user_id: user.id
             };
             
             const { data, error } = await window.supabaseClient
@@ -394,6 +393,7 @@
             return null;
             
         } catch (error) {
+            console.error('Supabase error:', error);
             window.showNotification('Ошибка сохранения в базу данных', 'error');
             return null;
         }
@@ -406,10 +406,6 @@
             if (!user) {
                 window.showNotification('Необходимо авторизоваться', 'error');
                 return false;
-            }
-            
-            if (mediaId.toString().startsWith('local-')) {
-                return true;
             }
             
             const { error } = await window.supabaseClient
@@ -534,6 +530,7 @@
             }
             
         } catch (error) {
+            console.error('Upload error:', error);
             window.showNotification('Ошибка загрузки', 'error');
         } finally {
             window.hideLoader();
