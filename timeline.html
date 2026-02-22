@@ -161,18 +161,11 @@
     <script src="app.js"></script>
     
 <script>
-    // ПЕРЕМЕННЫЕ ДЛЯ РАБОТЫ С SUPABASE
-    const SUPABASE_URL = 'https://szwsvtxkhlacrarplgtn.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6d3N2dHhraGxhY3JhcnBsZ3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxMzA1NjAsImV4cCI6MjA4MTcwNjU2MH0.dcRnrqlA4Iz1RthtFT7wL_KGorGz4lHnMMsWCP8i-ns';
-    
-    // СОЗДАЕМ КЛИЕНТ SUPABASE (если еще не создан)
+    // ПРОВЕРЯЕМ, ЧТО КЛИЕНТ SUPABASE УЖЕ ЕСТЬ
     if (!window.supabaseClient) {
-        try {
-            window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            console.log('✅ Supabase клиент создан');
-        } catch (error) {
-            console.error('❌ Ошибка создания Supabase клиента:', error);
-        }
+        console.error('❌ Supabase клиент не найден! Проверьте подключение supabase.js');
+    } else {
+        console.log('✅ Supabase клиент найден');
     }
     
     // ЗАГРУЗКА СОБЫТИЙ ИЗ SUPABASE
@@ -180,18 +173,19 @@
         console.log('📦 Загрузка событий из Supabase...');
         
         try {
-            // Проверяем авторизацию
+            // Проверяем авторизацию через глобальный объект
             const { data: { user } } = await window.supabaseClient.auth.getUser();
             
             if (!user) {
-                console.log('👤 Пользователь не авторизован, загружаем из localStorage');
-                loadEventsFromLocalStorage();
+                console.log('👤 Пользователь не авторизован');
+                window.events = [];
+                updateTimeline();
                 return;
             }
             
             console.log('👤 Загружаем события для пользователя:', user.id);
             
-            // Загружаем события
+            // Загружаем события из Supabase
             const { data, error } = await window.supabaseClient
                 .from('events')
                 .select('*')
@@ -200,41 +194,26 @@
             
             if (error) {
                 console.error('❌ Ошибка загрузки из Supabase:', error);
-                loadEventsFromLocalStorage();
+                window.events = [];
+                updateTimeline();
                 return;
             }
             
             if (data && data.length > 0) {
                 console.log('✅ Загружено событий из Supabase:', data.length);
                 window.events = data;
-                
-                // Сохраняем в localStorage как резервную копию
-                localStorage.setItem('family_tree_events', JSON.stringify(data));
             } else {
-                console.log('📭 Нет событий в Supabase, проверяем localStorage');
-                loadEventsFromLocalStorage();
+                console.log('📭 Нет событий в Supabase');
+                window.events = [];
             }
+            
+            // Обновляем отображение
+            updateTimeline();
             
         } catch (error) {
             console.error('❌ Ошибка при загрузке из Supabase:', error);
-            loadEventsFromLocalStorage();
-        }
-    }
-    
-    // ЗАГРУЗКА ИЗ LOCALSTORAGE (резервный вариант)
-    function loadEventsFromLocalStorage() {
-        try {
-            const savedEvents = localStorage.getItem('family_tree_events');
-            if (savedEvents) {
-                window.events = JSON.parse(savedEvents);
-                console.log('✅ Загружено событий из localStorage:', window.events.length);
-            } else {
-                window.events = [];
-                console.log('📭 Нет событий в localStorage');
-            }
-        } catch (error) {
-            console.error('❌ Ошибка загрузки из localStorage:', error);
             window.events = [];
+            updateTimeline();
         }
     }
     
@@ -247,31 +226,38 @@
             const { data: { user } } = await window.supabaseClient.auth.getUser();
             
             if (!user) {
-                console.log('👤 Пользователь не авторизован, сохраняем только в localStorage');
-                return false;
+                window.showNotification('Необходимо авторизоваться', 'error');
+                return null;
             }
             
-            // Добавляем user_id к данным
-            const eventWithUser = {
-                ...eventData,
+            // Подготавливаем данные для сохранения
+            const eventForDb = {
+                title: eventData.title,
+                date: eventData.date,
+                event_type: eventData.event_type || 'other',
+                description: eventData.description || '',
+                media_url: eventData.media_url || '',
                 user_id: user.id,
                 updated_at: new Date().toISOString()
             };
             
-            // Если есть id, обновляем существующее событие
+            // Если есть ID и это не временный, обновляем
             if (eventData.id && !eventData.id.toString().startsWith('local-')) {
-                const { error } = await window.supabaseClient
+                const { data, error } = await window.supabaseClient
                     .from('events')
-                    .update(eventWithUser)
-                    .eq('id', eventData.id);
+                    .update(eventForDb)
+                    .eq('id', eventData.id)
+                    .select();
                 
                 if (error) throw error;
+                
                 console.log('✅ Событие обновлено в Supabase');
+                return { ...eventForDb, id: eventData.id };
             } else {
                 // Создаем новое событие
                 const { data, error } = await window.supabaseClient
                     .from('events')
-                    .insert([eventWithUser])
+                    .insert([eventForDb])
                     .select();
                 
                 if (error) throw error;
@@ -282,11 +268,12 @@
                 }
             }
             
-            return true;
+            return null;
             
         } catch (error) {
             console.error('❌ Ошибка сохранения в Supabase:', error);
-            return false;
+            window.showNotification('Ошибка сохранения в базу данных', 'error');
+            return null;
         }
     }
     
@@ -299,13 +286,13 @@
             const { data: { user } } = await window.supabaseClient.auth.getUser();
             
             if (!user) {
-                console.log('👤 Пользователь не авторизован');
+                window.showNotification('Необходимо авторизоваться', 'error');
                 return false;
             }
             
-            // Не удаляем локальные события (с префиксом local-)
+            // Не удаляем временные события
             if (eventId.toString().startsWith('local-')) {
-                console.log('📝 Это локальное событие, пропускаем удаление из Supabase');
+                console.log('📝 Это временное событие, пропускаем удаление из Supabase');
                 return true;
             }
             
@@ -321,6 +308,7 @@
             
         } catch (error) {
             console.error('❌ Ошибка удаления из Supabase:', error);
+            window.showNotification('Ошибка удаления из базы данных', 'error');
             return false;
         }
     }
@@ -583,37 +571,29 @@
         window.showLoader('Сохранение...');
         
         try {
-            // Создаем временный ID для локального использования
-            const tempId = 'local-' + Date.now();
-            
-            const newEvent = {
-                id: tempId,
+            // Подготавливаем данные
+            const eventData = {
                 title: title,
                 date: date,
                 event_type: type,
                 description: description,
-                media_url: mediaUrl,
-                created_at: new Date().toISOString()
+                media_url: mediaUrl
             };
             
-            // Сначала сохраняем в Supabase
-            const savedEvent = await saveEventToSupabase(newEvent);
+            // Сохраняем в Supabase
+            const savedEvent = await saveEventToSupabase(eventData);
             
-            if (savedEvent && savedEvent.id) {
-                // Если успешно сохранили в Supabase, используем реальный ID
-                newEvent.id = savedEvent.id;
+            if (savedEvent) {
+                // Добавляем в локальный массив
+                if (!window.events) window.events = [];
+                window.events.unshift(savedEvent);
+                
+                window.showNotification('✅ Событие добавлено!', 'success');
+                window.closeSimpleModal();
+                updateTimeline();
+            } else {
+                window.showNotification('Не удалось сохранить событие', 'error');
             }
-            
-            // Добавляем в локальный массив
-            if (!window.events) window.events = [];
-            window.events.unshift(newEvent);
-            
-            // Сохраняем в localStorage как резервную копию
-            localStorage.setItem('family_tree_events', JSON.stringify(window.events));
-            
-            window.showNotification('✅ Событие добавлено!', 'success');
-            window.closeSimpleModal();
-            updateTimeline();
             
         } catch (error) {
             console.error('Ошибка:', error);
@@ -642,34 +622,29 @@
         window.showLoader('Сохранение...');
         
         try {
-            const updatedEvent = {
+            const eventData = {
                 id: eventId,
                 title: title,
                 date: date,
                 event_type: type,
                 description: description,
-                media_url: mediaUrl,
-                updated_at: new Date().toISOString()
+                media_url: mediaUrl
             };
             
             // Обновляем в Supabase
-            await saveEventToSupabase(updatedEvent);
+            const updatedEvent = await saveEventToSupabase(eventData);
             
-            // Обновляем в локальном массиве
-            const index = window.events.findIndex(e => e.id == eventId);
-            if (index !== -1) {
-                window.events[index] = {
-                    ...window.events[index],
-                    ...updatedEvent
-                };
+            if (updatedEvent) {
+                // Обновляем в локальном массиве
+                const index = window.events.findIndex(e => e.id == eventId);
+                if (index !== -1) {
+                    window.events[index] = updatedEvent;
+                }
+                
+                window.showNotification('✅ Событие обновлено!', 'success');
+                window.closeSimpleModal();
+                updateTimeline();
             }
-            
-            // Сохраняем в localStorage
-            localStorage.setItem('family_tree_events', JSON.stringify(window.events));
-            
-            window.showNotification('✅ Событие обновлено!', 'success');
-            window.closeSimpleModal();
-            updateTimeline();
             
         } catch (error) {
             console.error('Ошибка:', error);
@@ -689,16 +664,15 @@
         
         try {
             // Удаляем из Supabase
-            await deleteEventFromSupabase(eventId);
+            const deleted = await deleteEventFromSupabase(eventId);
             
-            // Удаляем из локального массива
-            window.events = window.events.filter(e => e.id != eventId);
-            
-            // Сохраняем в localStorage
-            localStorage.setItem('family_tree_events', JSON.stringify(window.events));
-            
-            window.showNotification('✅ Событие удалено!', 'success');
-            updateTimeline();
+            if (deleted) {
+                // Удаляем из локального массива
+                window.events = window.events.filter(e => e.id != eventId);
+                
+                window.showNotification('✅ Событие удалено!', 'success');
+                updateTimeline();
+            }
             
         } catch (error) {
             console.error('Ошибка:', error);
@@ -715,9 +689,6 @@
         // Загружаем данные из Supabase
         await loadEventsFromSupabase();
         
-        // Обновляем ленту
-        updateTimeline();
-        
         // Обработчик кнопки "Добавить событие"
         const addBtn = document.getElementById('add-event-btn');
         if (addBtn) {
@@ -728,7 +699,7 @@
             };
         }
         
-        // Обработчики фильтров (можно добавить позже)
+        // Обработчики фильтров
         const filterYear = document.getElementById('filter-year');
         const filterType = document.getElementById('filter-type');
         
