@@ -224,12 +224,12 @@ function setupProfileEventListeners() {
     }
     
     // Настройки уведомлений
-    const notificationsBtn = document.getElementById('notifications-settings-btn');
-    if (notificationsBtn) {
-        notificationsBtn.addEventListener('click', () => {
-            window.showNotification('Настройки уведомлений будут доступны в следующем обновлении', 'info');
-        });
-    }
+   const notificationsBtn = document.getElementById('notifications-settings-btn');
+if (notificationsBtn) {
+    notificationsBtn.addEventListener('click', () => {
+        openNotificationSettings();
+    });
+}
     
     // Экспорт данных
     const exportBtn = document.getElementById('export-data-btn');
@@ -796,6 +796,158 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 100);
 });
 
+// Настройки уведомлений
+let notificationSettings = {
+    success: true,
+    error: true,
+    info: true,
+    birthday: true,
+    anniversary: true,
+    event: true,
+    invite: true,
+    join: true,
+    media: true,
+    tree: true
+};
+
+// Загрузка настроек уведомлений
+function loadNotificationSettings() {
+    try {
+        const savedSettings = localStorage.getItem('notification_settings');
+        if (savedSettings) {
+            notificationSettings = { ...notificationSettings, ...JSON.parse(savedSettings) };
+        }
+        
+        // Применяем настройки к переключателям
+        document.querySelectorAll('.notification-toggle').forEach(toggle => {
+            const type = toggle.dataset.type;
+            if (type && notificationSettings[type] !== undefined) {
+                toggle.checked = notificationSettings[type];
+            }
+        });
+        
+        console.log('✅ Настройки уведомлений загружены');
+    } catch (error) {
+        console.error('Ошибка загрузки настроек уведомлений:', error);
+    }
+}
+
+// Сохранение настроек уведомлений
+function saveNotificationSettings() {
+    try {
+        // Собираем настройки с переключателей
+        document.querySelectorAll('.notification-toggle').forEach(toggle => {
+            const type = toggle.dataset.type;
+            if (type) {
+                notificationSettings[type] = toggle.checked;
+            }
+        });
+        
+        localStorage.setItem('notification_settings', JSON.stringify(notificationSettings));
+        
+        // Применяем настройки к глобальной функции показа уведомлений
+        window.notificationSettings = notificationSettings;
+        
+        console.log('✅ Настройки уведомлений сохранены');
+    } catch (error) {
+        console.error('Ошибка сохранения настроек уведомлений:', error);
+    }
+}
+
+// Сброс настроек уведомлений
+function resetNotificationSettings() {
+    notificationSettings = {
+        success: true,
+        error: true,
+        info: true,
+        birthday: true,
+        anniversary: true,
+        event: true,
+        invite: true,
+        join: true,
+        media: true,
+        tree: true
+    };
+    
+    // Обновляем переключатели
+    document.querySelectorAll('.notification-toggle').forEach(toggle => {
+        const type = toggle.dataset.type;
+        if (type && notificationSettings[type] !== undefined) {
+            toggle.checked = notificationSettings[type];
+        }
+    });
+    
+    saveNotificationSettings();
+    window.showNotification('✅ Настройки уведомлений сброшены', 'success');
+}
+
+// Открытие модального окна настроек уведомлений
+function openNotificationSettings() {
+    console.log('🔔 Открытие настроек уведомлений');
+    
+    // Загружаем актуальные настройки
+    loadNotificationSettings();
+    
+    // Показываем модальное окно
+    window.showModal('notifications-modal');
+}
+
+// Переопределяем глобальную функцию показа уведомлений с учетом настроек
+const originalShowNotification = window.showNotification;
+window.showNotification = function(message, type = 'info') {
+    // Проверяем, включены ли уведомления этого типа
+    if (window.notificationSettings) {
+        if (type === 'success' && !window.notificationSettings.success) return;
+        if (type === 'error' && !window.notificationSettings.error) return;
+        if (type === 'info' && !window.notificationSettings.info) return;
+    }
+    
+    // Вызываем оригинальную функцию
+    originalShowNotification(message, type);
+};
+
+// Добавляем обработчики для настроек уведомлений
+document.addEventListener('DOMContentLoaded', function() {
+    // Загружаем настройки
+    loadNotificationSettings();
+    window.notificationSettings = notificationSettings;
+    
+    // Обработчик для кнопки настроек уведомлений
+    const notificationsBtn = document.getElementById('notifications-settings-btn');
+    if (notificationsBtn) {
+        notificationsBtn.addEventListener('click', openNotificationSettings);
+    }
+    
+    // Обработчик для сохранения настроек
+    const saveBtn = document.getElementById('save-notification-settings');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', function() {
+            saveNotificationSettings();
+            window.closeAllModals();
+            window.showNotification('✅ Настройки уведомлений сохранены', 'success');
+        });
+    }
+    
+    // Обработчик для сброса настроек
+    const resetBtn = document.getElementById('reset-notifications');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', resetNotificationSettings);
+    }
+    
+    // Добавляем обработчики для всех переключателей (мгновенное применение)
+    document.querySelectorAll('.notification-toggle').forEach(toggle => {
+        toggle.addEventListener('change', function() {
+            // Можно показывать подсказку, но не обязательно
+            // console.log('Изменен тип:', this.dataset.type, this.checked);
+        });
+    });
+});
+
+// Экспортируем функции
+window.openNotificationSettings = openNotificationSettings;
+window.loadNotificationSettings = loadNotificationSettings;
+window.saveNotificationSettings = saveNotificationSettings;
+window.resetNotificationSettings = resetNotificationSettings;
 // Экспортируем функции
 window.initProfilePage = initProfilePage;
 window.updateProfileUI = updateProfileUI;

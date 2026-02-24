@@ -114,47 +114,158 @@
     <!-- Модальные окна -->
     <div class="modal-overlay hidden" id="modal-overlay"></div>
     
-    <!-- Модальное окно приглашения -->
-    <div id="invite-modal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Пригласить родственника</h3>
-                <button class="modal-close">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="invite-form-modal">
-                    <div class="form-group">
-                        <label for="invite-email">Email родственника *</label>
-                        <input type="email" id="invite-email" placeholder="email@example.com" required>
+<!-- Модальное окно настроек уведомлений -->
+<div id="notifications-modal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Настройки уведомлений</h3>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="notification-settings">
+                <div class="settings-group">
+                    <h4>Системные уведомления</h4>
+                    
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <label for="notif-success">Успешные операции</label>
+                            <div class="setting-description">Уведомления об успешном сохранении, загрузке и т.д.</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="notif-success" class="notification-toggle" data-type="success" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
                     </div>
                     
-                    <div class="form-group">
-                        <label for="invite-name">Имя родственника</label>
-                        <input type="text" id="invite-name" placeholder="Имя">
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <label for="notif-error">Ошибки и предупреждения</label>
+                            <div class="setting-description">Уведомления об ошибках и проблемах</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="notif-error" class="notification-toggle" data-type="error" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
                     </div>
                     
-                    <div class="form-group">
-                        <label for="invite-message">Сообщение</label>
-                        <textarea id="invite-message" rows="4" placeholder="Привет! Присоединяйся к нашему семейному древу..."></textarea>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <label for="notif-info">Информационные сообщения</label>
+                            <div class="setting-description">Общая информация о действиях в системе</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="notif-info" class="notification-toggle" data-type="info" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="settings-group">
+                    <h4>Семейные события</h4>
+                    
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <label for="notif-birthday">Дни рождения</label>
+                            <div class="setting-description">Напоминания о днях рождения родственников</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="notif-birthday" class="notification-toggle" data-type="birthday" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
                     </div>
                     
-                    <div class="form-group checkbox-group">
-                        <input type="checkbox" id="invite-editor" checked>
-                        <label for="invite-editor">Разрешить редактирование древа</label>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <label for="notif-anniversary">Годовщины</label>
+                            <div class="setting-description">Напоминания о свадьбах и других годовщинах</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="notif-anniversary" class="notification-toggle" data-type="anniversary" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
                     </div>
                     
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary cancel-btn">
-                            Отмена
-                        </button>
-                        <button type="submit" class="btn">
-                            Отправить приглашение
-                        </button>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <label for="notif-event">Новые события</label>
+                            <div class="setting-description">Уведомления о добавлении новых событий в ленту</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="notif-event" class="notification-toggle" data-type="event" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
                     </div>
-                </form>
+                </div>
+                
+                <div class="settings-group">
+                    <h4>Приглашения и доступ</h4>
+                    
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <label for="notif-invite">Приглашения родственников</label>
+                            <div class="setting-description">Уведомления о новых приглашениях в древо</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="notif-invite" class="notification-toggle" data-type="invite" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <label for="notif-join">Подключения родственников</label>
+                            <div class="setting-description">Уведомления о том, что родственник присоединился к древу</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="notif-join" class="notification-toggle" data-type="join" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="settings-group">
+                    <h4>Древо и медиа</h4>
+                    
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <label for="notif-media">Новые медиафайлы</label>
+                            <div class="setting-description">Уведомления о загрузке новых фото и видео</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="notif-media" class="notification-toggle" data-type="media" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <label for="notif-tree">Изменения в древе</label>
+                            <div class="setting-description">Уведомления о добавлении новых людей в древо</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="notif-tree" class="notification-toggle" data-type="tree" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="settings-group" style="margin-top: 25px;">
+                    <button class="btn btn-reset" id="reset-notifications" style="width: 100%;">
+                        <i class="fas fa-undo"></i> Сбросить все настройки
+                    </button>
+                </div>
             </div>
         </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary cancel-btn">
+                Отмена
+            </button>
+            <button type="button" class="btn" id="save-notification-settings">
+                Сохранить настройки
+            </button>
+        </div>
     </div>
+</div>
     
     <!-- Модальное окно редактирования профиля -->
     <div id="edit-profile-modal" class="modal hidden">
