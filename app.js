@@ -339,11 +339,14 @@ function setupFormHandlers() {
     }
     
     // Форма приглашения
-    const inviteForm = document.getElementById('invite-form-modal');
-    if (inviteForm) {
-        console.log('✅ Найдена форма приглашения');
-        inviteForm.addEventListener('submit', handleInvite);
-    }
+const inviteBtn = document.getElementById('invite-btn');
+if (inviteBtn) {
+    inviteBtn.onclick = function(e) {
+        e.preventDefault();
+        window.showModal('invite-modal');
+        return false;
+    };
+}
     
     // Форма редактирования профиля
     const editProfileForm = document.getElementById('edit-profile-form-modal');
