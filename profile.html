@@ -42,62 +42,58 @@
         <!-- Страница профиля -->
         <section id="profile-page" class="page">
             <div class="container">
-                <!-- Обновим контент профиля -->
-<div class="profile-container">
-    <div class="profile-avatar">
-        <div class="avatar large" id="profile-avatar" style="font-size: 3rem; font-weight: bold; display: flex; align-items: center; justify-content: center; color: white; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">П</div>
-        <h2 id="profile-name">Загрузка...</h2>
-        <p id="profile-email">Загрузка...</p>
-        <button class="btn btn-small" id="change-avatar-btn" style="margin-top: 15px;">
-            <i class="fas fa-camera"></i> Сменить фото
-        </button>
-    </div>
-    
-    <div class="profile-info">
-        <h3>Информация об аккаунте</h3>
-        <div class="info-grid">
-            <div class="info-item">
-                <i class="fas fa-envelope"></i>
-                <span>Email: <span id="info-email">Загрузка...</span></span>
-            </div>
-            <div class="info-item">
-                <i class="fas fa-user"></i>
-                <span>ID пользователя: <span id="info-user-id">Загрузка...</span></span>
-            </div>
-            <div class="info-item">
-                <i class="fas fa-calendar"></i>
-                <span>Регистрация: <span id="info-reg-date">Загрузка...</span></span>
-            </div>
-            <div class="info-item">
-                <i class="fas fa-tree"></i>
-                <span>Людей в древе: <span id="info-people-count">0</span></span>
-            </div>
-        </div>
-        
-        <!-- Добавим секцию для дерева -->
-        <h3 style="margin-top: 25px;">Мое дерево</h3>
-        <div id="tree-info-section" style="margin-bottom: 20px;">
-            <!-- Информация о дереве будет здесь -->
-        </div>
-        
-        <h3>Настройки</h3>
-        <button class="btn full-width" id="edit-profile-btn">
-            <i class="fas fa-edit"></i> Редактировать профиль
-        </button>
-        <button class="btn btn-secondary full-width" id="invite-btn">
-            <i class="fas fa-user-plus"></i> Пригласить родственника
-        </button>
-        <button class="btn btn-secondary full-width" id="notifications-settings-btn">
-            <i class="fas fa-bell"></i> Настройки уведомлений
-        </button>
-        <button class="btn btn-outline full-width" id="export-data-btn">
-            <i class="fas fa-download"></i> Экспорт данных
-        </button>
-        <button class="btn btn-danger full-width" id="logout-profile-btn">
-            <i class="fas fa-sign-out-alt"></i> Выйти из аккаунта
-        </button>
-    </div>
-</div>
+                <div class="profile-container">
+                    <div class="profile-avatar">
+                        <div class="avatar large" id="profile-avatar" style="font-size: 3rem; font-weight: bold; display: flex; align-items: center; justify-content: center; color: white; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">П</div>
+                        <h2 id="profile-name">Загрузка...</h2>
+                        <p id="profile-email">Загрузка...</p>
+                        <button class="btn btn-small" id="change-avatar-btn" style="margin-top: 15px;">
+                            <i class="fas fa-camera"></i> Сменить фото
+                        </button>
+                    </div>
+                    
+                    <div class="profile-info">
+                        <h3>Информация об аккаунте</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <i class="fas fa-envelope"></i>
+                                <span>Email: <span id="info-email">Загрузка...</span></span>
+                            </div>
+                            <div class="info-item">
+                                <i class="fas fa-user"></i>
+                                <span>ID пользователя: <span id="info-user-id">Загрузка...</span></span>
+                            </div>
+                            <div class="info-item">
+                                <i class="fas fa-calendar"></i>
+                                <span>Регистрация: <span id="info-reg-date">Загрузка...</span></span>
+                            </div>
+                            <div class="info-item">
+                                <i class="fas fa-tree"></i>
+                                <span>Людей в древе: <span id="info-people-count">0</span></span>
+                            </div>
+                        </div>
+                        
+                        <h3 style="margin-top: 25px;">Мое дерево</h3>
+                        <div id="tree-info-section" style="margin-bottom: 20px;"></div>
+                        
+                        <h3>Настройки</h3>
+                        <button class="btn full-width" id="edit-profile-btn">
+                            <i class="fas fa-edit"></i> Редактировать профиль
+                        </button>
+                        <button class="btn btn-secondary full-width" id="invite-btn">
+                            <i class="fas fa-user-plus"></i> Пригласить родственника
+                        </button>
+                        <button class="btn btn-secondary full-width" id="notifications-settings-btn">
+                            <i class="fas fa-bell"></i> Настройки уведомлений
+                        </button>
+                        <button class="btn btn-outline full-width" id="export-data-btn">
+                            <i class="fas fa-download"></i> Экспорт данных
+                        </button>
+                        <button class="btn btn-danger full-width" id="logout-profile-btn">
+                            <i class="fas fa-sign-out-alt"></i> Выйти из аккаунта
+                        </button>
+                    </div>
+                </div>
             </div>
         </section>
     </main>
@@ -114,158 +110,200 @@
     <!-- Модальные окна -->
     <div class="modal-overlay hidden" id="modal-overlay"></div>
     
-<!-- Модальное окно настроек уведомлений -->
-<div id="notifications-modal" class="modal hidden">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>Настройки уведомлений</h3>
-            <button class="modal-close">&times;</button>
-        </div>
-        <div class="modal-body">
-            <div class="notification-settings">
-                <div class="settings-group">
-                    <h4>Системные уведомления</h4>
-                    
-                    <div class="setting-item">
-                        <div class="setting-info">
-                            <label for="notif-success">Успешные операции</label>
-                            <div class="setting-description">Уведомления об успешном сохранении, загрузке и т.д.</div>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="notif-success" class="notification-toggle" data-type="success" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
+    <!-- Модальное окно приглашения родственника -->
+    <div id="invite-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Пригласить родственника</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="invite-form-modal">
+                    <div class="form-group">
+                        <label for="invite-email">Email родственника *</label>
+                        <input type="email" id="invite-email" placeholder="email@example.com" required>
                     </div>
                     
-                    <div class="setting-item">
-                        <div class="setting-info">
-                            <label for="notif-error">Ошибки и предупреждения</label>
-                            <div class="setting-description">Уведомления об ошибках и проблемах</div>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="notif-error" class="notification-toggle" data-type="error" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
+                    <div class="form-group">
+                        <label for="invite-name">Имя родственника</label>
+                        <input type="text" id="invite-name" placeholder="Имя">
                     </div>
                     
-                    <div class="setting-item">
-                        <div class="setting-info">
-                            <label for="notif-info">Информационные сообщения</label>
-                            <div class="setting-description">Общая информация о действиях в системе</div>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="notif-info" class="notification-toggle" data-type="info" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                </div>
-                
-                <div class="settings-group">
-                    <h4>Семейные события</h4>
-                    
-                    <div class="setting-item">
-                        <div class="setting-info">
-                            <label for="notif-birthday">Дни рождения</label>
-                            <div class="setting-description">Напоминания о днях рождения родственников</div>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="notif-birthday" class="notification-toggle" data-type="birthday" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
+                    <div class="form-group">
+                        <label for="invite-message">Сообщение</label>
+                        <textarea id="invite-message" rows="4" placeholder="Привет! Присоединяйся к нашему семейному древу..."></textarea>
                     </div>
                     
-                    <div class="setting-item">
-                        <div class="setting-info">
-                            <label for="notif-anniversary">Годовщины</label>
-                            <div class="setting-description">Напоминания о свадьбах и других годовщинах</div>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="notif-anniversary" class="notification-toggle" data-type="anniversary" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="invite-editor" checked>
+                        <label for="invite-editor">Разрешить редактирование древа</label>
                     </div>
                     
-                    <div class="setting-item">
-                        <div class="setting-info">
-                            <label for="notif-event">Новые события</label>
-                            <div class="setting-description">Уведомления о добавлении новых событий в ленту</div>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="notif-event" class="notification-toggle" data-type="event" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary cancel-btn">
+                            Отмена
+                        </button>
+                        <button type="submit" class="btn">
+                            Отправить приглашение
+                        </button>
                     </div>
-                </div>
-                
-                <div class="settings-group">
-                    <h4>Приглашения и доступ</h4>
-                    
-                    <div class="setting-item">
-                        <div class="setting-info">
-                            <label for="notif-invite">Приглашения родственников</label>
-                            <div class="setting-description">Уведомления о новых приглашениях в древо</div>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="notif-invite" class="notification-toggle" data-type="invite" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    
-                    <div class="setting-item">
-                        <div class="setting-info">
-                            <label for="notif-join">Подключения родственников</label>
-                            <div class="setting-description">Уведомления о том, что родственник присоединился к древу</div>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="notif-join" class="notification-toggle" data-type="join" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                </div>
-                
-                <div class="settings-group">
-                    <h4>Древо и медиа</h4>
-                    
-                    <div class="setting-item">
-                        <div class="setting-info">
-                            <label for="notif-media">Новые медиафайлы</label>
-                            <div class="setting-description">Уведомления о загрузке новых фото и видео</div>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="notif-media" class="notification-toggle" data-type="media" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    
-                    <div class="setting-item">
-                        <div class="setting-info">
-                            <label for="notif-tree">Изменения в древе</label>
-                            <div class="setting-description">Уведомления о добавлении новых людей в древо</div>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="notif-tree" class="notification-toggle" data-type="tree" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                </div>
-                
-                <div class="settings-group" style="margin-top: 25px;">
-                    <button class="btn btn-reset" id="reset-notifications" style="width: 100%;">
-                        <i class="fas fa-undo"></i> Сбросить все настройки
-                    </button>
-                </div>
+                </form>
             </div>
         </div>
-        <div class="modal-footer">
-            <button type="button" class="btn btn-secondary cancel-btn">
-                Отмена
-            </button>
-            <button type="button" class="btn" id="save-notification-settings">
-                Сохранить настройки
-            </button>
+    </div>
+    
+    <!-- Модальное окно настроек уведомлений -->
+    <div id="notifications-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Настройки уведомлений</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="notification-settings">
+                    <div class="settings-group">
+                        <h4>Системные уведомления</h4>
+                        
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <label for="notif-success">Успешные операции</label>
+                                <div class="setting-description">Уведомления об успешном сохранении, загрузке и т.д.</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="notif-success" class="notification-toggle" data-type="success" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <label for="notif-error">Ошибки и предупреждения</label>
+                                <div class="setting-description">Уведомления об ошибках и проблемах</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="notif-error" class="notification-toggle" data-type="error" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <label for="notif-info">Информационные сообщения</label>
+                                <div class="setting-description">Общая информация о действиях в системе</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="notif-info" class="notification-toggle" data-type="info" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-group">
+                        <h4>Семейные события</h4>
+                        
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <label for="notif-birthday">Дни рождения</label>
+                                <div class="setting-description">Напоминания о днях рождения родственников</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="notif-birthday" class="notification-toggle" data-type="birthday" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <label for="notif-anniversary">Годовщины</label>
+                                <div class="setting-description">Напоминания о свадьбах и других годовщинах</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="notif-anniversary" class="notification-toggle" data-type="anniversary" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <label for="notif-event">Новые события</label>
+                                <div class="setting-description">Уведомления о добавлении новых событий в ленту</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="notif-event" class="notification-toggle" data-type="event" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-group">
+                        <h4>Приглашения и доступ</h4>
+                        
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <label for="notif-invite">Приглашения родственников</label>
+                                <div class="setting-description">Уведомления о новых приглашениях в древо</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="notif-invite" class="notification-toggle" data-type="invite" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <label for="notif-join">Подключения родственников</label>
+                                <div class="setting-description">Уведомления о том, что родственник присоединился к древу</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="notif-join" class="notification-toggle" data-type="join" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-group">
+                        <h4>Древо и медиа</h4>
+                        
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <label for="notif-media">Новые медиафайлы</label>
+                                <div class="setting-description">Уведомления о загрузке новых фото и видео</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="notif-media" class="notification-toggle" data-type="media" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <label for="notif-tree">Изменения в древе</label>
+                                <div class="setting-description">Уведомления о добавлении новых людей в древо</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="notif-tree" class="notification-toggle" data-type="tree" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-group" style="margin-top: 25px;">
+                        <button class="btn btn-reset" id="reset-notifications" style="width: 100%;">
+                            <i class="fas fa-undo"></i> Сбросить все настройки
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary cancel-btn">
+                    Отмена
+                </button>
+                <button type="button" class="btn" id="save-notification-settings">
+                    Сохранить настройки
+                </button>
+            </div>
         </div>
     </div>
-</div>
     
     <!-- Модальное окно редактирования профиля -->
     <div id="edit-profile-modal" class="modal hidden">
@@ -332,46 +370,126 @@
     <script src="app.js"></script>
     <script src="profile.js"></script>
     
+    <!-- Добавляем обработчики для модальных окон -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔧 Настройка обработчиков profile.html...');
+            
+            // Кнопка приглашения родственника
+            const inviteBtn = document.getElementById('invite-btn');
+            if (inviteBtn) {
+                inviteBtn.onclick = function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('📨 Открытие формы приглашения');
+                    
+                    // Сбрасываем форму
+                    const form = document.getElementById('invite-form-modal');
+                    if (form) form.reset();
+                    
+                    window.showModal('invite-modal');
+                    return false;
+                };
+            }
+            
+            // Обработка формы приглашения
+            const inviteForm = document.getElementById('invite-form-modal');
+            if (inviteForm) {
+                inviteForm.onsubmit = async function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const email = document.getElementById('invite-email').value;
+                    const name = document.getElementById('invite-name').value;
+                    const message = document.getElementById('invite-message').value;
+                    const allowEdit = document.getElementById('invite-editor').checked;
+                    
+                    if (!email) {
+                        window.showNotification('Введите email', 'error');
+                        return false;
+                    }
+                    
+                    window.showLoader('Отправка приглашения...');
+                    
+                    try {
+                        // Сохраняем в localStorage
+                        const invitations = JSON.parse(localStorage.getItem('family_invitations') || '[]');
+                        invitations.push({
+                            id: Date.now(),
+                            email: email,
+                            name: name || email.split('@')[0],
+                            message: message,
+                            allowEdit: allowEdit,
+                            sentAt: new Date().toISOString(),
+                            status: 'pending'
+                        });
+                        
+                        localStorage.setItem('family_invitations', JSON.stringify(invitations));
+                        
+                        window.showNotification(`✅ Приглашение отправлено на ${email}`, 'success');
+                        
+                        inviteForm.reset();
+                        window.closeAllModals();
+                        
+                    } catch (error) {
+                        console.error('Ошибка:', error);
+                        window.showNotification('Ошибка отправки приглашения', 'error');
+                    } finally {
+                        window.hideLoader();
+                    }
+                    
+                    return false;
+                };
+            }
+            
+            // Кнопка настроек уведомлений
+            const notifBtn = document.getElementById('notifications-settings-btn');
+            if (notifBtn) {
+                notifBtn.onclick = function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('🔔 Открытие настроек уведомлений');
+                    
+                    if (typeof window.openNotificationModal === 'function') {
+                        window.openNotificationModal();
+                    } else {
+                        window.showNotification('Модуль уведомлений не загружен', 'info');
+                    }
+                    return false;
+                };
+            }
+        });
+    </script>
+    
 <!-- В конце profile.html, перед закрывающим тегом body -->
 <script>
     // Инициализация профиля
     document.addEventListener('DOMContentLoaded', async () => {
         console.log('👤 Инициализация страницы профиля...');
         
-        // Ждем загрузки основных скриптов
         if (typeof window.loadUserData === 'function') {
             await window.loadUserData();
         }
         
-        // Инициализируем профиль
         if (typeof window.initProfilePage === 'function') {
             window.initProfilePage();
         } else {
-            // Запасной вариант
             setTimeout(() => {
                 if (window.currentUser) {
-                    updateProfileUI();
+                    const name = window.currentUser.user_metadata?.name || 
+                                window.currentUser.email?.split('@')[0] || 
+                                'Пользователь';
+                    const email = window.currentUser.email || 'Не указан';
+                    const initials = window.getUserInitials ? window.getUserInitials(name) : name.substring(0, 2);
+                    
+                    document.getElementById('profile-name')?.textContent = name;
+                    document.getElementById('profile-email')?.textContent = email;
+                    document.getElementById('profile-avatar')?.textContent = initials;
+                    document.getElementById('info-email')?.textContent = email;
+                    document.getElementById('info-user-id')?.textContent = 
+                        window.currentUser.id ? window.currentUser.id.substring(0, 8) + '...' : 'Не указан';
                 }
             }, 1000);
-        }
-        
-        // Функция для обновления UI (запасная)
-        function updateProfileUI() {
-            if (!window.currentUser) return;
-            
-            const name = window.currentUser.user_metadata?.name || 
-                        window.currentUser.email?.split('@')[0] || 
-                        'Пользователь';
-            const email = window.currentUser.email || 'Не указан';
-            const initials = window.getUserInitials ? window.getUserInitials(name) : name.substring(0, 2);
-            
-            // Обновляем элементы
-            document.getElementById('profile-name')?.textContent = name;
-            document.getElementById('profile-email')?.textContent = email;
-            document.getElementById('profile-avatar')?.textContent = initials;
-            document.getElementById('info-email')?.textContent = email;
-            document.getElementById('info-user-id')?.textContent = 
-                window.currentUser.id ? window.currentUser.id.substring(0, 8) + '...' : 'Не указан';
         }
     });
 </script>
