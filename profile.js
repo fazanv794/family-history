@@ -8,7 +8,6 @@ function initProfilePage() {
     setupProfileEventListeners();
     updateProfileStats();
     loadTreeInfo();
-    loadNotificationSettings(); // Загружаем настройки уведомлений
 }
 
 // Загрузка данных профиля
@@ -160,229 +159,9 @@ function getUserInitials(name) {
     return initials || 'П';
 }
 
-// ========== НАСТРОЙКИ УВЕДОМЛЕНИЙ ==========
-
-let notificationSettings = {
-    success: true,
-    error: true,
-    info: true,
-    birthday: true,
-    anniversary: true,
-    event: true,
-    invite: true,
-    family_join: true,
-    media: true,
-    tree: true
-};
-
-// Загрузка настроек уведомлений из Supabase
-async function loadNotificationSettings() {
-    console.log('🔔 Загрузка настроек уведомлений...');
-    
-    try {
-        if (!window.currentUser || !window.supabaseClient) {
-            loadNotificationSettingsFromLocal();
-            return;
-        }
-        
-        const { data, error } = await window.supabaseClient
-            .from('notification_settings')
-            .select('*')
-            .eq('user_id', window.currentUser.id)
-            .maybeSingle();
-        
-        if (error) {
-            console.error('Ошибка загрузки настроек:', error);
-            loadNotificationSettingsFromLocal();
-            return;
-        }
-        
-        if (data) {
-            notificationSettings = { ...notificationSettings, ...data };
-            console.log('✅ Настройки загружены из Supabase');
-        } else {
-            console.log('📝 Настройки не найдены, создаем новые');
-            await createNotificationSettings();
-        }
-        
-        // Сохраняем в localStorage как резервную копию
-        localStorage.setItem('notification_settings', JSON.stringify(notificationSettings));
-        
-        // Применяем настройки к интерфейсу
-        applyNotificationSettingsToUI();
-        
-    } catch (error) {
-        console.error('Ошибка загрузки настроек:', error);
-        loadNotificationSettingsFromLocal();
-    }
-}
-
-// Загрузка из localStorage (резервный вариант)
-function loadNotificationSettingsFromLocal() {
-    try {
-        const savedSettings = localStorage.getItem('notification_settings');
-        if (savedSettings) {
-            notificationSettings = { ...notificationSettings, ...JSON.parse(savedSettings) };
-        }
-        applyNotificationSettingsToUI();
-    } catch (error) {
-        console.error('Ошибка загрузки из localStorage:', error);
-    }
-}
-
-// Создание настроек уведомлений в Supabase
-async function createNotificationSettings() {
-    try {
-        const settingsForDb = {
-            user_id: window.currentUser.id,
-            success: notificationSettings.success,
-            error: notificationSettings.error,
-            info: notificationSettings.info,
-            birthday: notificationSettings.birthday,
-            anniversary: notificationSettings.anniversary,
-            event: notificationSettings.event,
-            invite: notificationSettings.invite,
-            family_join: notificationSettings.family_join,
-            media: notificationSettings.media,
-            tree: notificationSettings.tree
-        };
-        
-        const { data, error } = await window.supabaseClient
-            .from('notification_settings')
-            .insert([settingsForDb])
-            .select();
-        
-        if (error) throw error;
-        
-        if (data && data[0]) {
-            notificationSettings = { ...notificationSettings, ...data[0] };
-            console.log('✅ Настройки созданы в Supabase');
-        }
-        
-    } catch (error) {
-        console.error('Ошибка создания настроек:', error);
-    }
-}
-
-// Сохранение настроек уведомлений в Supabase
-async function saveNotificationSettings() {
-    console.log('💾 Сохранение настроек уведомлений...');
-    
-    try {
-        // Собираем настройки с переключателей
-        document.querySelectorAll('.notification-toggle').forEach(toggle => {
-            const type = toggle.dataset.type;
-            if (type) {
-                notificationSettings[type] = toggle.checked;
-            }
-        });
-        
-        // Сохраняем в localStorage
-        localStorage.setItem('notification_settings', JSON.stringify(notificationSettings));
-        
-        // Если есть пользователь и Supabase, сохраняем туда
-        if (window.currentUser && window.supabaseClient && !window.currentUser.id.startsWith('demo-')) {
-            const settingsForDb = {
-                user_id: window.currentUser.id,
-                success: notificationSettings.success,
-                error: notificationSettings.error,
-                info: notificationSettings.info,
-                birthday: notificationSettings.birthday,
-                anniversary: notificationSettings.anniversary,
-                event: notificationSettings.event,
-                invite: notificationSettings.invite,
-                family_join: notificationSettings.family_join,
-                media: notificationSettings.media,
-                tree: notificationSettings.tree,
-                updated_at: new Date().toISOString()
-            };
-            
-            const { error } = await window.supabaseClient
-                .from('notification_settings')
-                .upsert(settingsForDb, { onConflict: 'user_id' });
-            
-            if (error) throw error;
-            
-            console.log('✅ Настройки сохранены в Supabase');
-        }
-        
-        // Обновляем глобальные настройки
-        window.notificationSettings = notificationSettings;
-        
-        window.showNotification('✅ Настройки уведомлений сохранены', 'success');
-        
-    } catch (error) {
-        console.error('Ошибка сохранения настроек:', error);
-        window.showNotification('Ошибка сохранения настроек', 'error');
-    }
-}
-
-// Сброс настроек уведомлений
-async function resetNotificationSettings() {
-    notificationSettings = {
-        success: true,
-        error: true,
-        info: true,
-        birthday: true,
-        anniversary: true,
-        event: true,
-        invite: true,
-        family_join: true,
-        media: true,
-        tree: true
-    };
-    
-    // Обновляем переключатели
-    document.querySelectorAll('.notification-toggle').forEach(toggle => {
-        const type = toggle.dataset.type;
-        if (type && notificationSettings[type] !== undefined) {
-            toggle.checked = notificationSettings[type];
-        }
-    });
-    
-    // Сохраняем
-    await saveNotificationSettings();
-}
-
-// Применение настроек к UI
-function applyNotificationSettingsToUI() {
-    document.querySelectorAll('.notification-toggle').forEach(toggle => {
-        const type = toggle.dataset.type;
-        if (type && notificationSettings[type] !== undefined) {
-            toggle.checked = notificationSettings[type];
-        }
-    });
-}
-
-// Открытие модального окна настроек уведомлений
-function openNotificationSettings() {
-    console.log('🔔 Открытие настроек уведомлений');
-    
-    // Применяем текущие настройки
-    applyNotificationSettingsToUI();
-    
-    // Показываем модальное окно
-    window.showModal('notifications-modal');
-}
-
-// Переопределяем глобальную функцию показа уведомлений
-const originalShowNotification = window.showNotification;
-window.showNotification = function(message, type = 'info') {
-    if (window.notificationSettings) {
-        if (type === 'success' && !window.notificationSettings.success) return;
-        if (type === 'error' && !window.notificationSettings.error) return;
-        if (type === 'info' && !window.notificationSettings.info) return;
-    }
-    
-    if (originalShowNotification) {
-        originalShowNotification(message, type);
-    }
-};
-
-// ========== ОСТАЛЬНЫЕ ФУНКЦИИ ПРОФИЛЯ ==========
-
 // Настройка обработчиков событий
 function setupProfileEventListeners() {
+    // Редактирование профиля
     const editProfileBtn = document.getElementById('edit-profile-btn');
     if (editProfileBtn) {
         editProfileBtn.addEventListener('click', () => {
@@ -390,6 +169,7 @@ function setupProfileEventListeners() {
         });
     }
     
+    // Приглашение родственника
     const inviteBtn = document.getElementById('invite-btn');
     if (inviteBtn) {
         inviteBtn.addEventListener('click', () => {
@@ -397,21 +177,31 @@ function setupProfileEventListeners() {
         });
     }
     
+    // Настройки уведомлений
     const notificationsBtn = document.getElementById('notifications-settings-btn');
     if (notificationsBtn) {
-        notificationsBtn.addEventListener('click', openNotificationSettings);
+        notificationsBtn.addEventListener('click', () => {
+            if (window.openNotificationModal) {
+                window.openNotificationModal();
+            } else {
+                window.showNotification('Настройки уведомлений будут доступны в следующем обновлении', 'info');
+            }
+        });
     }
     
+    // Экспорт данных
     const exportBtn = document.getElementById('export-data-btn');
     if (exportBtn) {
         exportBtn.addEventListener('click', exportUserData);
     }
     
+    // Смена аватара
     const changeAvatarBtn = document.getElementById('change-avatar-btn');
     if (changeAvatarBtn) {
         changeAvatarBtn.addEventListener('click', handleAvatarChange);
     }
     
+    // Выход
     const logoutBtn = document.getElementById('logout-profile-btn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', () => {
@@ -421,29 +211,13 @@ function setupProfileEventListeners() {
         });
     }
     
-    // Обработчик для сохранения настроек уведомлений
-    const saveNotifBtn = document.getElementById('save-notification-settings');
-    if (saveNotifBtn) {
-        saveNotifBtn.addEventListener('click', async () => {
-            await saveNotificationSettings();
-            window.closeAllModals();
-        });
-    }
-    
-    // Обработчик для сброса настроек
-    const resetNotifBtn = document.getElementById('reset-notifications');
-    if (resetNotifBtn) {
-        resetNotifBtn.addEventListener('click', async () => {
-            await resetNotificationSettings();
-            window.showNotification('✅ Настройки сброшены', 'success');
-        });
-    }
-    
+    // Обработчик формы редактирования профиля
     const editProfileForm = document.getElementById('edit-profile-form-modal');
     if (editProfileForm) {
         editProfileForm.addEventListener('submit', handleEditProfileSubmit);
     }
     
+    // Обработчик формы приглашения
     const inviteForm = document.getElementById('invite-form-modal');
     if (inviteForm) {
         inviteForm.addEventListener('submit', handleInviteSubmit);
@@ -635,14 +409,10 @@ async function handleEditProfileSubmit(e) {
         
         if (window.supabaseClient && window.currentUser.id && !window.currentUser.id.startsWith('demo-')) {
             try {
-                const { data: authData, error: authError } = await window.supabaseClient.auth.updateUser({
+                await window.supabaseClient.auth.updateUser({
                     email: email,
                     data: { name: fullName }
                 });
-                
-                if (!authError && authData.user) {
-                    window.currentUser = authData.user;
-                }
                 
                 const profileData = {
                     id: window.currentUser.id,
@@ -652,13 +422,10 @@ async function handleEditProfileSubmit(e) {
                     updated_at: new Date().toISOString()
                 };
                 
-                const { error: profileError } = await window.supabaseClient
+                await window.supabaseClient
                     .from('profiles')
                     .upsert(profileData);
                 
-                if (profileError) {
-                    console.warn('⚠️ Ошибка обновления в таблице profiles:', profileError);
-                }
             } catch (supabaseError) {
                 console.warn('⚠️ Не удалось обновить в Supabase:', supabaseError);
             }
@@ -699,7 +466,7 @@ async function handleInviteSubmit(e) {
     
     try {
         const invitations = JSON.parse(localStorage.getItem('family_invitations') || '[]');
-        const newInvitation = {
+        invitations.push({
             id: Date.now(),
             email: email,
             name: name,
@@ -707,9 +474,8 @@ async function handleInviteSubmit(e) {
             allowEdit: allowEdit,
             sentAt: new Date().toISOString(),
             status: 'pending'
-        };
+        });
         
-        invitations.push(newInvitation);
         localStorage.setItem('family_invitations', JSON.stringify(invitations));
         
         window.showNotification(`✅ Приглашение отправлено на ${email}`, 'success');
@@ -869,7 +635,4 @@ window.exportUserData = exportUserData;
 window.loadProfileData = loadProfileData;
 window.handleAvatarChange = handleAvatarChange;
 window.openEditProfileModal = openEditProfileModal;
-window.openNotificationSettings = openNotificationSettings;
-window.loadNotificationSettings = loadNotificationSettings;
-window.saveNotificationSettings = saveNotificationSettings;
-window.resetNotificationSettings = resetNotificationSettings;
+window.exportTree = exportTree;
