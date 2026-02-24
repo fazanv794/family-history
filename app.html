@@ -102,86 +102,41 @@
     <!-- Модальные окна -->
     <div class="modal-overlay hidden" id="modal-overlay"></div>
     
-    <!-- Модальное окно добавления человека -->
-    <div id="add-person-modal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Добавить человека в древо</h3>
-                <button class="modal-close">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="add-person-form-modal">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="person-first-name">Имя *</label>
-                            <input type="text" id="person-first-name" placeholder="Имя" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="person-last-name">Фамилия *</label>
-                            <input type="text" id="person-last-name" placeholder="Фамилия" required>
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="person-birth-date">Дата рождения</label>
-                            <input type="date" id="person-birth-date">
-                        </div>
-                        <div class="form-group">
-                            <label for="person-death-date">Дата смерти</label>
-                            <input type="date" id="person-death-date">
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="person-gender">Пол</label>
-                        <select id="person-gender" required>
-                            <option value="">Выберите пол</option>
-                            <option value="male">Мужской</option>
-                            <option value="female">Женский</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="person-relation">Родство *</label>
-                        <select id="person-relation" required>
-                            <option value="">Выберите родство</option>
-                            <option value="self">Я</option>
-                            <option value="spouse">Супруг/а</option>
-                            <option value="parent">Родитель</option>
-                            <option value="child">Ребенок</option>
-                            <option value="sibling">Брат/сестра</option>
-                            <option value="grandparent">Дедушка/бабушка</option>
-                            <option value="grandchild">Внук/внучка</option>
-                            <option value="aunt_uncle">Тетя/дядя</option>
-                            <option value="cousin">Двоюродный брат/сестра</option>
-                            <option value="other">Другой родственник</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="person-photo-url">Фото (URL)</label>
-                        <input type="url" id="person-photo-url" placeholder="https://example.com/photo.jpg">
-                        <small style="color: #718096;">Или загрузите после создания</small>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="person-bio">Биография</label>
-                        <textarea id="person-bio" rows="4" placeholder="Расскажите историю этого человека..."></textarea>
-                    </div>
-                    
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary cancel-btn">
-                            Отмена
-                        </button>
-                        <button type="submit" class="btn">
-                            Добавить в древо
-                        </button>
-                    </div>
-                </form>
-            </div>
+<div id="add-person-modal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Добавить человека</h3>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="invite-family-form">
+                <div class="form-group">
+                    <label for="invite-email">Email родственника *</label>
+                    <input type="email" id="invite-email" placeholder="email@example.com" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="invite-name">Имя родственника</label>
+                    <input type="text" id="invite-name" placeholder="Как к нему обращаться?">
+                </div>
+                
+                <div class="form-group">
+                    <label for="invite-message">Личное сообщение</label>
+                    <textarea id="invite-message" rows="4" placeholder="Привет! Присоединяйся к нашему семейному древу, чтобы вместе сохранять историю семьи..."></textarea>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary cancel-btn">
+                        Отмена
+                    </button>
+                    <button type="submit" class="btn">
+                        <i class="fas fa-envelope"></i> Отправить приглашение
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
+</div>
 
     <!-- Уведомления -->
     <div id="notification" class="notification">
