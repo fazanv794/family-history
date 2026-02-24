@@ -4,17 +4,11 @@ console.log('👤 Profile.js загружается...');
 function initProfilePage() {
     console.log('🔄 Инициализация страницы профиля...');
     
-    // Загружаем данные пользователя
     loadProfileData();
-    
-    // Настраиваем обработчики событий
     setupProfileEventListeners();
-    
-    // Обновляем статистику
     updateProfileStats();
-    
-    // Загружаем информацию о дереве
     loadTreeInfo();
+    loadNotificationSettings(); // Загружаем настройки уведомлений
 }
 
 // Загрузка данных профиля
@@ -22,22 +16,16 @@ async function loadProfileData() {
     console.log('📥 Загрузка данных профиля...');
     
     try {
-        // Проверяем авторизацию
         if (!window.currentUser) {
-            console.log('👤 Пользователь не авторизован, проверяем localStorage...');
-            
-            // Пробуем загрузить из localStorage
             const savedUser = localStorage.getItem('family_tree_user');
             if (savedUser) {
                 try {
                     window.currentUser = JSON.parse(savedUser);
-                    console.log('✅ Пользователь загружен из localStorage');
                 } catch (e) {
                     console.error('❌ Ошибка парсинга пользователя:', e);
                 }
             }
             
-            // Если всё равно нет пользователя, перенаправляем
             if (!window.currentUser) {
                 window.showNotification('Пожалуйста, войдите в систему', 'error');
                 setTimeout(() => {
@@ -47,17 +35,10 @@ async function loadProfileData() {
             }
         }
         
-        console.log('👤 Текущий пользователь:', window.currentUser);
-        
-        // Обновляем UI профиля
         updateProfileUI();
         
-        // Загружаем данные из Supabase если пользователь авторизован через него
         if (window.supabaseClient && window.currentUser.id && !window.currentUser.id.startsWith('demo-')) {
             try {
-                console.log('📦 Загрузка данных из Supabase...');
-                
-                // Загружаем профиль из Supabase
                 const { data, error } = await window.supabaseClient
                     .from('profiles')
                     .select('*')
@@ -65,15 +46,9 @@ async function loadProfileData() {
                     .single();
                 
                 if (!error && data) {
-                    console.log('✅ Данные профиля из Supabase:', data);
-                    
-                    // Обновляем объект пользователя
                     window.currentUser.profile = data;
-                    
-                    // Обновляем UI
                     updateProfileUI();
                 } else {
-                    console.log('📝 Профиль не найден в Supabase, создаем новый...');
                     await createUserProfile();
                 }
             } catch (error) {
@@ -106,7 +81,6 @@ async function createUserProfile() {
             .select();
         
         if (!error && data) {
-            console.log('✅ Профиль создан в Supabase:', data);
             window.currentUser.profile = data[0];
             updateProfileUI();
         }
@@ -117,14 +91,8 @@ async function createUserProfile() {
 
 // Обновление UI профиля
 function updateProfileUI() {
-    console.log('🎨 Обновление UI профиля...');
+    if (!window.currentUser) return;
     
-    if (!window.currentUser) {
-        console.log('👤 Нет данных пользователя для отображения');
-        return;
-    }
-    
-    // Получаем данные для отображения
     const email = window.currentUser.email || 'Не указан';
     const userId = window.currentUser.id || 'Не указан';
     const createdAt = window.currentUser.created_at || 
@@ -134,18 +102,15 @@ function updateProfileUI() {
                     window.currentUser.profile?.full_name || 
                     email.split('@')[0];
     
-    // Проверяем наличие аватара
     const avatarUrl = window.currentUser.profile?.avatar_url;
     const avatarElement = document.getElementById('profile-avatar');
     
-    // Форматируем дату регистрации
     const regDate = new Date(createdAt).toLocaleDateString('ru-RU', {
         day: 'numeric',
         month: 'long',
         year: 'numeric'
     });
     
-    // Обновляем элементы на странице
     const profileName = document.getElementById('profile-name');
     const profileEmail = document.getElementById('profile-email');
     const infoEmail = document.getElementById('info-email');
@@ -159,30 +124,24 @@ function updateProfileUI() {
     if (infoUserId) infoUserId.textContent = userId.substring(0, 8) + '...';
     if (infoRegDate) infoRegDate.textContent = regDate;
     
-    // Обновляем аватар
     if (avatarElement) {
         if (avatarUrl) {
-            // Используем URL аватара
             avatarElement.style.backgroundImage = `url(${avatarUrl})`;
             avatarElement.style.backgroundSize = 'cover';
             avatarElement.style.backgroundPosition = 'center';
             avatarElement.textContent = '';
         } else {
-            // Используем инициалы
             const initials = getUserInitials(fullName);
             avatarElement.style.backgroundImage = '';
             avatarElement.textContent = initials;
         }
     }
     
-    // Обновляем имя в хедере
     usernameElements.forEach(el => {
         if (el.id === 'username' || el.classList.contains('user-name')) {
             el.textContent = fullName;
         }
     });
-    
-    console.log('✅ UI профиля обновлен:', { fullName, email, avatarUrl: !!avatarUrl });
 }
 
 // Функция для получения инициалов
@@ -201,70 +160,290 @@ function getUserInitials(name) {
     return initials || 'П';
 }
 
+// ========== НАСТРОЙКИ УВЕДОМЛЕНИЙ ==========
+
+let notificationSettings = {
+    success: true,
+    error: true,
+    info: true,
+    birthday: true,
+    anniversary: true,
+    event: true,
+    invite: true,
+    family_join: true,
+    media: true,
+    tree: true
+};
+
+// Загрузка настроек уведомлений из Supabase
+async function loadNotificationSettings() {
+    console.log('🔔 Загрузка настроек уведомлений...');
+    
+    try {
+        if (!window.currentUser || !window.supabaseClient) {
+            loadNotificationSettingsFromLocal();
+            return;
+        }
+        
+        const { data, error } = await window.supabaseClient
+            .from('notification_settings')
+            .select('*')
+            .eq('user_id', window.currentUser.id)
+            .maybeSingle();
+        
+        if (error) {
+            console.error('Ошибка загрузки настроек:', error);
+            loadNotificationSettingsFromLocal();
+            return;
+        }
+        
+        if (data) {
+            notificationSettings = { ...notificationSettings, ...data };
+            console.log('✅ Настройки загружены из Supabase');
+        } else {
+            console.log('📝 Настройки не найдены, создаем новые');
+            await createNotificationSettings();
+        }
+        
+        // Сохраняем в localStorage как резервную копию
+        localStorage.setItem('notification_settings', JSON.stringify(notificationSettings));
+        
+        // Применяем настройки к интерфейсу
+        applyNotificationSettingsToUI();
+        
+    } catch (error) {
+        console.error('Ошибка загрузки настроек:', error);
+        loadNotificationSettingsFromLocal();
+    }
+}
+
+// Загрузка из localStorage (резервный вариант)
+function loadNotificationSettingsFromLocal() {
+    try {
+        const savedSettings = localStorage.getItem('notification_settings');
+        if (savedSettings) {
+            notificationSettings = { ...notificationSettings, ...JSON.parse(savedSettings) };
+        }
+        applyNotificationSettingsToUI();
+    } catch (error) {
+        console.error('Ошибка загрузки из localStorage:', error);
+    }
+}
+
+// Создание настроек уведомлений в Supabase
+async function createNotificationSettings() {
+    try {
+        const settingsForDb = {
+            user_id: window.currentUser.id,
+            success: notificationSettings.success,
+            error: notificationSettings.error,
+            info: notificationSettings.info,
+            birthday: notificationSettings.birthday,
+            anniversary: notificationSettings.anniversary,
+            event: notificationSettings.event,
+            invite: notificationSettings.invite,
+            family_join: notificationSettings.family_join,
+            media: notificationSettings.media,
+            tree: notificationSettings.tree
+        };
+        
+        const { data, error } = await window.supabaseClient
+            .from('notification_settings')
+            .insert([settingsForDb])
+            .select();
+        
+        if (error) throw error;
+        
+        if (data && data[0]) {
+            notificationSettings = { ...notificationSettings, ...data[0] };
+            console.log('✅ Настройки созданы в Supabase');
+        }
+        
+    } catch (error) {
+        console.error('Ошибка создания настроек:', error);
+    }
+}
+
+// Сохранение настроек уведомлений в Supabase
+async function saveNotificationSettings() {
+    console.log('💾 Сохранение настроек уведомлений...');
+    
+    try {
+        // Собираем настройки с переключателей
+        document.querySelectorAll('.notification-toggle').forEach(toggle => {
+            const type = toggle.dataset.type;
+            if (type) {
+                notificationSettings[type] = toggle.checked;
+            }
+        });
+        
+        // Сохраняем в localStorage
+        localStorage.setItem('notification_settings', JSON.stringify(notificationSettings));
+        
+        // Если есть пользователь и Supabase, сохраняем туда
+        if (window.currentUser && window.supabaseClient && !window.currentUser.id.startsWith('demo-')) {
+            const settingsForDb = {
+                user_id: window.currentUser.id,
+                success: notificationSettings.success,
+                error: notificationSettings.error,
+                info: notificationSettings.info,
+                birthday: notificationSettings.birthday,
+                anniversary: notificationSettings.anniversary,
+                event: notificationSettings.event,
+                invite: notificationSettings.invite,
+                family_join: notificationSettings.family_join,
+                media: notificationSettings.media,
+                tree: notificationSettings.tree,
+                updated_at: new Date().toISOString()
+            };
+            
+            const { error } = await window.supabaseClient
+                .from('notification_settings')
+                .upsert(settingsForDb, { onConflict: 'user_id' });
+            
+            if (error) throw error;
+            
+            console.log('✅ Настройки сохранены в Supabase');
+        }
+        
+        // Обновляем глобальные настройки
+        window.notificationSettings = notificationSettings;
+        
+        window.showNotification('✅ Настройки уведомлений сохранены', 'success');
+        
+    } catch (error) {
+        console.error('Ошибка сохранения настроек:', error);
+        window.showNotification('Ошибка сохранения настроек', 'error');
+    }
+}
+
+// Сброс настроек уведомлений
+async function resetNotificationSettings() {
+    notificationSettings = {
+        success: true,
+        error: true,
+        info: true,
+        birthday: true,
+        anniversary: true,
+        event: true,
+        invite: true,
+        family_join: true,
+        media: true,
+        tree: true
+    };
+    
+    // Обновляем переключатели
+    document.querySelectorAll('.notification-toggle').forEach(toggle => {
+        const type = toggle.dataset.type;
+        if (type && notificationSettings[type] !== undefined) {
+            toggle.checked = notificationSettings[type];
+        }
+    });
+    
+    // Сохраняем
+    await saveNotificationSettings();
+}
+
+// Применение настроек к UI
+function applyNotificationSettingsToUI() {
+    document.querySelectorAll('.notification-toggle').forEach(toggle => {
+        const type = toggle.dataset.type;
+        if (type && notificationSettings[type] !== undefined) {
+            toggle.checked = notificationSettings[type];
+        }
+    });
+}
+
+// Открытие модального окна настроек уведомлений
+function openNotificationSettings() {
+    console.log('🔔 Открытие настроек уведомлений');
+    
+    // Применяем текущие настройки
+    applyNotificationSettingsToUI();
+    
+    // Показываем модальное окно
+    window.showModal('notifications-modal');
+}
+
+// Переопределяем глобальную функцию показа уведомлений
+const originalShowNotification = window.showNotification;
+window.showNotification = function(message, type = 'info') {
+    if (window.notificationSettings) {
+        if (type === 'success' && !window.notificationSettings.success) return;
+        if (type === 'error' && !window.notificationSettings.error) return;
+        if (type === 'info' && !window.notificationSettings.info) return;
+    }
+    
+    if (originalShowNotification) {
+        originalShowNotification(message, type);
+    }
+};
+
+// ========== ОСТАЛЬНЫЕ ФУНКЦИИ ПРОФИЛЯ ==========
+
 // Настройка обработчиков событий
 function setupProfileEventListeners() {
-    console.log('🎮 Настройка обработчиков профиля...');
-    
-    // Редактирование профиля
     const editProfileBtn = document.getElementById('edit-profile-btn');
     if (editProfileBtn) {
         editProfileBtn.addEventListener('click', () => {
-            console.log('✏️ Открытие формы редактирования профиля');
             openEditProfileModal();
         });
     }
     
-    // Приглашение родственника
     const inviteBtn = document.getElementById('invite-btn');
     if (inviteBtn) {
         inviteBtn.addEventListener('click', () => {
-            console.log('📨 Открытие формы приглашения');
             window.showModal('invite-modal');
         });
     }
     
-    // Настройки уведомлений
-   const notificationsBtn = document.getElementById('notifications-settings-btn');
-if (notificationsBtn) {
-    notificationsBtn.addEventListener('click', () => {
-        openNotificationSettings();
-    });
-}
+    const notificationsBtn = document.getElementById('notifications-settings-btn');
+    if (notificationsBtn) {
+        notificationsBtn.addEventListener('click', openNotificationSettings);
+    }
     
-    // Экспорт данных
     const exportBtn = document.getElementById('export-data-btn');
     if (exportBtn) {
         exportBtn.addEventListener('click', exportUserData);
     }
     
-    // Смена аватара
     const changeAvatarBtn = document.getElementById('change-avatar-btn');
     if (changeAvatarBtn) {
         changeAvatarBtn.addEventListener('click', handleAvatarChange);
     }
     
-    // Выход
     const logoutBtn = document.getElementById('logout-profile-btn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', () => {
-            console.log('🚪 Выход из профиля');
             if (window.handleLogout) {
                 window.handleLogout();
             }
         });
     }
     
-    // Обработчик формы редактирования профиля
-    const editProfileForm = document.getElementById('edit-profile-form-modal');
-    if (editProfileForm) {
-        // Удаляем старый обработчик если есть
-        editProfileForm.replaceWith(editProfileForm.cloneNode(true));
-        
-        // Добавляем новый обработчик
-        document.getElementById('edit-profile-form-modal').addEventListener('submit', handleEditProfileSubmit);
+    // Обработчик для сохранения настроек уведомлений
+    const saveNotifBtn = document.getElementById('save-notification-settings');
+    if (saveNotifBtn) {
+        saveNotifBtn.addEventListener('click', async () => {
+            await saveNotificationSettings();
+            window.closeAllModals();
+        });
     }
     
-    // Обработчик формы приглашения
+    // Обработчик для сброса настроек
+    const resetNotifBtn = document.getElementById('reset-notifications');
+    if (resetNotifBtn) {
+        resetNotifBtn.addEventListener('click', async () => {
+            await resetNotificationSettings();
+            window.showNotification('✅ Настройки сброшены', 'success');
+        });
+    }
+    
+    const editProfileForm = document.getElementById('edit-profile-form-modal');
+    if (editProfileForm) {
+        editProfileForm.addEventListener('submit', handleEditProfileSubmit);
+    }
+    
     const inviteForm = document.getElementById('invite-form-modal');
     if (inviteForm) {
         inviteForm.addEventListener('submit', handleInviteSubmit);
@@ -273,40 +452,28 @@ if (notificationsBtn) {
 
 // Обработка смены аватара
 async function handleAvatarChange() {
-    console.log('📸 Запуск процесса смены аватара');
-    
-    // Создаем input для выбора файла
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
     input.style.display = 'none';
-    
-    // Добавляем ограничения
-    input.setAttribute('capture', 'user'); // Для мобильных устройств
-    input.setAttribute('multiple', false);
     
     document.body.appendChild(input);
     
     input.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) {
-            console.log('❌ Файл не выбран');
             document.body.removeChild(input);
             return;
         }
         
-        console.log('📁 Выбран файл:', file.name, file.size, file.type);
-        
-        // Проверяем размер файла (макс 5MB)
         if (file.size > 5 * 1024 * 1024) {
             window.showNotification('Размер файла не должен превышать 5MB', 'error');
             document.body.removeChild(input);
             return;
         }
         
-        // Проверяем тип файла
         if (!file.type.startsWith('image/')) {
-            window.showNotification('Пожалуйста, выберите изображение (JPG, PNG, GIF)', 'error');
+            window.showNotification('Пожалуйста, выберите изображение', 'error');
             document.body.removeChild(input);
             return;
         }
@@ -316,33 +483,16 @@ async function handleAvatarChange() {
         try {
             let avatarUrl;
             
-            // Если пользователь авторизован, загружаем фото
             if (window.currentUser && window.currentUser.id) {
-                try {
-                    // Используем функцию загрузки
-                    if (window.uploadProfilePhoto) {
-                        avatarUrl = await window.uploadProfilePhoto(file, window.currentUser.id);
-                        console.log('✅ Фото загружено, URL:', avatarUrl);
-                    } else {
-                        // Если функция не доступна, используем Data URL
-                        avatarUrl = await window.readFileAsDataURL(file);
-                    }
-                } catch (uploadError) {
-                    console.error('Ошибка загрузки фото:', uploadError);
-                    window.showNotification('Ошибка загрузки фото', 'error');
-                    window.hideLoader();
-                    document.body.removeChild(input);
-                    return;
+                if (window.uploadProfilePhoto) {
+                    avatarUrl = await window.uploadProfilePhoto(file, window.currentUser.id);
+                } else {
+                    avatarUrl = await window.readFileAsDataURL(file);
                 }
                 
-                // Сохраняем URL фото в профиле пользователя
                 await saveAvatarToProfile(avatarUrl);
-                
-                // Обновляем аватар в интерфейсе
                 updateAvatarInUI(avatarUrl);
-                
-                window.showNotification('✅ Фото профиля успешно обновлено!', 'success');
-                
+                window.showNotification('✅ Фото профиля обновлено!', 'success');
             } else {
                 window.showNotification('Пользователь не авторизован', 'error');
             }
@@ -352,69 +502,45 @@ async function handleAvatarChange() {
             window.showNotification('Ошибка обработки фото', 'error');
         } finally {
             window.hideLoader();
-            // Удаляем input
             document.body.removeChild(input);
         }
     });
     
-    // Запускаем выбор файла
     input.click();
 }
 
 // Сохранение аватара в профиль
 async function saveAvatarToProfile(avatarUrl) {
-    if (!window.currentUser) {
-        console.error('❌ Нет данных пользователя для сохранения аватара');
-        return;
+    if (!window.currentUser) return;
+    
+    if (!window.currentUser.profile) {
+        window.currentUser.profile = {};
     }
     
-    console.log('💾 Сохранение аватара в профиль:', avatarUrl);
+    window.currentUser.profile.avatar_url = avatarUrl;
+    localStorage.setItem('family_tree_user', JSON.stringify(window.currentUser));
     
-    try {
-        // Обновляем локально
-        if (!window.currentUser.profile) {
-            window.currentUser.profile = {};
-        }
-        
-        window.currentUser.profile.avatar_url = avatarUrl;
-        
-        // Сохраняем в localStorage
-        localStorage.setItem('family_tree_user', JSON.stringify(window.currentUser));
-        console.log('✅ Аватар сохранен в localStorage');
-        
-        // Если пользователь авторизован через Supabase, обновляем в базе
-        if (window.supabaseClient && window.currentUser.id && !window.currentUser.id.startsWith('demo-')) {
-            try {
-                // Обновляем в таблице profiles
-                const { error } = await window.supabaseClient
-                    .from('profiles')
-                    .update({
-                        avatar_url: avatarUrl,
-                        updated_at: new Date().toISOString()
-                    })
-                    .eq('id', window.currentUser.id);
-                
-                if (error) {
-                    console.warn('⚠️ Не удалось сохранить аватар в Supabase:', error);
-                } else {
-                    console.log('✅ Аватар сохранен в Supabase');
-                }
-            } catch (supabaseError) {
-                console.warn('⚠️ Ошибка Supabase при сохранении аватара:', supabaseError);
+    if (window.supabaseClient && window.currentUser.id && !window.currentUser.id.startsWith('demo-')) {
+        try {
+            const { error } = await window.supabaseClient
+                .from('profiles')
+                .update({
+                    avatar_url: avatarUrl,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', window.currentUser.id);
+            
+            if (error) {
+                console.warn('⚠️ Не удалось сохранить аватар в Supabase:', error);
             }
+        } catch (supabaseError) {
+            console.warn('⚠️ Ошибка Supabase при сохранении аватара:', supabaseError);
         }
-        
-    } catch (error) {
-        console.error('❌ Ошибка сохранения аватара:', error);
-        throw error;
     }
 }
 
 // Обновление аватара в UI
 function updateAvatarInUI(avatarUrl) {
-    console.log('🎨 Обновление аватара в UI');
-    
-    // Обновляем на странице профиля
     const profileAvatar = document.getElementById('profile-avatar');
     if (profileAvatar) {
         if (avatarUrl) {
@@ -423,7 +549,6 @@ function updateAvatarInUI(avatarUrl) {
             profileAvatar.style.backgroundPosition = 'center';
             profileAvatar.textContent = '';
         } else {
-            // Если нет URL, показываем инициалы
             const fullName = window.currentUser.user_metadata?.name || 
                            window.currentUser.profile?.full_name || 
                            window.currentUser.email?.split('@')[0] || 
@@ -434,7 +559,6 @@ function updateAvatarInUI(avatarUrl) {
         }
     }
     
-    // Обновляем в хедере
     const userAvatar = document.getElementById('user-avatar');
     if (userAvatar && avatarUrl) {
         userAvatar.style.backgroundImage = `url(${avatarUrl})`;
@@ -451,22 +575,15 @@ function openEditProfileModal() {
         return;
     }
     
-    console.log('📝 Заполнение формы редактирования профиля');
-    
-    // Получаем текущие данные
     const name = window.currentUser.user_metadata?.name || 
                 window.currentUser.profile?.full_name || 
                 '';
-    const email = window.currentUser.email || '';
     
-    // Разбиваем имя на части
     const nameParts = name.split(' ');
     const firstName = nameParts[0] || '';
     const lastName = nameParts.slice(1).join(' ') || '';
+    const email = window.currentUser.email || '';
     
-    console.log('Данные для формы:', { firstName, lastName, email });
-    
-    // Заполняем форму
     const nameInput = document.getElementById('edit-profile-name');
     const lastNameInput = document.getElementById('edit-profile-last-name');
     const emailInput = document.getElementById('edit-profile-email');
@@ -477,46 +594,28 @@ function openEditProfileModal() {
     if (emailInput) emailInput.value = email;
     if (bioInput) bioInput.value = window.currentUser.profile?.bio || '';
     
-    // Показываем модальное окно
-    const modal = window.showModal('edit-profile-modal');
-    
-    // Убедимся, что у формы есть обработчик
-    if (modal) {
-        const form = modal.querySelector('#edit-profile-form-modal');
-        if (form) {
-            // Удаляем старый обработчик если есть
-            form.replaceWith(form.cloneNode(true));
-            
-            // Добавляем новый обработчик
-            modal.querySelector('#edit-profile-form-modal').addEventListener('submit', handleEditProfileSubmit);
-        }
-    }
+    window.showModal('edit-profile-modal');
 }
 
 // Обработка отправки формы редактирования профиля
 async function handleEditProfileSubmit(e) {
     e.preventDefault();
-    console.log('📝 Сохранение профиля...');
     
     const name = document.getElementById('edit-profile-name').value;
     const lastName = document.getElementById('edit-profile-last-name').value;
     const email = document.getElementById('edit-profile-email').value;
     const bio = document.getElementById('edit-profile-bio').value;
     
-    console.log('Данные из формы:', { name, lastName, email, bio });
-    
     if (!name || !email) {
         window.showNotification('Заполните обязательные поля', 'error');
         return;
     }
     
-    // Формируем полное имя
     const fullName = lastName ? `${name} ${lastName}` : name;
     
     window.showLoader('Сохранение профиля...');
     
     try {
-        // Обновляем локально
         if (window.currentUser) {
             window.currentUser.user_metadata = {
                 ...window.currentUser.user_metadata,
@@ -531,32 +630,20 @@ async function handleEditProfileSubmit(e) {
             window.currentUser.profile.bio = bio;
             window.currentUser.profile.updated_at = new Date().toISOString();
             
-            // Сохраняем в localStorage
             localStorage.setItem('family_tree_user', JSON.stringify(window.currentUser));
-            console.log('✅ Профиль обновлен локально');
         }
         
-        // Если пользователь авторизован через Supabase, обновляем там
         if (window.supabaseClient && window.currentUser.id && !window.currentUser.id.startsWith('demo-')) {
             try {
-                // Обновляем в auth
-                console.log('🔐 Обновление данных в Auth...');
                 const { data: authData, error: authError } = await window.supabaseClient.auth.updateUser({
                     email: email,
-                    data: {
-                        name: fullName
-                    }
+                    data: { name: fullName }
                 });
                 
-                if (authError) {
-                    console.warn('⚠️ Ошибка обновления в Auth:', authError);
-                } else if (authData.user) {
+                if (!authError && authData.user) {
                     window.currentUser = authData.user;
-                    console.log('✅ Профиль обновлен в Auth');
                 }
                 
-                // Обновляем в таблице profiles
-                console.log('💾 Обновление данных в таблице profiles...');
                 const profileData = {
                     id: window.currentUser.id,
                     email: email,
@@ -571,8 +658,6 @@ async function handleEditProfileSubmit(e) {
                 
                 if (profileError) {
                     console.warn('⚠️ Ошибка обновления в таблице profiles:', profileError);
-                } else {
-                    console.log('✅ Профиль обновлен в таблице profiles');
                 }
             } catch (supabaseError) {
                 console.warn('⚠️ Не удалось обновить в Supabase:', supabaseError);
@@ -581,13 +666,11 @@ async function handleEditProfileSubmit(e) {
         
         window.showNotification('✅ Профиль успешно обновлен!', 'success');
         
-        // Обновляем UI
         updateProfileUI();
         if (window.updateUserUI) {
             window.updateUserUI();
         }
         
-        // Закрываем модальное окно
         window.closeAllModals();
         
     } catch (error) {
@@ -601,7 +684,6 @@ async function handleEditProfileSubmit(e) {
 // Обработка приглашения
 async function handleInviteSubmit(e) {
     e.preventDefault();
-    console.log('📨 Отправка приглашения...');
     
     const email = document.getElementById('invite-email').value;
     const name = document.getElementById('invite-name').value;
@@ -616,7 +698,6 @@ async function handleInviteSubmit(e) {
     window.showLoader('Отправка приглашения...');
     
     try {
-        // Сохраняем приглашение в localStorage
         const invitations = JSON.parse(localStorage.getItem('family_invitations') || '[]');
         const newInvitation = {
             id: Date.now(),
@@ -633,7 +714,6 @@ async function handleInviteSubmit(e) {
         
         window.showNotification(`✅ Приглашение отправлено на ${email}`, 'success');
         
-        // Сбрасываем форму
         e.target.reset();
         window.closeAllModals();
         
@@ -647,12 +727,9 @@ async function handleInviteSubmit(e) {
 
 // Экспорт данных пользователя
 async function exportUserData() {
-    console.log('💾 Экспорт данных пользователя...');
-    
     window.showLoader('Подготовка данных...');
     
     try {
-        // Собираем все данные пользователя
         const userData = {
             exportInfo: {
                 date: new Date().toISOString(),
@@ -672,12 +749,10 @@ async function exportUserData() {
             invitations: JSON.parse(localStorage.getItem('family_invitations') || '[]')
         };
         
-        // Создаем JSON файл
         const dataStr = JSON.stringify(userData, null, 2);
         const dataBlob = new Blob([dataStr], { type: 'application/json' });
         const url = URL.createObjectURL(dataBlob);
         
-        // Создаем ссылку для скачивания
         const link = document.createElement('a');
         link.href = url;
         link.download = `family-history-export-${new Date().toISOString().split('T')[0]}.json`;
@@ -686,7 +761,7 @@ async function exportUserData() {
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
         
-        window.showNotification('✅ Данные экспортированы! Файл скачивается...', 'success');
+        window.showNotification('✅ Данные экспортированы!', 'success');
         
     } catch (error) {
         console.error('❌ Ошибка экспорта данных:', error);
@@ -698,23 +773,17 @@ async function exportUserData() {
 
 // Обновление статистики профиля
 function updateProfileStats() {
-    console.log('📊 Обновление статистики профиля...');
-    
-    // Люди в древе
     const peopleCount = window.people ? window.people.length : 0;
     const peopleCountElement = document.getElementById('info-people-count');
     if (peopleCountElement) {
         peopleCountElement.textContent = peopleCount;
     }
     
-    // Обновляем статистику каждые 5 секунд (для динамических данных)
     setTimeout(updateProfileStats, 5000);
 }
 
 // Загрузка информации о дереве
 function loadTreeInfo() {
-    console.log('🌳 Загрузка информации о дереве...');
-    
     const treeInfoSection = document.getElementById('tree-info-section');
     if (!treeInfoSection) return;
     
@@ -788,166 +857,11 @@ function exportTree() {
 
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('📄 Страница профиля загружена');
-    
-    // Ждем загрузки основных скриптов
     setTimeout(() => {
         initProfilePage();
     }, 100);
 });
 
-// Настройки уведомлений
-let notificationSettings = {
-    success: true,
-    error: true,
-    info: true,
-    birthday: true,
-    anniversary: true,
-    event: true,
-    invite: true,
-    join: true,
-    media: true,
-    tree: true
-};
-
-// Загрузка настроек уведомлений
-function loadNotificationSettings() {
-    try {
-        const savedSettings = localStorage.getItem('notification_settings');
-        if (savedSettings) {
-            notificationSettings = { ...notificationSettings, ...JSON.parse(savedSettings) };
-        }
-        
-        // Применяем настройки к переключателям
-        document.querySelectorAll('.notification-toggle').forEach(toggle => {
-            const type = toggle.dataset.type;
-            if (type && notificationSettings[type] !== undefined) {
-                toggle.checked = notificationSettings[type];
-            }
-        });
-        
-        console.log('✅ Настройки уведомлений загружены');
-    } catch (error) {
-        console.error('Ошибка загрузки настроек уведомлений:', error);
-    }
-}
-
-// Сохранение настроек уведомлений
-function saveNotificationSettings() {
-    try {
-        // Собираем настройки с переключателей
-        document.querySelectorAll('.notification-toggle').forEach(toggle => {
-            const type = toggle.dataset.type;
-            if (type) {
-                notificationSettings[type] = toggle.checked;
-            }
-        });
-        
-        localStorage.setItem('notification_settings', JSON.stringify(notificationSettings));
-        
-        // Применяем настройки к глобальной функции показа уведомлений
-        window.notificationSettings = notificationSettings;
-        
-        console.log('✅ Настройки уведомлений сохранены');
-    } catch (error) {
-        console.error('Ошибка сохранения настроек уведомлений:', error);
-    }
-}
-
-// Сброс настроек уведомлений
-function resetNotificationSettings() {
-    notificationSettings = {
-        success: true,
-        error: true,
-        info: true,
-        birthday: true,
-        anniversary: true,
-        event: true,
-        invite: true,
-        join: true,
-        media: true,
-        tree: true
-    };
-    
-    // Обновляем переключатели
-    document.querySelectorAll('.notification-toggle').forEach(toggle => {
-        const type = toggle.dataset.type;
-        if (type && notificationSettings[type] !== undefined) {
-            toggle.checked = notificationSettings[type];
-        }
-    });
-    
-    saveNotificationSettings();
-    window.showNotification('✅ Настройки уведомлений сброшены', 'success');
-}
-
-// Открытие модального окна настроек уведомлений
-function openNotificationSettings() {
-    console.log('🔔 Открытие настроек уведомлений');
-    
-    // Загружаем актуальные настройки
-    loadNotificationSettings();
-    
-    // Показываем модальное окно
-    window.showModal('notifications-modal');
-}
-
-// Переопределяем глобальную функцию показа уведомлений с учетом настроек
-const originalShowNotification = window.showNotification;
-window.showNotification = function(message, type = 'info') {
-    // Проверяем, включены ли уведомления этого типа
-    if (window.notificationSettings) {
-        if (type === 'success' && !window.notificationSettings.success) return;
-        if (type === 'error' && !window.notificationSettings.error) return;
-        if (type === 'info' && !window.notificationSettings.info) return;
-    }
-    
-    // Вызываем оригинальную функцию
-    originalShowNotification(message, type);
-};
-
-// Добавляем обработчики для настроек уведомлений
-document.addEventListener('DOMContentLoaded', function() {
-    // Загружаем настройки
-    loadNotificationSettings();
-    window.notificationSettings = notificationSettings;
-    
-    // Обработчик для кнопки настроек уведомлений
-    const notificationsBtn = document.getElementById('notifications-settings-btn');
-    if (notificationsBtn) {
-        notificationsBtn.addEventListener('click', openNotificationSettings);
-    }
-    
-    // Обработчик для сохранения настроек
-    const saveBtn = document.getElementById('save-notification-settings');
-    if (saveBtn) {
-        saveBtn.addEventListener('click', function() {
-            saveNotificationSettings();
-            window.closeAllModals();
-            window.showNotification('✅ Настройки уведомлений сохранены', 'success');
-        });
-    }
-    
-    // Обработчик для сброса настроек
-    const resetBtn = document.getElementById('reset-notifications');
-    if (resetBtn) {
-        resetBtn.addEventListener('click', resetNotificationSettings);
-    }
-    
-    // Добавляем обработчики для всех переключателей (мгновенное применение)
-    document.querySelectorAll('.notification-toggle').forEach(toggle => {
-        toggle.addEventListener('change', function() {
-            // Можно показывать подсказку, но не обязательно
-            // console.log('Изменен тип:', this.dataset.type, this.checked);
-        });
-    });
-});
-
-// Экспортируем функции
-window.openNotificationSettings = openNotificationSettings;
-window.loadNotificationSettings = loadNotificationSettings;
-window.saveNotificationSettings = saveNotificationSettings;
-window.resetNotificationSettings = resetNotificationSettings;
 // Экспортируем функции
 window.initProfilePage = initProfilePage;
 window.updateProfileUI = updateProfileUI;
@@ -955,3 +869,7 @@ window.exportUserData = exportUserData;
 window.loadProfileData = loadProfileData;
 window.handleAvatarChange = handleAvatarChange;
 window.openEditProfileModal = openEditProfileModal;
+window.openNotificationSettings = openNotificationSettings;
+window.loadNotificationSettings = loadNotificationSettings;
+window.saveNotificationSettings = saveNotificationSettings;
+window.resetNotificationSettings = resetNotificationSettings;
