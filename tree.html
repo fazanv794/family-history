@@ -265,61 +265,238 @@
     <script src="tree-builder-simple.js"></script>
     <script src="tree-engine.js"></script>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', async function() {
-            console.log('🌳 Страница дерева загружается...');
+<script>
+// Функция для скачивания изображения
+async function downloadImage(imageUrl, fileName) {
+    try {
+        window.showLoader('Подготовка изображения...');
+        
+        // Пробуем разные способы загрузки
+        let blob;
+        let response;
+        
+        // Способ 1: Прямая загрузка с fetch
+        try {
+            response = await fetch(imageUrl, {
+                mode: 'cors',
+                cache: 'no-cache',
+                headers: {
+                    'Accept': 'image/*'
+                }
+            });
             
-            // Загружаем данные из localStorage
-            if (typeof window.loadFromLocalStorage === 'function') {
-                window.loadFromLocalStorage();
+            if (response.ok) {
+                blob = await response.blob();
+            }
+        } catch (e) {
+            console.log('Прямая загрузка не удалась, пробуем прокси...');
+        }
+        
+        // Способ 2: Если не получилось, используем прокси
+        if (!blob) {
+            // Используем CORS прокси для обхода ограничений
+            const proxyUrl = 'https://api.allorigins.win/raw?url=' + 
+                encodeURIComponent(imageUrl);
+            
+            response = await fetch(proxyUrl);
+            if (response.ok) {
+                blob = await response.blob();
+            }
+        }
+        
+        // Способ 3: Создаем изображение и конвертируем в canvas
+        if (!blob) {
+            blob = await imageToBlob(imageUrl);
+        }
+        
+        if (blob && blob.size > 0) {
+            // Определяем расширение файла
+            let extension = 'jpg';
+            if (blob.type) {
+                if (blob.type.includes('png')) extension = 'png';
+                else if (blob.type.includes('gif')) extension = 'gif';
+                else if (blob.type.includes('webp')) extension = 'webp';
             }
             
-            // Проверяем есть ли сохраненное дерево
-            if (window.treeData && window.treeData.relatives && window.treeData.relatives.length > 0) {
-                console.log('✅ Найдено сохраненное дерево:', window.treeData.name);
-                
-                // Создаем интерактивное дерево
-                if (typeof window.createInteractiveTree === 'function') {
-                    window.createInteractiveTree(window.treeData.relatives, 'tree-visualization-container');
-                } else if (typeof window.updateTreeInterface === 'function') {
-                    // Используем старую версию для совместимости
-                    window.updateTreeInterface(window.treeData.relatives, window.treeData.name);
-                }
-                
-                // Обновляем статистику
-                if (typeof window.updateTreeStats === 'function') {
-                    window.updateTreeStats();
-                }
-                
-                // Показываем контролы
-                document.getElementById('tree-controls-panel').style.display = 'flex';
-            }
+            // Создаем и скачиваем файл
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fileName || `image.${extension}`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
             
-            // Обработчики кнопок
-            document.getElementById('start-builder-btn')?.addEventListener('click', function(e) {
-                e.preventDefault();
-                if (typeof window.startTreeBuilder === 'function') {
-                    window.startTreeBuilder('auto');
+            window.showNotification('✅ Изображение сохранено!', 'success');
+        } else {
+            throw new Error('Не удалось загрузить изображение');
+        }
+        
+    } catch (error) {
+        console.error('Ошибка скачивания:', error);
+        
+        // Последний шанс - открыть в новой вкладке
+        window.showNotification('Не удалось скачать, открываем в браузере', 'info');
+        window.open(imageUrl, '_blank');
+        
+    } finally {
+        window.hideLoader();
+    }
+}
+
+// Конвертация изображения в blob через canvas
+function imageToBlob(imageUrl) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            
+            canvas.toBlob((blob) => {
+                if (blob) {
+                    resolve(blob);
                 } else {
-                    window.showNotification('Построитель дерева не загружен', 'error');
+                    reject(new Error('Не удалось создать blob'));
                 }
+            }, 'image/jpeg', 0.95);
+        };
+        img.onerror = reject;
+        img.src = imageUrl;
+    });
+}
+
+// Функция для сохранения элемента дерева
+function saveTreeElement(elementId, fileName) {
+    const element = document.getElementById(elementId);
+    if (!element) {
+        window.showNotification('Элемент не найден', 'error');
+        return;
+    }
+    
+    // Если это изображение
+    if (element.tagName === 'IMG') {
+        downloadImage(element.src, fileName || 'image.jpg');
+        return;
+    }
+    
+    // Если это canvas
+    if (element.tagName === 'CANVAS') {
+        const link = document.createElement('a');
+        link.download = fileName || 'canvas-image.png';
+        link.href = element.toDataURL('image/png');
+        link.click();
+        window.showNotification('✅ Изображение сохранено!', 'success');
+        return;
+    }
+    
+    // Если это div с изображением
+    const img = element.querySelector('img');
+    if (img) {
+        downloadImage(img.src, fileName || 'image.jpg');
+        return;
+    }
+    
+    window.showNotification('Не найден элемент для сохранения', 'error');
+}
+
+// Функция для сохранения всего дерева как изображение
+async function saveTreeAsImage() {
+    const treeContainer = document.querySelector('.tree-visualization-container');
+    if (!treeContainer) {
+        window.showNotification('Дерево не найдено', 'error');
+        return;
+    }
+    
+    window.showLoader('Создание изображения...');
+    
+    try {
+        // Используем html2canvas если он доступен
+        if (typeof html2canvas !== 'undefined') {
+            const canvas = await html2canvas(treeContainer, {
+                scale: 2,
+                backgroundColor: '#ffffff',
+                allowTaint: false,
+                useCORS: true,
+                logging: false
             });
             
-            document.getElementById('add-person-to-tree-btn')?.addEventListener('click', function(e) {
+            const link = document.createElement('a');
+            link.download = `family-tree-${new Date().toISOString().split('T')[0]}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            
+            window.showNotification('✅ Дерево сохранено как изображение!', 'success');
+        } else {
+            // Если html2canvas не доступен, просто открываем инструкцию
+            window.showNotification(
+                'Для сохранения дерева как изображение сделайте скриншот страницы', 
+                'info'
+            );
+        }
+    } catch (error) {
+        console.error('Ошибка сохранения дерева:', error);
+        window.showNotification('Ошибка сохранения дерева', 'error');
+    } finally {
+        window.hideLoader();
+    }
+}
+
+// Добавляем кнопки сохранения в интерфейс дерева
+function addSaveButtons() {
+    const treeControls = document.querySelector('.tree-controls');
+    if (!treeControls) return;
+    
+    const saveButton = document.createElement('button');
+    saveButton.className = 'btn btn-secondary';
+    saveButton.innerHTML = '<i class="fas fa-camera"></i> Сохранить как фото';
+    saveButton.onclick = saveTreeAsImage;
+    
+    treeControls.appendChild(saveButton);
+    
+    // Добавляем кнопки сохранения для каждого изображения
+    document.querySelectorAll('.person-photo, .tree-node img').forEach((img, index) => {
+        const parent = img.closest('.tree-node, .person-card');
+        if (parent && !parent.querySelector('.save-image-btn')) {
+            const saveImgBtn = document.createElement('button');
+            saveImgBtn.className = 'btn-icon save-image-btn';
+            saveImgBtn.innerHTML = '<i class="fas fa-download"></i>';
+            saveImgBtn.title = 'Сохранить изображение';
+            saveImgBtn.onclick = (e) => {
                 e.preventDefault();
-                window.showModal('add-person-modal');
-            });
+                e.stopPropagation();
+                downloadImage(img.src, `person-${index + 1}.jpg`);
+            };
             
-            // Карточки действий
-            const actionCards = document.querySelectorAll('.action-card');
-            actionCards.forEach(card => {
-                card.addEventListener('click', function(e) {
-                    if (this.getAttribute('onclick')) return;
-                });
-            });
-            
-            console.log('✅ Страница дерева инициализирована');
-        });
-    </script>
+            const actions = parent.querySelector('.node-actions, .person-actions');
+            if (actions) {
+                actions.appendChild(saveImgBtn);
+            }
+        }
+    });
+}
+
+// Подключаем html2canvas если его нет
+if (typeof html2canvas === 'undefined') {
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    script.onload = () => {
+        console.log('✅ html2canvas загружен');
+        addSaveButtons();
+    };
+    document.head.appendChild(script);
+} else {
+    addSaveButtons();
+}
+
+// Экспортируем функции
+window.downloadImage = downloadImage;
+window.saveTreeAsImage = saveTreeAsImage;
+window.saveTreeElement = saveTreeElement;
+</script>
 </body>
 </html>
