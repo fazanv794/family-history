@@ -444,13 +444,6 @@
                     e.preventDefault();
                     e.stopPropagation();
                     console.log('🔔 Открытие настроек уведомлений');
-                    
-                    if (typeof window.openNotificationModal === 'function') {
-                        window.openNotificationModal();
-                    } else {
-                        window.showNotification('Модуль уведомлений не загружен', 'info');
-                    }
-                    return false;
                 };
             }
         });
