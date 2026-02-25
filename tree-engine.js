@@ -3,154 +3,52 @@
 console.log('🌳 Tree Engine загружается...');
 
 // Функции для работы с построенным деревом
-// Функция для сохранения дерева как изображение
-window.saveTreeAsImage = function() {
-    console.log('saveTreeAsImage вызвана');
-    
-    // Проверка наличия дерева
-    const container = document.getElementById('tree-visualization-container');
-    if (!container) {
-        window.showNotification('Контейнер дерева не найден', 'error');
+function saveTreeAsImage() {
+    // Проверка авторизации
+    if (!window.currentUser && !window.treeData?.relatives?.length) {
+        window.showNotification('Для сохранения дерева сначала постройте дерево', 'error');
         return;
     }
     
-    // Проверяем, есть ли реальное дерево (не пустое состояние)
-    if (container.querySelector('.tree-empty-state') || 
-        container.innerHTML.includes('Дерево еще не создано')) {
+    const container = document.getElementById('tree-visualization-container');
+    if (!container || container.innerHTML.includes('tree-empty-state')) {
         window.showNotification('Сначала постройте дерево', 'error');
         return;
     }
     
     window.showLoader('Сохранение изображения...');
     
-    // Проверяем наличие html2canvas
-    if (typeof html2canvas === 'undefined') {
-        console.log('html2canvas не найден, загружаем...');
-        
-        // Загружаем с правильного CDN
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-        script.integrity = 'sha512-BHz9gGXxWxtrNQztT9hMqDfRl1H5tA6l3q1sF3QJm2+ZzScc8G5W8pS5L3pYO0XtD6R6Q9FqlZOYfQctVJjA==';
-        script.crossOrigin = 'anonymous';
-        script.referrerPolicy = 'no-referrer';
-        
-        script.onload = () => {
-            console.log('✅ html2canvas загружен');
-            // Небольшая задержка для инициализации
-            setTimeout(() => {
+    try {
+        // Используем html2canvas для создания изображения
+        if (typeof html2canvas === 'undefined') {
+            // Динамически загружаем библиотеку
+            const script = document.createElement('script');
+            script.src = 'https://html2canvas.hertzen.com/dist/html2canvas.min.js';
+            script.onload = () => {
                 generateTreeImage();
-            }, 300);
-        };
-        
-        script.onerror = (error) => {
-            console.error('❌ Ошибка загрузки html2canvas:', error);
-            window.showNotification('Не удалось загрузить библиотеку для сохранения', 'error');
-            window.hideLoader();
-        };
-        
-        document.head.appendChild(script);
-    } else {
-        console.log('html2canvas уже загружен');
-        generateTreeImage();
-    }
-};
-
-function generateTreeImage() {
-    console.log('generateTreeImage вызвана');
-    
-    const container = document.getElementById('tree-visualization-container');
-    
-    // Проверяем размеры контейнера
-    const width = container.offsetWidth;
-    const height = container.offsetHeight;
-    
-    console.log('Размеры контейнера:', width, height);
-    
-    if (width === 0 || height === 0) {
-        console.error('Контейнер имеет нулевые размеры');
-        window.showNotification('Контейнер дерева не видим', 'error');
-        window.hideLoader();
-        return;
-    }
-    
-    // Опции для html2canvas
-    const options = {
-        scale: 2,
-        useCORS: true,
-        allowTaint: false,
-        backgroundColor: '#ffffff',
-        logging: true,
-        windowWidth: container.scrollWidth,
-        windowHeight: container.scrollHeight,
-        onclone: (clonedDoc, element) => {
-            console.log('Документ склонирован');
+            };
+            script.onerror = () => {
+                fallbackSaveTreeAsImage();
+            };
+            document.head.appendChild(script);
+        } else {
+            generateTreeImage();
         }
-    };
-    
-    html2canvas(container, options)
-        .then(canvas => {
-            console.log('✅ Canvas создан, размеры:', canvas.width, canvas.height);
-            
-            // Создаем ссылку для скачивания
-            const link = document.createElement('a');
-            link.download = `family-tree-${new Date().toISOString().split('T')[0]}.png`;
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-            
-            window.showNotification('✅ Дерево сохранено как изображение!', 'success');
-            window.hideLoader();
-        })
-        .catch(error => {
-            console.error('❌ Ошибка html2canvas:', error);
-            window.showNotification('Ошибка создания изображения: ' + error.message, 'error');
-            window.hideLoader();
-        });
+    } catch (error) {
+        console.error('Ошибка сохранения изображения:', error);
+        fallbackSaveTreeAsImage();
+    }
 }
-
-// Вспомогательная функция для получения текста отношения
-function getRelationText(relation) {
-    const relations = {
-        'self': 'Я',
-        'spouse': 'Супруг(а)',
-        'parent': 'Родитель',
-        'child': 'Ребенок',
-        'sibling': 'Брат/Сестра',
-        'grandparent': 'Дедушка/Бабушка',
-        'grandchild': 'Внук/Внучка',
-        'aunt_uncle': 'Тетя/Дядя',
-        'cousin': 'Двоюродный брат/сестра',
-        'other': 'Другой'
-    };
-    return relations[relation] || relation;
-}
-
-// Убедимся, что функция доступна глобально
-console.log('saveTreeAsImage доступна:', typeof window.saveTreeAsImage);
 
 function generateTreeImage() {
     const container = document.getElementById('tree-visualization-container');
-    
-    // Проверяем размеры контейнера
-    console.log('Размеры контейнера:', container.offsetWidth, container.offsetHeight);
-    
-    if (container.offsetWidth === 0 || container.offsetHeight === 0) {
-        console.error('Контейнер имеет нулевые размеры');
-        window.showNotification('Контейнер дерева не видим', 'error');
-        window.hideLoader();
-        return;
-    }
     
     html2canvas(container, {
         scale: 2,
         useCORS: true,
         allowTaint: true,
-        backgroundColor: '#ffffff',
-        logging: true, // Включите логирование для отладки
-        windowWidth: container.scrollWidth,
-        windowHeight: container.scrollHeight
+        backgroundColor: '#ffffff'
     }).then(canvas => {
-        console.log('Canvas создан, размеры:', canvas.width, canvas.height);
-        
         // Создаем ссылку для скачивания
         const link = document.createElement('a');
         link.download = `family-tree-${new Date().toISOString().split('T')[0]}.png`;
@@ -161,8 +59,7 @@ function generateTreeImage() {
         window.hideLoader();
     }).catch(error => {
         console.error('Ошибка html2canvas:', error);
-        window.showNotification('Ошибка создания изображения: ' + error.message, 'error');
-        window.hideLoader();
+        fallbackSaveTreeAsImage();
     });
 }
 
