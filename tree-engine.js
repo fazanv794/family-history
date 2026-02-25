@@ -465,8 +465,6 @@ function addExportJsonButton() {
     const controlsPanel = document.getElementById('tree-controls-panel');
     if (controlsPanel) {
         const exportJsonBtn = document.createElement('button');
-        exportJsonBtn.className = 'btn btn-small';
-        exportJsonBtn.innerHTML = '<i class="fas fa-code"></i> Экспорт JSON';
         exportJsonBtn.onclick = exportTreeAsJson;
         controlsPanel.appendChild(exportJsonBtn);
     }
