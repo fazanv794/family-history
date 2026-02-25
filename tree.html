@@ -133,14 +133,12 @@
                 
                 <!-- Контролы для дерева -->
                 <div class="tree-controls" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); display: none;" id="tree-controls-panel">
-                    <button class="btn btn-small" onclick="window.saveTreeAsImage()">
-                        <i class="fas fa-camera"></i> Экспорт в текстовом виде
-                    </button>
+                   
                     <button class="btn btn-small" onclick="window.printTree()">
                         <i class="fas fa-print"></i> Печать
                     </button>
-                    <button class="btn btn-small" onclick="window.exportTreeAsJson ? window.exportTreeAsJson() : alert('Функция экспорта JSON доступна после загрузки страницы')">
-                        <i class="fas fa-code"></i> Здесь сделай Сохранить как изображение
+                    <button class="btn btn-small" onclick="window.saveTreeAsImage()">
+                        <i class="fas fa-telegram"></i> Экспорт в текстовом виде
                     </button>
                 </div>
             </div>
